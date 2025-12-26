@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { TagSelector } from "@/components/TagSelector";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import type { AddOn } from "@/data/products";
