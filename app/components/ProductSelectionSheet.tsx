@@ -6,11 +6,11 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { ReadyCake, AddOn } from "@/data/products";
+import type { SmallCake, AddOn } from "@/data/products";
 
 interface ProductSelection {
   type: "cake" | "sweet";
-  product: ReadyCake | AddOn;
+  product: SmallCake | AddOn;
   selectedSizes: Array<{ name: string; price: number }>;
 }
 
@@ -70,28 +70,30 @@ export function ProductSelectionSheet({
                 Select Sizes (Multiple)
               </label>
               <div className="space-y-2">
-                {(selectedProduct.product as SmallCake).sizes.map((size) => {
-                  const isSelected = selectedProduct.selectedSizes.some(
-                    (s) => s.name === size.name
-                  );
-                  return (
-                    <Button
-                      key={size.name}
-                      variant={isSelected ? "default" : "outline"}
-                      className="w-full justify-between"
-                      onClick={() => {
-                        if (isSelected) {
-                          onRemoveSize(size.name);
-                        } else {
-                          onSelectSize(size);
-                        }
-                      }}
-                    >
-                      <span>{size.name}</span>
-                      <span className="font-bold">${size.price}</span>
-                    </Button>
-                  );
-                })}
+                {(selectedProduct.product as SmallCake).sizes.map(
+                  (size: { name: string; price: number }) => {
+                    const isSelected = selectedProduct.selectedSizes.some(
+                      (s) => s.name === size.name
+                    );
+                    return (
+                      <Button
+                        key={size.name}
+                        variant={isSelected ? "default" : "outline"}
+                        className="w-full justify-between"
+                        onClick={() => {
+                          if (isSelected) {
+                            onRemoveSize(size.name);
+                          } else {
+                            onSelectSize(size);
+                          }
+                        }}
+                      >
+                        <span>{size.name}</span>
+                        <span className="font-bold">${size.price}</span>
+                      </Button>
+                    );
+                  }
+                )}
               </div>
               {selectedProduct.selectedSizes.length > 0 && (
                 <div className="bg-muted p-2 rounded text-sm">

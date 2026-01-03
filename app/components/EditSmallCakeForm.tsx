@@ -172,7 +172,7 @@ export function EditSmallCakeForm({
 
         <Separator />
 
-        <FlavorsSection<EditReadyCakeFormValues>
+        <FlavorsSection<EditSmallCakeFormValues>
           control={form.control}
           fields={flavorFields}
           fieldName="flavors"
@@ -182,7 +182,7 @@ export function EditSmallCakeForm({
 
         <Separator />
 
-        <SizesSection<EditReadyCakeFormValues>
+        <SizesSection<EditSmallCakeFormValues>
           control={form.control}
           fields={sizeFields}
           fieldName="sizes"
