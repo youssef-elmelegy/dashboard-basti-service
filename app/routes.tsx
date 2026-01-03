@@ -11,10 +11,10 @@ import PaymentsPage from "@/routes/payments";
 import RegionsPage from "@/routes/management/regions";
 import RegionDetailPage from "@/routes/management/region-detail";
 import BakeriesPage from "@/routes/management/bakeries";
+import BakeryDetailPage from "@/routes/management/bakery-detail";
 import ChefsPage from "@/routes/management/chefs";
 import CustomCreationsPage from "@/routes/products/custom-creations";
-import ReadyCakesPage from "@/routes/products/ready-cakes";
-import SweetsPage from "@/routes/products/sweets";
+import SmallCakesPage from "@/routes/products/small-cakes";
 import AddOnsPage from "@/routes/products/add-ons";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
@@ -98,6 +98,10 @@ export const router = createBrowserRouter([
         element: <BakeriesPage />,
       },
       {
+        path: "management/bakeries/:id",
+        element: <BakeryDetailPage />,
+      },
+      {
         path: "management/chefs",
         element: <ChefsPage />,
       },
@@ -106,12 +110,8 @@ export const router = createBrowserRouter([
         element: <CustomCreationsPage />,
       },
       {
-        path: "products/ready-cakes",
-        element: <ReadyCakesPage />,
-      },
-      {
-        path: "products/sweets",
-        element: <SweetsPage />,
+        path: "products/small-cakes",
+        element: <SmallCakesPage />,
       },
       {
         path: "products/add-ons",

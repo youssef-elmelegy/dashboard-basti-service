@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRegionStore } from "@/stores/regionStore";
-import { useReadyCakeStore } from "@/stores/readyCakeStore";
-import { useSweetStore } from "@/stores/sweetStore";
+import { useSmallCakeStore } from "@/stores/smallCakeStore";
+import { useAddOnStore } from "@/stores/addOnStore";
 import { useRegionProductSelectionStore } from "@/stores/regionProductSelectionStore";
+import { useStockStore } from "@/stores/stockStore";
 import { SelectedProductsDataTable } from "@/components/SelectedProductsDataTable";
 import React, { useState, useRef } from "react";
 import { selectedProductsColumns } from "@/components/SelectedProductsColumns";
@@ -11,11 +12,11 @@ import { RegionHeader } from "@/components/RegionHeader";
 import { SearchProductsBar } from "@/components/SearchProductsBar";
 import { SearchProductsDropdown } from "@/components/SearchProductsDropdown";
 import { ProductSelectionSheet } from "@/components/ProductSelectionSheet";
-import type { ReadyCake, Sweet } from "@/data/products";
+import type { SmallCake, AddOn } from "@/data/products";
 
 type ProductSelection = {
   type: "cake" | "sweet";
-  product: ReadyCake | Sweet;
+  product: SmallCake | AddOn;
   selectedSizes: Array<{ name: string; price: number }>;
 } | null;
 
@@ -31,8 +32,8 @@ export default function RegionDetailPage() {
 
   // Store hooks
   const regions = useRegionStore((state) => state.regions);
-  const readyCakes = useReadyCakeStore((state) => state.readyCakes);
-  const sweets = useSweetStore((state) => state.sweets);
+  const smallCakes = useSmallCakeStore((state) => state.smallCakes);
+  const addOns = useAddOnStore((state) => state.addOns);
   const selectedProducts = useRegionProductSelectionStore(
     (state) => state.selectedProducts
   );
@@ -55,14 +56,14 @@ export default function RegionDetailPage() {
         type: item.type,
         product:
           item.type === "cake"
-            ? readyCakes.find((c) => c.id === item.productId)!
-            : sweets.find((s) => s.id === item.productId)!,
+            ? smallCakes.find((c) => c.id === item.productId)!
+            : addOns.find((s) => s.id === item.productId)!,
         selectedSizes: item.selectedSizes || [],
       });
       setEditingProductId(item.id);
       setIsSelectionOpen(true);
     },
-    [readyCakes, sweets]
+    [smallCakes, addOns]
   );
 
   // Sync editingProductId state to ref
@@ -91,10 +92,15 @@ export default function RegionDetailPage() {
   );
 
   // Filter products based on search query
-  const activeReadyCakes = readyCakes.filter((cake) => cake.isActive);
-  const activeSweets = sweets.filter((sweet) => sweet.isActive);
+  const activeSmallCakes = smallCakes.filter((cake) => cake.isActive);
+  const activeSweets = addOns.filter(
+    (addon) => addon.category === "sweets" && addon.isActive
+  );
+  const activeAddOns = addOns.filter(
+    (addon) => addon.category !== "sweets" && addon.isActive
+  );
 
-  const filteredCakes = activeReadyCakes.filter(
+  const filteredCakes = activeSmallCakes.filter(
     (cake) =>
       cake.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cake.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -106,14 +112,25 @@ export default function RegionDetailPage() {
       sweet.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredAddOns = activeAddOns.filter(
+    (addon) =>
+      addon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      addon.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Handle product selection
-  const handleSelectCake = (cake: ReadyCake) => {
+  const handleSelectCake = (cake: SmallCake) => {
     setSelectedProduct({ type: "cake", product: cake, selectedSizes: [] });
     setIsSelectionOpen(true);
   };
 
-  const handleSelectSweet = (sweet: Sweet) => {
+  const handleSelectSweet = (sweet: AddOn) => {
     setSelectedProduct({ type: "sweet", product: sweet, selectedSizes: [] });
+    setIsSelectionOpen(true);
+  };
+
+  const handleSelectAddOn = (addon: AddOn) => {
+    setSelectedProduct({ type: "sweet", product: addon, selectedSizes: [] });
     setIsSelectionOpen(true);
   };
 
@@ -141,15 +158,16 @@ export default function RegionDetailPage() {
     if (selectedProduct) {
       if (editingProductId) {
         // Edit mode: update all fields of the existing product
+        const product = selectedProduct.product;
+        const isSmallCake = selectedProduct.type === "cake";
         const updated = {
           type: selectedProduct.type,
-          productId: selectedProduct.product.id,
-          productName: selectedProduct.product.name,
-          productImage: selectedProduct.product.image,
-          basePrice:
-            selectedProduct.type === "cake"
-              ? (selectedProduct.product as ReadyCake).basePrice
-              : (selectedProduct.product as Sweet).price,
+          productId: product.id,
+          productName: product.name,
+          productImage: product.images?.[0] || "",
+          basePrice: isSmallCake
+            ? (product as SmallCake).basePrice
+            : (product as AddOn).price,
           selectedSizes:
             selectedProduct.type === "cake"
               ? selectedProduct.selectedSizes
@@ -168,6 +186,25 @@ export default function RegionDetailPage() {
             ? selectedProduct.selectedSizes
             : undefined
         );
+
+        // If it's an add-on, create stock entry with currentStock = 0
+        if (selectedProduct.type !== "cake") {
+          const addon = selectedProduct.product as AddOn;
+          const addStock = useStockStore.getState().addStock;
+          addStock({
+            id: `stock-${region.id}-${addon.id}`,
+            bakeryId: "", // Will be determined by region's bakery association
+            regionId: region.id,
+            regionName: region.name,
+            addOnId: addon.id,
+            addOnName: addon.name,
+            currentStock: 0,
+            maxStock: 100, // Default max stock
+            lastRestocked: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
       }
       setIsSelectionOpen(false);
       setSelectedProduct(null);
@@ -191,9 +228,11 @@ export default function RegionDetailPage() {
         <SearchProductsDropdown
           filteredCakes={filteredCakes}
           filteredSweets={filteredSweets}
+          filteredAddOns={filteredAddOns}
           searchQuery={searchQuery}
           onSelectCake={handleSelectCake}
           onSelectSweet={handleSelectSweet}
+          onSelectAddOn={handleSelectAddOn}
           onClose={() => setSearchQuery("")}
         />
       </div>

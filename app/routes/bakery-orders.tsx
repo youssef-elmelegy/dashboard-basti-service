@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
@@ -112,19 +113,21 @@ function ImageUpload({
   );
 }
 
-// Timer Component
-function OrderTimer({
-  orderedAt,
+// Timer Component - Isolated with memo to prevent unnecessary re-renders
+const OrderTimer = memo(function OrderTimer({
+  assignedAt,
   onExpire,
 }: {
-  orderedAt: string;
+  assignedAt?: string;
   onExpire: () => void;
 }) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
   useEffect(() => {
-    const orderTime = new Date(orderedAt).getTime();
-    const expiryTime = orderTime + 60 * 60 * 1000; // 60 minutes
+    if (!assignedAt) return;
+
+    const assignTime = new Date(assignedAt).getTime();
+    const expiryTime = assignTime + 60 * 60 * 1000; // 60 minutes from assignment
 
     const updateTimer = () => {
       const now = Date.now();
@@ -140,7 +143,7 @@ function OrderTimer({
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [orderedAt, onExpire]);
+  }, [assignedAt, onExpire]);
 
   const minutes = Math.floor(timeLeft / 60000);
   const seconds = Math.floor((timeLeft % 60000) / 1000);
@@ -162,6 +165,80 @@ function OrderTimer({
       </span>
     </div>
   );
+});
+
+// Cancellation Dialog Component
+function CancellationDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  orderId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  orderId: string;
+}) {
+  const { t, i18n } = useTranslation();
+  const [reason, setReason] = useState("");
+  const isArabic = i18n.language === "ar";
+
+  const handleConfirm = () => {
+    if (reason.trim()) {
+      onConfirm(reason);
+      setReason("");
+    }
+  };
+
+  return (
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex items-center justify-center transition-all duration-200",
+        isOpen
+          ? "bg-black/50 opacity-100 visible"
+          : "bg-black/0 opacity-0 invisible"
+      )}
+      onClick={onClose}
+    >
+      <Card
+        className="w-full max-w-md mx-4 shadow-lg"
+        dir={isArabic ? "ltr" : "auto"}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <X className="w-5 h-5 text-red-500" />
+            {t("bakeryOrders.cancelTitle")} #{orderId}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("bakeryOrders.cancelDescription")}
+          </p>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t("bakeryOrders.enterReason")}
+            className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none h-24"
+          />
+        </CardContent>
+        <Separator />
+        <div className="flex gap-2 p-4">
+          <Button variant="outline" className="flex-1" onClick={onClose}>
+            {t("bakeryOrders.keepOrder")}
+          </Button>
+          <Button
+            variant="destructive"
+            className="flex-1"
+            onClick={handleConfirm}
+            disabled={!reason.trim()}
+          >
+            {t("bakeryOrders.confirm")}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 // Order Card in Sidebar
@@ -176,87 +253,124 @@ function OrderSidebarCard({
   isSelected: boolean;
   onSelect: () => void;
   onConfirm: () => void;
-  onDecline: () => void;
+  onDecline: (reason: string) => void;
 }) {
   const isPending = order.status === "pending";
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const handleCancelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelConfirm = (reason: string) => {
+    onDecline(reason);
+    setShowCancelDialog(false);
+  };
 
   return (
-    <Card
-      className={cn(
-        "cursor-pointer transition-all hover:shadow-md",
-        isSelected && "ring-2 ring-primary"
-      )}
-      onClick={onSelect}
-    >
-      <CardHeader className="p-3">
-        <div className="space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm truncate">
-                {order.productName}
-              </h4>
-              <p className="text-xs text-muted-foreground truncate">
-                {order.customerName}
-              </p>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                "capitalize text-xs shrink-0",
-                statusColors[order.status]
-              )}
+    <>
+      <Card
+        className={cn(
+          "cursor-pointer transition-all hover:shadow-md",
+          isSelected && "ring-2 ring-primary"
+        )}
+        onClick={onSelect}
+      >
+        <CardHeader className="py-0 px-3">
+          <div className="space-y-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
+              title={`Order ${order.id}`}
             >
-              {order.status}
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {format(new Date(order.deliverDay), "MMM d")}
-            </span>
-            <span>{order.capacitySlots} slots</span>
-          </div>
-
-          {isPending && (
-            <>
-              <OrderTimer orderedAt={order.orderedAt} onExpire={onConfirm} />
-
-              <div className="flex gap-2 pt-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="flex-1 h-8 bg-green-600 hover:bg-green-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onConfirm();
-                  }}
-                >
-                  <Check className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="flex-1 h-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDecline();
-                  }}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+              #{order.id}
+            </button>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm truncate">
+                  {order.productName}
+                </h4>
+                <p className="text-xs text-muted-foreground truncate">
+                  {order.customerName}
+                </p>
               </div>
-            </>
-          )}
-        </div>
-      </CardHeader>
-    </Card>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "capitalize text-xs shrink-0",
+                  statusColors[order.status]
+                )}
+              >
+                {order.status}
+              </Badge>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {format(new Date(order.deliverDay), "MMM d")}
+              </span>
+              <span>{order.capacitySlots} slots</span>
+            </div>
+
+            {isPending && (
+              <>
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="flex-1">
+                    <OrderTimer
+                      assignedAt={order.assignedAt}
+                      onExpire={onConfirm}
+                    />
+                  </div>
+
+                  <div className="flex gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-6 h-6 p-0 rounded-full opacity-40 hover:opacity-100 transition-opacity border border-dashed border-foreground flex items-center justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onConfirm();
+                      }}
+                      title="Approve Order"
+                    >
+                      <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="w-6 h-6 p-0 rounded-full opacity-40 hover:opacity-100 transition-opacity border border-dashed border-foreground flex items-center justify-center"
+                      onClick={handleCancelClick}
+                      title="Cancel Order"
+                    >
+                      <X className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
+      <CancellationDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={handleCancelConfirm}
+        orderId={order.id}
+      />
+    </>
   );
 }
 
 export default function BakeryOrdersPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { i18n, t } = useTranslation();
+  const isRTL = i18n.language === "ar";
   const bakeries = useBakeryStore((state) => state.bakeries);
   const orders = useOrderStore((state) => state.orders);
   const updateOrder = useOrderStore((state) => state.updateOrder);
@@ -288,8 +402,16 @@ export default function BakeryOrdersPage() {
     updateOrder(orderId, { status: "confirmed" });
   };
 
-  const handleDecline = (orderId: string) => {
-    updateOrder(orderId, { status: "cancelled" });
+  const handleDecline = (orderId: string, reason: string) => {
+    updateOrder(orderId, {
+      status: "cancelled",
+      cancellationReason: reason,
+    });
+    // Remove from bakery orders by unassigning
+    updateOrder(orderId, {
+      assignedBakeryId: undefined,
+      assignedBakeryName: undefined,
+    });
   };
 
   const handleQualityCheck = (checkId: string, checked: boolean) => {
@@ -307,21 +429,26 @@ export default function BakeryOrdersPage() {
   if (!bakery) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
-        <h1 className="text-2xl font-bold">Bakery Not Found</h1>
+        <h1 className="text-2xl font-bold">{t("bakeries.bakeryNotFound")}</h1>
         <Button onClick={() => navigate("/management/bakeries")}>
           <ChevronLeft className="w-4 h-4 mr-2" />
-          Back to Bakeries
+          {t("bakeries.backToBakeries")}
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex w-full h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex w-full h-full overflow-hidden">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden pr-[22rem]">
+      <div
+        className={cn(
+          "flex-1 flex flex-col overflow-hidden",
+          isRTL ? "pl-88 order-last" : "pr-88 order-first"
+        )}
+      >
         {/* Header */}
-        <div className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
+        <div className="shrink-0 px-6 pt-6 pb-4 border-b">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
@@ -380,8 +507,8 @@ export default function BakeryOrdersPage() {
         {/* Order Details */}
         <div className="flex-1 overflow-hidden px-6 py-6">
           {selectedOrder ? (
-            <ScrollArea className="h-full w-full pr-4">
-              <div className="grid gap-6 md:grid-cols-2 pb-4">
+            <ScrollArea className="h-full w-full">
+              <div className="grid gap-6 md:grid-cols-2 pb-4 pr-4">
                 {/* Product Information */}
                 <Card className="md:col-span-2">
                   <CardHeader>
@@ -628,24 +755,29 @@ export default function BakeryOrdersPage() {
             </ScrollArea>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              Select an order to view details
+              {t("bakeryOrders.selectOrderDetails")}
             </div>
           )}
         </div>
       </div>
 
       {/* Right Sidebar - Orders List */}
-      <div className="fixed right-0 top-16 h-[calc(100vh-4rem)] w-[22rem] border-l bg-sidebar z-30 flex flex-col">
-        <div className="border-b px-4 py-3">
+      <div
+        className={cn(
+          "fixed top-16 h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden",
+          isRTL ? "left-0 border-r order-first" : "right-0 border-l order-last"
+        )}
+      >
+        <div className="shrink-0 border-b px-4 py-3">
           <h2 className="font-semibold text-lg">
-            Orders ({bakeryOrders.length})
+            {t("bakeryOrders.orders")} ({bakeryOrders.length})
           </h2>
         </div>
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-2">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-2 p-4">
             {bakeryOrders.length === 0 ? (
               <div className="text-center py-8 text-sm text-muted-foreground">
-                No orders assigned to this bakery
+                {t("bakeryOrders.noOrdersAssigned")}
               </div>
             ) : (
               bakeryOrders.map((order) => (
@@ -655,7 +787,7 @@ export default function BakeryOrdersPage() {
                   isSelected={selectedOrderId === order.id}
                   onSelect={() => setSelectedOrderId(order.id)}
                   onConfirm={() => handleConfirm(order.id)}
-                  onDecline={() => handleDecline(order.id)}
+                  onDecline={(reason) => handleDecline(order.id, reason)}
                 />
               ))
             )}

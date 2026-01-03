@@ -12,6 +12,7 @@ import {
   Building,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import logoSvg from "@/assets/logo.svg";
 import {
   Sidebar,
@@ -33,71 +34,69 @@ import {
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
 
-const items = [
-  {
-    title: "Home",
-    url: "/",
-    icon: Home,
-  },
-];
-
-const managementItems = [
-  {
-    title: "Regions",
-    url: "/management/regions",
-    icon: MapPin,
-  },
-  {
-    title: "Bakeries",
-    url: "/management/bakeries",
-    icon: Building2,
-  },
-  {
-    title: "Chefs",
-    url: "/management/chefs",
-    icon: ChefHat,
-  },
-];
-
-const productItems = [
-  {
-    title: "Custom Creations",
-    url: "/products/custom-creations",
-    icon: Sparkles,
-  },
-  {
-    title: "Ready Cakes",
-    url: "/products/ready-cakes",
-    icon: Cake,
-  },
-  {
-    title: "Sweets",
-    url: "/products/sweets",
-    icon: Package,
-  },
-  {
-    title: "Add-ons",
-    url: "/products/add-ons",
-    icon: Gift,
-  },
-];
-
-const orderItems = [
-  {
-    title: "Orders",
-    url: "/orders",
-    icon: Package,
-  },
-  {
-    title: "Bakery Orders",
-    url: "/orders/bakery/bakery1",
-    icon: Building,
-  },
-];
-
 const AppSidebar = () => {
+  const { i18n, t } = useTranslation();
+  const isRTL = i18n.language === "ar";
+
+  const items = [
+    {
+      title: t("sidebar.home"),
+      url: "/",
+      icon: Home,
+    },
+  ];
+
+  const managementItems = [
+    {
+      title: t("sidebar.regions"),
+      url: "/management/regions",
+      icon: MapPin,
+    },
+    {
+      title: t("sidebar.bakeries"),
+      url: "/management/bakeries",
+      icon: Building2,
+    },
+    {
+      title: t("sidebar.chefs"),
+      url: "/management/chefs",
+      icon: ChefHat,
+    },
+  ];
+
+  const productItems = [
+    {
+      title: t("sidebar.customCreations"),
+      url: "/products/custom-creations",
+      icon: Sparkles,
+    },
+    {
+      title: t("sidebar.smallCakes"),
+      url: "/products/small-cakes",
+      icon: Cake,
+    },
+    {
+      title: t("sidebar.addOns"),
+      url: "/products/add-ons",
+      icon: Gift,
+    },
+  ];
+
+  const orderItems = [
+    {
+      title: t("sidebar.orders"),
+      url: "/orders",
+      icon: Package,
+    },
+    {
+      title: t("sidebar.bakeryOrders"),
+      url: "/orders/bakery/bakery1",
+      icon: Building,
+    },
+  ];
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" side={isRTL ? "right" : "left"}>
       <SidebarHeader className="py-4">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -113,7 +112,7 @@ const AppSidebar = () => {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.main")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -131,7 +130,7 @@ const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Orders</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.orders")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {orderItems.map((item) => (
@@ -149,7 +148,7 @@ const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.management")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {managementItems.map((item) => (
@@ -167,7 +166,7 @@ const AppSidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Products</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.products")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {productItems.map((item) => (
@@ -195,9 +194,9 @@ const AppSidebar = () => {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Account</DropdownMenuItem>
-                <DropdownMenuItem>Setting</DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem>{t("sidebar.account")}</DropdownMenuItem>
+                <DropdownMenuItem>{t("sidebar.setting")}</DropdownMenuItem>
+                <DropdownMenuItem>{t("sidebar.signOut")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

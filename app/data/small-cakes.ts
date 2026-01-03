@@ -1,12 +1,15 @@
-import type { ReadyCake } from "./products";
+import type { SmallCake } from "./products";
 
-export const readyCakesData: ReadyCake[] = [
+export const smallCakesData: SmallCake[] = [
   {
     id: "cake1",
     name: "Vanilla Dream",
     description: "Classic vanilla cake with vanilla buttercream frosting",
-    image:
+    images: [
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.3",
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.7",
+    ],
     tags: ["birthday", "anniversary"],
     basePrice: 45,
     capacity: 12,
@@ -22,8 +25,11 @@ export const readyCakesData: ReadyCake[] = [
     id: "cake2",
     name: "Chocolate Elegance",
     description: "Decadent chocolate cake layers with chocolate ganache",
-    image:
+    images: [
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.3&fp-y=0.4",
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.7&fp-y=0.6",
+    ],
     tags: ["wedding"],
     basePrice: 55,
     capacity: 16,

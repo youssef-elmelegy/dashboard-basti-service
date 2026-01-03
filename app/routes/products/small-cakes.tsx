@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,34 +13,35 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import { ReadyCakeCard } from "@/components/ReadyCakeCard";
-import { AddReadyCakeForm } from "@/components/AddReadyCakeForm";
-import { EditReadyCakeForm } from "@/components/EditReadyCakeForm";
+import { SmallCakeCard } from "@/components/SmallCakeCard";
+import { AddSmallCakeForm } from "@/components/AddSmallCakeForm";
+import { EditSmallCakeForm } from "@/components/EditSmallCakeForm";
 import { ProductFilter } from "@/components/ProductFilter";
-import { useReadyCakeStore } from "@/stores/readyCakeStore";
+import { useSmallCakeStore } from "@/stores/smallCakeStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
-import type { ReadyCake } from "@/data/products";
+import type { SmallCake } from "@/data/products";
 import { Plus } from "lucide-react";
 
-export default function ReadyCakesPage() {
+export default function SmallCakesPage() {
+  const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingCake, setEditingCake] = useState<ReadyCake | null>(null);
+  const [editingCake, setEditingCake] = useState<SmallCake | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
 
-  const cakes = useReadyCakeStore((state) => state.readyCakes);
-  const addReadyCake = useReadyCakeStore((state) => state.addReadyCake);
-  const updateReadyCake = useReadyCakeStore((state) => state.updateReadyCake);
-  const deleteReadyCake = useReadyCakeStore((state) => state.deleteReadyCake);
-  const toggleCakeActive = useReadyCakeStore((state) => state.toggleCakeActive);
+  const cakes = useSmallCakeStore((state) => state.smallCakes);
+  const addSmallCake = useSmallCakeStore((state) => state.addSmallCake);
+  const updateSmallCake = useSmallCakeStore((state) => state.updateSmallCake);
+  const deleteSmallCake = useSmallCakeStore((state) => state.deleteSmallCake);
+  const toggleCakeActive = useSmallCakeStore((state) => state.toggleCakeActive);
   const { openDeleteDialog } = useDeleteDialog();
 
-  // Get all unique tags from ready cakes
+  // Get all unique tags from small cakes
   const allTags = Array.from(new Set(cakes.flatMap((c) => c.tags))).sort();
 
-  // Filter ready cakes based on selected filters
+  // Filter small cakes based on selected filters
   const filteredCakes = cakes.filter((cake) => {
     // Filter by active status
     if (activeFilter === "active" && !cake.isActive) return false;
@@ -53,8 +55,8 @@ export default function ReadyCakesPage() {
     return true;
   });
 
-  const handleAddCake = (values: Omit<ReadyCake, "id" | "createdAt">) => {
-    addReadyCake({
+  const handleAddCake = (values: Omit<SmallCake, "id" | "createdAt">) => {
+    addSmallCake({
       id: Date.now().toString(),
       ...values,
       createdAt: new Date(),
@@ -62,9 +64,9 @@ export default function ReadyCakesPage() {
     setIsAddOpen(false);
   };
 
-  const handleUpdateCake = (values: Omit<ReadyCake, "createdAt">) => {
+  const handleUpdateCake = (values: Omit<SmallCake, "createdAt">) => {
     if (editingCake) {
-      updateReadyCake(editingCake.id, {
+      updateSmallCake(editingCake.id, {
         ...editingCake,
         ...values,
       });
@@ -72,15 +74,15 @@ export default function ReadyCakesPage() {
     }
   };
 
-  const handleDeleteCake = (cake: ReadyCake) => {
+  const handleDeleteCake = (cake: SmallCake) => {
     openDeleteDialog(
       {
         recordName: cake.name,
-        recordType: "cake",
-        title: "Delete Cake",
-        description: `Are you sure you want to delete "${cake.name}"? This action cannot be undone.`,
+        recordType: t("smallCakes.recordType"),
+        title: t("smallCakes.deleteCake"),
+        description: `${t("messages.confirmDelete")}`,
       },
-      () => deleteReadyCake(cake.id)
+      () => deleteSmallCake(cake.id)
     );
   };
 
@@ -94,14 +96,14 @@ export default function ReadyCakesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ready Cakes</h1>
-          <p className="text-muted-foreground">
-            Manage your ready-made cake inventory
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("smallCakes.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("smallCakes.description")}</p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Cake
+          {t("smallCakes.addCake")}
         </Button>
       </div>
 
@@ -122,13 +124,13 @@ export default function ReadyCakesPage() {
             <EmptyHeader>
               <EmptyTitle>
                 {cakes.length === 0
-                  ? "No ready cakes yet"
-                  : "No ready cakes match your filters"}
+                  ? t("smallCakes.noCakesYet")
+                  : t("smallCakes.noCakesMatch")}
               </EmptyTitle>
               <EmptyDescription>
                 {cakes.length === 0
-                  ? "Add your first ready-made cake to get started"
-                  : "Try adjusting your filters to find products"}
+                  ? t("smallCakes.addFirstCake")
+                  : t("smallCakes.tryAdjusting")}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -136,7 +138,7 @@ export default function ReadyCakesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCakes.map((cake) => (
-            <ReadyCakeCard
+            <SmallCakeCard
               key={cake.id}
               cake={cake}
               onEdit={(c) => setEditingCake(c)}
@@ -151,10 +153,10 @@ export default function ReadyCakesPage() {
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
         <SheetContent className="overflow-y-auto max-w-2xl">
           <SheetHeader>
-            <SheetTitle>Add New Cake</SheetTitle>
+            <SheetTitle>{t("smallCakes.addNewCake")}</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
-            <AddReadyCakeForm onSubmit={handleAddCake} />
+            <AddSmallCakeForm onSubmit={handleAddCake} />
           </div>
         </SheetContent>
       </Sheet>
@@ -164,10 +166,10 @@ export default function ReadyCakesPage() {
         <Sheet open={!!editingCake} onOpenChange={() => setEditingCake(null)}>
           <SheetContent className="overflow-y-auto max-w-2xl">
             <SheetHeader>
-              <SheetTitle>Edit Cake</SheetTitle>
+              <SheetTitle>{t("smallCakes.editCake")}</SheetTitle>
             </SheetHeader>
             <div className="mt-6">
-              <EditReadyCakeForm
+              <EditSmallCakeForm
                 cake={editingCake}
                 onSubmit={handleUpdateCake}
               />

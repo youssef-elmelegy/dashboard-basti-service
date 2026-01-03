@@ -11,35 +11,23 @@ export type CakeSize = {
   price: number;
 };
 
-export type Sweet = {
-  id: string;
-  name: string;
-  description: string;
-  image: string;
-  tags: string[];
-  price: number;
-  capacity: number; // slots/servings
-  isActive: boolean;
-  createdAt?: Date;
-};
-
 export type AddOn = {
   id: string;
   name: string;
   description: string;
-  image: string;
-  category: "card" | "balloon" | "candle" | "decoration" | "other";
+  images: string[]; // Multiple images support
+  category: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
   price: number;
   tags: string[];
   isActive: boolean;
   createdAt?: Date;
 };
 
-export type ReadyCake = {
+export type SmallCake = {
   id: string;
   name: string;
   description: string;
-  image: string;
+  images: string[]; // Multiple images support
   tags: string[];
   basePrice: number;
   capacity: number; // servings

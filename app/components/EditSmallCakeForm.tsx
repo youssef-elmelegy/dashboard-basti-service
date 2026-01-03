@@ -1,5 +1,6 @@
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,33 +13,34 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { TagSelector } from "@/components/TagSelector";
-import { ImageUploadField } from "@/components/ImageUploadField";
+import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { FlavorsSection } from "@/components/FlavorsSection";
 import { SizesSection } from "@/components/SizesSection";
-import type { ReadyCake } from "@/data/products";
+import type { SmallCake } from "@/data/products";
 import {
-  editReadyCakeSchema,
-  type EditReadyCakeFormValues,
-} from "@/schemas/edit-ready-cake.schema";
+  editSmallCakeSchema,
+  type EditSmallCakeFormValues,
+} from "@/schemas/edit-small-cake.schema";
 
-interface EditReadyCakeFormProps {
-  cake: ReadyCake;
-  onSubmit: (values: EditReadyCakeFormValues) => void;
+interface EditSmallCakeFormProps {
+  cake: SmallCake;
+  onSubmit: (values: EditSmallCakeFormValues) => void;
   isLoading?: boolean;
 }
 
-export function EditReadyCakeForm({
+export function EditSmallCakeForm({
   cake,
   onSubmit,
   isLoading = false,
-}: EditReadyCakeFormProps) {
-  const form = useForm<EditReadyCakeFormValues>({
-    resolver: zodResolver(editReadyCakeSchema),
+}: EditSmallCakeFormProps) {
+  const { t } = useTranslation();
+  const form = useForm<EditSmallCakeFormValues>({
+    resolver: zodResolver(editSmallCakeSchema),
     defaultValues: {
       id: cake.id,
       name: cake.name,
       description: cake.description,
-      image: cake.image,
+      images: cake.images,
       basePrice: cake.basePrice,
       capacity: cake.capacity,
       tags: cake.tags,
@@ -74,8 +76,8 @@ export function EditReadyCakeForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cake Name</FormLabel>
-              <Input placeholder="e.g., Vanilla Dream" {...field} />
+              <FormLabel>{t("products.name")}</FormLabel>
+              <Input placeholder={t("smallCakes.namePlaceholder")} {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -86,11 +88,12 @@ export function EditReadyCakeForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
-              <Input placeholder="Describe your cake..." {...field} />
-              <FormDescription>
-                Minimum 10 characters, maximum 500
-              </FormDescription>
+              <FormLabel>{t("products.description")}</FormLabel>
+              <Input
+                placeholder={t("smallCakes.descriptionPlaceholder")}
+                {...field}
+              />
+              <FormDescription>{t("products.descriptionHint")}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -98,12 +101,13 @@ export function EditReadyCakeForm({
 
         <FormField
           control={form.control}
-          name="image"
+          name="images"
           render={({ field }) => (
-            <ImageUploadField
-              label="Image"
-              initialImage={cake.image}
-              onImageChange={(base64) => field.onChange(base64)}
+            <MultiImageUploader
+              images={field.value}
+              onImagesChange={field.onChange}
+              label={t("products.images")}
+              error={form.formState.errors.images?.message}
             />
           )}
         />
@@ -114,7 +118,7 @@ export function EditReadyCakeForm({
             name="basePrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Base Price ($)</FormLabel>
+                <FormLabel>{t("products.price")} ($)</FormLabel>
                 <Input
                   type="number"
                   placeholder="45"
@@ -131,7 +135,7 @@ export function EditReadyCakeForm({
             name="capacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Servings</FormLabel>
+                <FormLabel>{t("products.capacity")}</FormLabel>
                 <Input
                   type="number"
                   placeholder="10"
@@ -159,7 +163,7 @@ export function EditReadyCakeForm({
                     field.onChange([...current, tag]);
                   }
                 }}
-                label="Tags"
+                label={t("products.tags")}
               />
               <FormMessage />
             </FormItem>
@@ -187,7 +191,7 @@ export function EditReadyCakeForm({
         />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update Cake"}
+          {isLoading ? `${t("common.loading")}...` : t("readyCakes.updateCake")}
         </Button>
       </form>
     </Form>

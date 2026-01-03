@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "./ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
 
 const Navbar = () => {
   return (
@@ -18,6 +19,7 @@ const Navbar = () => {
       <SidebarTrigger />
       <div className="flex items-center gap-4">
         <Link to="/">Dashboard</Link>
+        <LanguageToggle />
         <ThemeToggle />
 
         <DropdownMenu>

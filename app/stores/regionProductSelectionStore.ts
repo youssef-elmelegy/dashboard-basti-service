@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ReadyCake, Sweet } from "@/data/products";
+import type { SmallCake, AddOn } from "@/data/products";
 
 export type SelectedProductItem = {
   id: string;
@@ -20,7 +20,7 @@ interface RegionProductSelectionStore {
     regionName: string,
     regionId: string,
     type: "cake" | "sweet",
-    product: ReadyCake | Sweet,
+    product: SmallCake | AddOn,
     selectedSizes?: Array<{ name: string; price: number }>
   ) => void;
   removeProduct: (id: string) => void;
@@ -46,7 +46,7 @@ export const useRegionProductSelectionStore =
         let finalSelectedSizes: Array<{ name: string; price: number }> = [];
 
         if (type === "cake") {
-          const cake = product as ReadyCake;
+          const cake = product as SmallCake;
           basePrice = cake.basePrice;
 
           // If selectedSizes provided, use them; otherwise use the base price
@@ -54,8 +54,8 @@ export const useRegionProductSelectionStore =
             finalSelectedSizes = selectedSizes;
           }
         } else {
-          const sweet = product as Sweet;
-          basePrice = sweet.price;
+          const addon = product as AddOn;
+          basePrice = addon.price;
         }
 
         const newProduct: SelectedProductItem = {
@@ -65,7 +65,7 @@ export const useRegionProductSelectionStore =
           type,
           productId: product.id,
           productName: product.name,
-          productImage: product.image,
+          productImage: product.images?.[0] || "",
           basePrice,
           selectedSizes: finalSelectedSizes,
           addedAt: new Date(),

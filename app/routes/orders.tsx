@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragOverlay,
@@ -25,7 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   CalendarIcon,
   Package,
@@ -38,6 +39,8 @@ import { cn } from "@/lib/utils";
 
 // Sortable Order Card within column
 function SortableOrderCard({ order }: { order: Order }) {
+  const navigate = useNavigate();
+  const [isDragActive, setIsDragActive] = useState(false);
   const {
     attributes,
     listeners,
@@ -58,22 +61,46 @@ function SortableOrderCard({ order }: { order: Order }) {
     transition,
   };
 
+  const handleClick = () => {
+    // Only navigate if not dragging
+    if (!isDragActive && !isDragging) {
+      navigate(`/orders/${order.id}`);
+    }
+  };
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      onMouseDown={() => setIsDragActive(false)}
+    >
       <Card
         className={cn(
           "bg-background hover:bg-accent/50 transition-colors cursor-grab active:cursor-grabbing",
           isDragging && "opacity-50"
         )}
+        onClick={handleClick}
+        {...listeners}
       >
-        <CardHeader className="p-3">
-          <div className="space-y-2">
+        <CardHeader className="py-0 px-3">
+          <div className="space-y-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/orders/${order.id}`);
+              }}
+              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
+              title={`Click to view order ${order.id}`}
+            >
+              #{order.id}
+            </button>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm truncate">
                   {order.productName}
                 </h4>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <User className="w-3 h-3" />
                   <span className="truncate">{order.customerName}</span>
                 </div>
@@ -116,6 +143,18 @@ function getCapacityColor(percentage: number) {
   return "bg-red-500";
 }
 
+// Format bakery type for display
+function formatBakeryType(type: string): string {
+  const typeMap: Record<string, string> = {
+    basket_cakes: "Basket Cakes",
+    midume: "Midume",
+    small_cakes: "Small Cakes",
+    large_cakes: "Large Cakes",
+    custom: "Custom",
+  };
+  return typeMap[type] || type;
+}
+
 // Droppable Column Component
 function BakeryColumn({
   bakeryId,
@@ -123,16 +162,24 @@ function BakeryColumn({
   location,
   capacity,
   orders,
+  types,
   isCollapsed,
   onToggleCollapse,
+  t,
+  activeOrderType,
+  isIncompatible,
 }: {
   bakeryId: string;
   bakeryName: string;
   location: string;
   capacity: number;
   orders: Order[];
+  types?: string[];
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  t: (key: string) => string;
+  activeOrderType?: string;
+  isIncompatible?: boolean;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: bakeryId,
@@ -152,8 +199,9 @@ function BakeryColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex flex-col h-full min-h-0 rounded-lg border bg-card shadow-sm transition-all w-16",
-          isOver && "ring-2 ring-primary"
+          "flex flex-col h-[calc(100vh-16rem)] rounded-lg border bg-card shadow-sm transition-all w-16 overflow-hidden",
+          isOver && !isIncompatible && "ring-2 ring-primary",
+          isIncompatible && "opacity-50 cursor-not-allowed"
         )}
       >
         {/* Collapsed Header with rotated text */}
@@ -174,7 +222,8 @@ function BakeryColumn({
             <div
               className={cn(
                 "absolute bottom-0 left-0 right-0 transition-all",
-                getCapacityColor(capacityPercentage)
+                getCapacityColor(capacityPercentage),
+                isIncompatible && "opacity-50"
               )}
               style={{ height: `${Math.min(capacityPercentage, 100)}%` }}
             />
@@ -202,16 +251,33 @@ function BakeryColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col h-full min-h-0 rounded-lg border bg-card shadow-sm transition-all",
-        isOver && "ring-2 ring-primary"
+        "flex flex-col h-[calc(100vh-16rem)] rounded-lg border bg-card shadow-sm transition-all overflow-hidden",
+        isOver && !isIncompatible && "ring-2 ring-primary",
+        isIncompatible && "opacity-50 cursor-not-allowed"
       )}
     >
       {/* Column Header */}
-      <CardHeader className="flex-shrink-0 border-b bg-muted/50 px-4 py-3">
+      <CardHeader className="shrink-0 border-b bg-muted/50 px-4 py-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{bakeryName}</h3>
             <p className="text-xs text-muted-foreground truncate">{location}</p>
+            {types && types.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {types.map((type) => (
+                  <Badge
+                    key={type}
+                    variant="secondary"
+                    className={cn(
+                      "text-xs",
+                      isIncompatible && activeOrderType !== type && "opacity-50"
+                    )}
+                  >
+                    {formatBakeryType(type)}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -226,23 +292,26 @@ function BakeryColumn({
         {/* Capacity Progress Bar */}
         <div className="mt-3 space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Capacity</span>
+            <span className="text-muted-foreground">
+              {t("orders.capacity")}
+            </span>
             <span className="font-medium">
               {usedCapacity} / {capacity}
             </span>
           </div>
-          <div className="relative">
-            <Progress value={capacityPercentage} className="h-2" />
+          <div className="relative h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
-                "absolute inset-0 rounded-full transition-all",
+                "h-full transition-all rounded-full",
                 getCapacityColor(capacityPercentage)
               )}
               style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
             />
           </div>
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>{Math.round(capacityPercentage)}% used</span>
+            <span>
+              {Math.round(capacityPercentage)}% {t("orders.used")}
+            </span>
             <span
               className={cn(
                 "font-medium",
@@ -253,14 +322,14 @@ function BakeryColumn({
                 capacityPercentage < 60 && "text-green-500"
               )}
             >
-              {capacity - usedCapacity} available
+              {capacity - usedCapacity} {t("orders.available")}
             </span>
           </div>
         </div>
       </CardHeader>
 
-      {/* Orders List */}
-      <ScrollArea className="flex-1 min-h-0">
+      {/* Orders List - With fixed height and internal scroll */}
+      <ScrollArea className="flex-1 min-h-0 custom-scrollbar">
         <div className="p-3">
           <SortableContext
             items={orderIds}
@@ -269,7 +338,7 @@ function BakeryColumn({
             <div className="space-y-2">
               {orders.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
-                  No orders assigned
+                  {t("orders.noOrders")}
                 </div>
               ) : (
                 orders.map((order) => (
@@ -286,6 +355,7 @@ function BakeryColumn({
 }
 
 const Orders = () => {
+  const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
   const orders = useOrderStore((state) => state.orders);
   const updateOrder = useOrderStore((state) => state.updateOrder);
@@ -348,7 +418,7 @@ const Orders = () => {
     });
   };
 
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: DragEndEvent) => {
     const { active } = event;
     const order = orders.find((o) => o.id === active.id);
     if (order) {
@@ -372,11 +442,17 @@ const Orders = () => {
     const overOrder = orders.find((o) => o.id === overId);
 
     if (overBakery) {
+      // Check if bakery supports this order type
+      if (!overBakery.types.includes(activeOrder.type)) {
+        return; // Don't allow drop on incompatible bakery
+      }
+
       // Dragging over a bakery column
       if (activeOrder.assignedBakeryId !== overBakery.id) {
         updateOrder(activeId, {
           assignedBakeryId: overBakery.id,
           assignedBakeryName: overBakery.name,
+          assignedAt: new Date().toISOString(),
         });
       }
     } else if (overOrder && overOrder.assignedBakeryId) {
@@ -385,6 +461,7 @@ const Orders = () => {
         updateOrder(activeId, {
           assignedBakeryId: overOrder.assignedBakeryId,
           assignedBakeryName: overOrder.assignedBakeryName,
+          assignedAt: new Date().toISOString(),
         });
       }
     }
@@ -411,10 +488,16 @@ const Orders = () => {
     const overBakery = bakeries.find((b) => b.id === overId);
 
     if (overBakery) {
+      // Check if bakery supports this order type
+      if (!overBakery.types.includes(activeOrder.type)) {
+        return; // Don't allow drop on incompatible bakery
+      }
+
       // Dropping on a bakery column
       updateOrder(activeId, {
         assignedBakeryId: overBakery.id,
         assignedBakeryName: overBakery.name,
+        assignedAt: new Date().toISOString(),
       });
     } else if (overOrder && overOrder.assignedBakeryId) {
       // Dropping on another order - reorder within the same bakery
@@ -441,9 +524,17 @@ const Orders = () => {
           updateOrder(activeId, {
             assignedBakeryId: bakery.id,
             assignedBakeryName: bakery.name,
+            assignedAt: new Date().toISOString(),
           });
         }
       }
+    } else if (overId === "unassigned-sidebar") {
+      // Dropping on the unassigned sidebar - remove bakery assignment
+      updateOrder(activeId, {
+        assignedBakeryId: undefined,
+        assignedBakeryName: undefined,
+        assignedAt: undefined,
+      });
     }
   };
 
@@ -461,61 +552,72 @@ const Orders = () => {
       onDragCancel={handleDragCancel}
     >
       <div className="flex w-full h-full">
-        {/* Main Content Area - with right padding for sidebar */}
-        <div className="flex-1 p-6 overflow-hidden pr-[calc(22rem+1.5rem)] lg:pr-[calc(22rem+1.5rem)]">
+        {/* Main Content Area - Takes remaining space */}
+        <div className="flex-1 min-w-0 p-6 overflow-hidden flex flex-col">
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Orders Management
+              {t("orders.title")}
             </h1>
-            <p className="text-muted-foreground">
-              Drag orders from the sidebar to assign them to bakeries
-            </p>
+            <p className="text-muted-foreground">{t("orders.description")}</p>
           </div>
 
-          {/* Kanban Board */}
-          <div className="h-[calc(100vh-12rem)] overflow-x-auto">
-            <div className="flex gap-4 h-full pb-4">
-              {bakeries.map((bakery) => (
-                <div
-                  key={bakery.id}
-                  className={cn(
-                    "transition-all",
-                    collapsedColumns.has(bakery.id)
-                      ? "w-16"
-                      : "min-w-[300px] flex-1"
-                  )}
-                >
-                  <BakeryColumn
-                    bakeryId={bakery.id}
-                    bakeryName={bakery.name}
-                    location={bakery.location}
-                    capacity={bakery.capacity}
-                    orders={bakeryOrders[bakery.id] || []}
-                    isCollapsed={collapsedColumns.has(bakery.id)}
-                    onToggleCollapse={() => toggleColumnCollapse(bakery.id)}
-                  />
-                </div>
-              ))}
+          {/* Kanban Board - Only horizontal scroll here */}
+          <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
+            <div className="flex gap-4 h-full pb-4 min-h-fit">
+              {bakeries.map((bakery) => {
+                // Check if bakery is compatible with active order
+                const isIncompatible =
+                  activeOrder && !bakery.types.includes(activeOrder.type);
+
+                return (
+                  <div
+                    key={bakery.id}
+                    className={cn(
+                      "transition-all shrink-0",
+                      collapsedColumns.has(bakery.id) ? "w-16" : "w-75"
+                    )}
+                  >
+                    <BakeryColumn
+                      bakeryId={bakery.id}
+                      bakeryName={bakery.name}
+                      location={bakery.location}
+                      capacity={bakery.capacity}
+                      orders={bakeryOrders[bakery.id] || []}
+                      types={bakery.types}
+                      isCollapsed={collapsedColumns.has(bakery.id)}
+                      onToggleCollapse={() => toggleColumnCollapse(bakery.id)}
+                      t={t}
+                      activeOrderType={activeOrder?.type}
+                      isIncompatible={isIncompatible || false}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <OrdersSidebarRight />
+        {/* Right Sidebar - Scrollable, fixed width, absolutely positioned */}
+        <div className="w-88 shrink-0 flex flex-col border-l overflow-hidden">
+          <OrdersSidebarRight />
+        </div>
       </div>
 
       {/* Drag Overlay */}
       <DragOverlay>
         {activeOrder ? (
           <Card className="w-80 shadow-lg cursor-grabbing opacity-95 ring-2 ring-primary">
-            <CardHeader className="p-3">
-              <div className="space-y-2">
+            <CardHeader className="py-2 px-3">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary w-fit">
+                  #{activeOrder.id}
+                </span>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm truncate">
                       {activeOrder.productName}
                     </h4>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <User className="w-3 h-3" />
                       <span className="truncate">
                         {activeOrder.customerName}

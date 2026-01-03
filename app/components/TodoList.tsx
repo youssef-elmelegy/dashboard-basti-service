@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "./ui/card";
 import { Checkbox } from "./ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -79,6 +80,7 @@ const allOrders: Order[] = [
 ];
 
 const OrdersList = () => {
+  const { t } = useTranslation();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [open, setOpen] = useState(false);
 
@@ -89,14 +91,31 @@ const OrdersList = () => {
 
   const isCompleted = (status: string) => status === "completed";
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "completed":
+        return t("dashboard.completed");
+      case "pending":
+        return t("dashboard.pending");
+      case "processing":
+        return t("dashboard.processing");
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="">
-      <h1 className="text-lg font-medium mb-6">Orders List</h1>
+      <h1 className="text-lg font-medium mb-6">{t("dashboard.ordersList")}</h1>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button className="w-full">
             <CalendarIcon />
-            {date ? format(date, "PPP") : <span>Pick a date</span>}
+            {date ? (
+              format(date, "PPP")
+            ) : (
+              <span>{t("dashboard.pickADate")}</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 w-auto">
@@ -130,8 +149,7 @@ const OrdersList = () => {
                       {order.customerName}
                     </label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {order.status.charAt(0).toUpperCase() +
-                        order.status.slice(1)}
+                      {getStatusText(order.status)}
                     </p>
                   </div>
                 </div>
@@ -141,7 +159,7 @@ const OrdersList = () => {
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground opacity-50">
-                  No orders for this date
+                  {t("dashboard.noOrdersForDate")}
                 </p>
               </div>
             </div>

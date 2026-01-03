@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const addReadyCakeSchema = z.object({
+export const addSmallCakeSchema = z.object({
   name: z
     .string()
     .min(2, "Name must be at least 2 characters")
@@ -9,7 +9,7 @@ export const addReadyCakeSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters")
     .max(500, "Description must be less than 500 characters"),
-  image: z.string().min(1, "Please upload an image"),
+  images: z.array(z.string()).min(1, "At least one image is required"),
   basePrice: z
     .number()
     .min(1, "Price must be at least $1")
@@ -33,4 +33,4 @@ export const addReadyCakeSchema = z.object({
   isActive: z.boolean(),
 });
 
-export type AddReadyCakeFormValues = z.infer<typeof addReadyCakeSchema>;
+export type AddSmallCakeFormValues = z.infer<typeof addSmallCakeSchema>;

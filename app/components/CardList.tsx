@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardFooter, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
@@ -108,6 +109,8 @@ const chefsList = [
 ];
 
 const CardList = ({ title }: { title: string }) => {
+  const { t } = useTranslation();
+
   interface CardItem {
     id: number;
     title: string;
@@ -117,8 +120,23 @@ const CardList = ({ title }: { title: string }) => {
     rating?: number;
   }
 
+  const chefsBadgeTranslations: { [key: string]: string } = {
+    "Pastry Chef": t("dashboard.pastryChef"),
+    "Cake Designer": t("dashboard.cakeDesigner"),
+    "Head Chef": t("dashboard.headChef"),
+    Confectioner: t("dashboard.confectioner"),
+  };
+
+  const translatedChefsList = chefsList.map((chef) => ({
+    ...chef,
+    badge: chefsBadgeTranslations[chef.badge] || chef.badge,
+  }));
+
   const list: CardItem[] =
-    title === "Most Selling" ? mostSellingProducts : chefsList;
+    title === t("dashboard.mostSelling")
+      ? mostSellingProducts
+      : translatedChefsList;
+
   return (
     <div className="">
       <h1 className="text-lg font-medium mb-6">{title}</h1>
@@ -144,7 +162,7 @@ const CardList = ({ title }: { title: string }) => {
                 <Badge variant="secondary">{item.badge}</Badge>
               </CardContent>
               <CardFooter className="p-0">
-                {title === "Most Selling"
+                {title === t("dashboard.mostSelling")
                   ? `${item.count! / 1000}K`
                   : `${item.rating}⭐`}
               </CardFooter>

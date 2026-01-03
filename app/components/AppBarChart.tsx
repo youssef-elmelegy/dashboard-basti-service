@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   ChartContainer,
   ChartLegend,
@@ -7,21 +8,6 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-
-const chartConfig = {
-  custom: {
-    label: "Custom",
-    color: "var(--chart-1)",
-  },
-  premade: {
-    label: "Premade",
-    color: "var(--chart-2)",
-  },
-  sweets: {
-    label: "Sweets",
-    color: "var(--chart-3)",
-  },
-} satisfies ChartConfig;
 
 const chartData = [
   { month: "January", custom: 186, premade: 120, sweets: 80 },
@@ -33,9 +19,28 @@ const chartData = [
 ];
 
 const AppBarChart = () => {
+  const { t } = useTranslation();
+
+  const chartConfig = {
+    custom: {
+      label: t("dashboard.custom"),
+      color: "var(--chart-1)",
+    },
+    premade: {
+      label: t("dashboard.premade"),
+      color: "var(--chart-2)",
+    },
+    sweets: {
+      label: t("dashboard.sweets"),
+      color: "var(--chart-3)",
+    },
+  } satisfies ChartConfig;
+
   return (
     <div className="">
-      <h1 className="text-lg font-medium mb-6">Total Revenue</h1>
+      <h1 className="text-lg font-medium mb-6">
+        {t("dashboard.totalRevenue")}
+      </h1>
       <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
         <BarChart accessibilityLayer data={chartData}>
           <CartesianGrid vertical={false} />

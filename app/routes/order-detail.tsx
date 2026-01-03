@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { useOrderStore } from "@/stores/orderStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import {
   Clock,
   DollarSign,
   MessageSquare,
+  CheckCircle,
 } from "lucide-react";
 
 const statusColors = {
@@ -38,6 +40,7 @@ const statusColors = {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const orders = useOrderStore((state) => state.orders);
 
   const order = orders.find((o) => o.id === id);
@@ -45,13 +48,13 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
-        <h1 className="text-2xl font-bold">Order Not Found</h1>
+        <h1 className="text-2xl font-bold">{t("orderDetail.orderNotFound")}</h1>
         <p className="text-muted-foreground">
-          The order you're looking for doesn't exist.
+          {t("orderDetail.orderNotFoundDesc")}
         </p>
         <Button onClick={() => navigate("/orders")}>
           <ChevronLeft className="w-4 h-4 mr-2" />
-          Back to Orders
+          {t("orderDetail.backToOrders")}
         </Button>
       </div>
     );
@@ -66,18 +69,22 @@ export default function OrderDetailPage() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink href="/orders" className="cursor-pointer">
-                  Orders
+                  {t("orders.title")}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{order.id}</BreadcrumbPage>
+                <BreadcrumbPage className="font-mono text-sm">
+                  #{order.id}
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
 
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold tracking-tight">Order Details</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {t("orderDetail.orderDetails")}
+            </h1>
             <Badge
               variant="outline"
               className={`${statusColors[order.status]} capitalize`}
@@ -93,7 +100,7 @@ export default function OrderDetailPage() {
           className="gap-2"
         >
           <ChevronLeft className="w-4 h-4" />
-          Back
+          {t("orderDetail.back")}
         </Button>
       </div>
 
@@ -103,7 +110,7 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Product Information
+              {t("orderDetail.productInformation")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -128,7 +135,7 @@ export default function OrderDetailPage() {
                 {order.size && (
                   <div className="flex items-start gap-2">
                     <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      Size:
+                      {t("orderDetail.size")}:
                     </span>
                     <span className="text-sm">{order.size}</span>
                   </div>
@@ -137,7 +144,7 @@ export default function OrderDetailPage() {
                 {order.flavor && (
                   <div className="flex items-start gap-2">
                     <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      Flavor:
+                      {t("orderDetail.flavor")}:
                     </span>
                     <span className="text-sm">{order.flavor}</span>
                   </div>
@@ -146,7 +153,7 @@ export default function OrderDetailPage() {
                 {order.textOnCake && (
                   <div className="flex items-start gap-2">
                     <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      Text on Cake:
+                      {t("orderDetail.textOnCake")}:
                     </span>
                     <span className="text-sm font-medium bg-muted px-3 py-1 rounded">
                       "{order.textOnCake}"
@@ -163,7 +170,7 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Customer
+              {t("orderDetail.customer")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -192,7 +199,7 @@ export default function OrderDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="w-5 h-5" />
-                Assigned Bakery
+                {t("orderDetail.assignedBakery")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -200,7 +207,7 @@ export default function OrderDetailPage() {
                 <span className="text-sm font-medium">
                   {order.assignedBakeryName}
                 </span>
-                <Badge variant="secondary">Assigned</Badge>
+                <Badge variant="secondary">{t("orderDetail.assigned")}</Badge>
               </div>
             </CardContent>
           </Card>
@@ -211,23 +218,27 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Delivery Details
+              {t("orderDetail.deliveryDetails")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <span className="text-xs text-muted-foreground">Region</span>
+              <span className="text-xs text-muted-foreground">
+                {t("orderDetail.region")}
+              </span>
               <p className="text-sm font-medium">{order.region}</p>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground">Address</span>
+              <span className="text-xs text-muted-foreground">
+                {t("orderDetail.address")}
+              </span>
               <p className="text-sm">{order.deliveryLocation}</p>
             </div>
             <div className="flex items-center gap-2 pt-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <div>
                 <span className="text-xs text-muted-foreground">
-                  Delivery Date
+                  {t("orderDetail.deliveryDate")}
                 </span>
                 <p className="text-sm font-medium">
                   {format(new Date(order.deliverDay), "EEEE, MMMM d, yyyy")}
@@ -242,12 +253,14 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Order Timeline
+              {t("orderDetail.orderTimeline")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <span className="text-xs text-muted-foreground">Ordered At</span>
+              <span className="text-xs text-muted-foreground">
+                {t("orderDetail.orderedAt")}
+              </span>
               <p className="text-sm font-medium">
                 {format(new Date(order.orderedAt), "MMM d, yyyy 'at' h:mm a")}
               </p>
@@ -255,7 +268,7 @@ export default function OrderDetailPage() {
             <Separator />
             <div>
               <span className="text-xs text-muted-foreground">
-                Expected Delivery
+                {t("orderDetail.expectedDelivery")}
               </span>
               <p className="text-sm font-medium">
                 {format(new Date(order.deliverDay), "MMM d, yyyy")}
@@ -264,7 +277,7 @@ export default function OrderDetailPage() {
             <Separator />
             <div>
               <span className="text-xs text-muted-foreground">
-                Capacity Slots
+                {t("orderDetail.capacitySlots")}
               </span>
               <p className="text-sm font-medium">{order.capacitySlots}</p>
             </div>
@@ -276,26 +289,32 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
-              Pricing
+              {t("orderDetail.pricing")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Base Price</span>
-              <span className="text-sm font-medium">{order.basePrice} EGP</span>
+              <span className="text-sm text-muted-foreground">
+                {t("orderDetail.basePrice")}
+              </span>
+              <span className="text-sm font-medium">
+                {order.basePrice} {t("orderDetail.egp")}
+              </span>
             </div>
             {order.addOns && order.addOns.length > 0 && (
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <span className="text-sm font-medium">Add-ons:</span>
+                  <span className="text-sm font-medium">
+                    {t("orderDetail.addOns")}:
+                  </span>
                   {order.addOns.map((addon) => (
                     <div key={addon.id} className="flex justify-between pl-2">
                       <span className="text-sm text-muted-foreground">
                         {addon.name} x{addon.quantity}
                       </span>
                       <span className="text-sm">
-                        {addon.price * addon.quantity} EGP
+                        {addon.price * addon.quantity} {t("orderDetail.egp")}
                       </span>
                     </div>
                   ))}
@@ -304,8 +323,10 @@ export default function OrderDetailPage() {
             )}
             <Separator />
             <div className="flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <span>{order.totalPrice} EGP</span>
+              <span>{t("orderDetail.total")}</span>
+              <span>
+                {order.totalPrice} {t("orderDetail.egp")}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -316,13 +337,145 @@ export default function OrderDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
-                Special Requests
+                {t("orderDetail.specialRequests")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm bg-muted p-4 rounded-lg">
                 {order.specialRequests}
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quality Control Progress */}
+        {order.qualityChecks && Object.keys(order.qualityChecks).length > 0 && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                {t("bakeryOrders.qualityControl")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const checks = order.qualityChecks;
+                const totalChecks = Object.keys(checks).length;
+                const completedChecks = Object.values(checks).filter(
+                  (v) => v === true
+                ).length;
+                const progress = (completedChecks / totalChecks) * 100;
+
+                const checkLabels: Record<string, string> = {
+                  addons: "Add-ons Implementation",
+                  printing: "Print Verification",
+                  packaging: "Safe Packaging",
+                  decoration: "Decoration Quality",
+                  freshness: "Freshness Check",
+                };
+
+                return (
+                  <>
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          {t("bakeryOrders.completionStatus")}
+                        </span>
+                        <span className="text-sm font-bold">
+                          {completedChecks} / {totalChecks}
+                        </span>
+                      </div>
+                      <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-linear-to-r from-green-500 to-emerald-500 transition-all rounded-full"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(progress)}% {t("bakeryOrders.complete")}
+                      </span>
+                    </div>
+
+                    <Separator />
+
+                    {/* Quality Checks List */}
+                    <div className="space-y-2">
+                      {Object.entries(checks).map(([checkId, isChecked]) => (
+                        <div
+                          key={checkId}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                              isChecked
+                                ? "bg-green-500 border-green-500"
+                                : "border-muted-foreground/30"
+                            }`}
+                          >
+                            {isChecked && (
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={3}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <span
+                            className={`text-sm ${
+                              isChecked
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {checkLabels[checkId] || checkId}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Final Image from Bakery */}
+        {order.finalImage && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                {t("bakeryOrders.finalProductImage")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4">
+                <div className="rounded-lg overflow-hidden border">
+                  <img
+                    src={order.finalImage}
+                    alt="Final Product"
+                    className="w-full h-auto max-h-96 object-cover"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("bakeryOrders.finalImageTaken")}{" "}
+                  {order.finalImageUploadedAt
+                    ? format(
+                        new Date(order.finalImageUploadedAt),
+                        "MMM d, yyyy 'at' h:mm a"
+                      )
+                    : ""}
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}

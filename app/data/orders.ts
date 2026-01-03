@@ -4,7 +4,12 @@
  * This is mock data for orders. Replace with API integration as needed.
  */
 
-export type OrderType = "sweet" | "cake" | "custom";
+export type OrderType =
+  | "basket_cakes"
+  | "midume"
+  | "small_cakes"
+  | "large_cakes"
+  | "custom";
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -54,6 +59,15 @@ export type Order = {
   // Bakery assignment
   assignedBakeryId?: string;
   assignedBakeryName?: string;
+  assignedAt?: string; // ISO timestamp when assigned to bakery
+
+  // Cancellation
+  cancellationReason?: string;
+
+  // Quality Control (populated by bakery staff)
+  qualityChecks?: Record<string, boolean>; // { addons: true, printing: false, ... }
+  finalImage?: string; // Base64 or URL of final product photo
+  finalImageUploadedAt?: string; // ISO timestamp when photo was taken
 
   // Additional notes
   specialRequests?: string;
@@ -61,11 +75,11 @@ export type Order = {
 
 export const ORDERS_DATA: Order[] = [
   {
-    id: "order001",
+    id: "A7K2M9P1",
     customerName: "Sarah Ahmed",
     customerPhone: "+20 123 456 7890",
     customerEmail: "sarah.ahmed@example.com",
-    type: "cake",
+    type: "large_cakes",
     productName: "Chocolate Fudge Cake",
     productImage:
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
@@ -82,15 +96,15 @@ export const ORDERS_DATA: Order[] = [
     region: "Cairo",
     deliverDay: "2025-12-25",
     orderedAt: "2025-12-20T10:30:00Z",
-    status: "preparing",
+    status: "pending",
     capacitySlots: 2,
     specialRequests: "Please add extra chocolate drizzle",
   },
   {
-    id: "order002",
+    id: "B5X8N3Q6",
     customerName: "Mohamed Hassan",
     customerPhone: "+20 100 111 2222",
-    type: "sweet",
+    type: "midume",
     productName: "Birthday Macarons Box",
     productImage:
       "https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=500&h=500&fit=crop",
@@ -101,11 +115,11 @@ export const ORDERS_DATA: Order[] = [
     region: "Alexandria",
     deliverDay: "2025-12-24",
     orderedAt: "2025-12-19T14:20:00Z",
-    status: "confirmed",
+    status: "pending",
     capacitySlots: 1,
   },
   {
-    id: "order003",
+    id: "C9R4L7W2",
     customerName: "Fatima Ibrahim",
     customerEmail: "fatima.i@example.com",
     type: "custom",
@@ -126,16 +140,16 @@ export const ORDERS_DATA: Order[] = [
     region: "Giza",
     deliverDay: "2025-12-28",
     orderedAt: "2025-11-15T09:00:00Z",
-    status: "preparing",
+    status: "pending",
     capacitySlots: 3,
     specialRequests:
       "Wedding cake - needs to be perfect! Fresh flowers on top.",
   },
   {
-    id: "order004",
+    id: "D2K6F9H5",
     customerName: "Ali Mahmoud",
     customerPhone: "+20 122 333 4444",
-    type: "cake",
+    type: "large_cakes",
     productName: "Anniversary Cake",
     productImage:
       "https://images.unsplash.com/photo-1588195538326-c5b1e5b80c23?w=500&h=500&fit=crop",
@@ -152,12 +166,11 @@ export const ORDERS_DATA: Order[] = [
     status: "pending",
     capacitySlots: 2,
   },
-  // --- 30 additional orders below ---
   {
-    id: "order005",
+    id: "E8P1V4T7",
     customerName: "Laila Samir",
     customerPhone: "+20 101 555 8888",
-    type: "cake",
+    type: "small_cakes",
     productName: "Lemon Drizzle Cake",
     productImage:
       "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=500&fit=crop",
@@ -171,14 +184,14 @@ export const ORDERS_DATA: Order[] = [
     region: "Cairo",
     deliverDay: "2025-12-30",
     orderedAt: "2025-12-25T11:00:00Z",
-    status: "ready",
+    status: "pending",
     capacitySlots: 2,
   },
   {
-    id: "order006",
+    id: "F3J7M2S8",
     customerName: "Omar Khaled",
     customerPhone: "+20 102 222 3333",
-    type: "sweet",
+    type: "midume",
     productName: "Baklava Box",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -192,14 +205,14 @@ export const ORDERS_DATA: Order[] = [
     region: "Cairo",
     deliverDay: "2025-12-31",
     orderedAt: "2025-12-27T13:00:00Z",
-    status: "delivered",
+    status: "pending",
     capacitySlots: 1,
   },
   {
-    id: "order007",
+    id: "G6Y9B1K3",
     customerName: "Nour El-Din",
     customerPhone: "+20 103 444 5555",
-    type: "cake",
+    type: "large_cakes",
     productName: "Carrot Cake",
     productImage:
       "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=500&h=500&fit=crop",
@@ -213,14 +226,14 @@ export const ORDERS_DATA: Order[] = [
     region: "Alexandria",
     deliverDay: "2026-01-02",
     orderedAt: "2025-12-28T15:00:00Z",
-    status: "preparing",
+    status: "pending",
     capacitySlots: 3,
   },
   {
-    id: "order008",
+    id: "H4Z2D8R5",
     customerName: "Hana Youssef",
     customerPhone: "+20 104 666 7777",
-    type: "sweet",
+    type: "large_cakes",
     productName: "Holiday Cookies",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -235,7 +248,7 @@ export const ORDERS_DATA: Order[] = [
     capacitySlots: 1,
   },
   {
-    id: "order009",
+    id: "J1W5C9L6",
     customerName: "Yasmin Fathy",
     customerPhone: "+20 105 888 9999",
     type: "custom",
@@ -255,15 +268,15 @@ export const ORDERS_DATA: Order[] = [
     region: "Cairo",
     deliverDay: "2026-01-04",
     orderedAt: "2025-12-30T12:00:00Z",
-    status: "confirmed",
+    status: "pending",
     capacitySlots: 2,
     specialRequests: "Nut-free, please!",
   },
   {
-    id: "order010",
+    id: "K7X3N8M4",
     customerName: "Karim Adel",
     customerPhone: "+20 106 111 2222",
-    type: "cake",
+    type: "large_cakes",
     productName: "Red Velvet Cake",
     productImage:
       "https://images.unsplash.com/photo-1588195538326-c5b1e5b80c23?w=500&h=500&fit=crop",
@@ -277,14 +290,14 @@ export const ORDERS_DATA: Order[] = [
     region: "Giza",
     deliverDay: "2026-01-05",
     orderedAt: "2025-12-31T14:00:00Z",
-    status: "ready",
+    status: "pending",
     capacitySlots: 2,
   },
   {
-    id: "order011",
+    id: "L9T6P2V8",
     customerName: "Mona Nabil",
     customerPhone: "+20 107 333 4444",
-    type: "sweet",
+    type: "midume",
     productName: "Tiramisu Box",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -295,15 +308,14 @@ export const ORDERS_DATA: Order[] = [
     region: "Alexandria",
     deliverDay: "2026-01-06",
     orderedAt: "2026-01-01T09:00:00Z",
-    status: "delivered",
+    status: "pending",
     capacitySlots: 1,
   },
-  // ... 19 more orders ...
   {
-    id: "order030",
+    id: "M5Q1H7K9",
     customerName: "Iman Gamal",
     customerPhone: "+20 126 111 2222",
-    type: "cake",
+    type: "small_cakes",
     productName: "Mango Mousse Cake",
     productImage:
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
@@ -317,7 +329,7 @@ export const ORDERS_DATA: Order[] = [
     region: "Giza",
     deliverDay: "2026-01-25",
     orderedAt: "2026-01-20T12:00:00Z",
-    status: "confirmed",
+    status: "pending",
     capacitySlots: 2,
   },
 ];

@@ -1,7 +1,8 @@
 import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ReadyCake } from "@/data/products";
+import type { SmallCake } from "@/data/products";
+import { ProductImageCarousel } from "@/components/ProductImageCarousel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +14,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 
 const TAG_COLORS: Record<string, string> = {
   birthday: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
@@ -31,41 +27,32 @@ const TAG_COLORS: Record<string, string> = {
   custom: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
 };
 
-interface ReadyCakeCardProps {
-  cake: ReadyCake;
-  onEdit: (cake: ReadyCake) => void;
-  onDelete: (cake: ReadyCake) => void;
+interface SmallCakeCardProps {
+  cake: SmallCake;
+  onEdit: (cake: SmallCake) => void;
+  onDelete: (cake: SmallCake) => void;
   onToggleActive: (id: string) => void;
 }
 
-export function ReadyCakeCard({
+export function SmallCakeCard({
   cake,
   onEdit,
   onDelete,
   onToggleActive,
-}: ReadyCakeCardProps) {
+}: SmallCakeCardProps) {
+  // Support both old (image) and new (images) data structures
+  const images = Array.isArray(cake.images)
+    ? cake.images
+    : [(cake as Record<string, unknown>).image as string];
+
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-      {/* Image */}
-      <div className="relative w-full h-48 bg-muted overflow-hidden">
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <img
-              src={cake.image}
-              alt={cake.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-            />
-          </HoverCardTrigger>
-          <HoverCardContent side="right" className="w-auto p-2">
-            <img
-              src={cake.image}
-              alt={cake.name}
-              className="max-w-sm h-auto rounded-md"
-            />
-          </HoverCardContent>
-        </HoverCard>
+      {/* Image Carousel */}
+      <div className="p-3 bg-muted/30 relative">
+        <ProductImageCarousel images={images} name={cake.name} />
+
         {/* Action Menu */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-5 right-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

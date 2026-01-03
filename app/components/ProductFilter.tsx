@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,6 +25,7 @@ export function ProductFilter({
   activeFilter,
   onActiveFilterChange,
 }: ProductFilterProps) {
+  const { t } = useTranslation();
   const hasActiveFilters = selectedTags.length > 0 || activeFilter !== "all";
 
   return (
@@ -31,7 +33,7 @@ export function ProductFilter({
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
         {/* Status Filter */}
         <div className="flex flex-col gap-2 flex-1">
-          <label className="text-sm font-medium">Status</label>
+          <label className="text-sm font-medium">{t("filters.status")}</label>
           <Select
             value={activeFilter}
             onValueChange={(value) =>
@@ -39,19 +41,21 @@ export function ProductFilter({
             }
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select status" />
+              <SelectValue placeholder={t("filters.selectStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Products</SelectItem>
-              <SelectItem value="active">Active Only</SelectItem>
-              <SelectItem value="inactive">Inactive Only</SelectItem>
+              <SelectItem value="all">{t("filters.allProducts")}</SelectItem>
+              <SelectItem value="active">{t("filters.activeOnly")}</SelectItem>
+              <SelectItem value="inactive">
+                {t("filters.inactiveOnly")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Tags Filter */}
         <div className="flex flex-col gap-2 flex-1">
-          <label className="text-sm font-medium">Tags</label>
+          <label className="text-sm font-medium">{t("filters.tags")}</label>
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => (
               <Badge
@@ -79,18 +83,20 @@ export function ProductFilter({
           }}
           className="w-full"
         >
-          Clear All Filters
+          {t("filters.clearAllFilters")}
         </Button>
       )}
 
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="pt-2 border-t">
-          <p className="text-xs text-muted-foreground mb-2">Active filters:</p>
+          <p className="text-xs text-muted-foreground mb-2">
+            {t("filters.activeFilters")}
+          </p>
           <div className="flex flex-wrap gap-2">
             {activeFilter !== "all" && (
               <Badge variant="secondary" className="text-xs">
-                Status: {activeFilter}
+                {t("filters.status")}: {activeFilter}
               </Badge>
             )}
             {selectedTags.map((tag) => (

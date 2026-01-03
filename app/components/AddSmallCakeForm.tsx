@@ -1,5 +1,6 @@
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,29 +13,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { TagSelector } from "@/components/TagSelector";
-import { ImageUploadField } from "@/components/ImageUploadField";
+import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { FlavorsSection } from "@/components/FlavorsSection";
 import { SizesSection } from "@/components/SizesSection";
 import {
-  addReadyCakeSchema,
-  type AddReadyCakeFormValues,
-} from "@/schemas/ready-cake.schema";
+  addSmallCakeSchema,
+  type AddSmallCakeFormValues,
+} from "@/schemas/small-cake.schema";
 
-interface AddReadyCakeFormProps {
-  onSubmit: (values: AddReadyCakeFormValues) => void;
+interface AddSmallCakeFormProps {
+  onSubmit: (values: AddSmallCakeFormValues) => void;
   isLoading?: boolean;
 }
 
-export function AddReadyCakeForm({
+export function AddSmallCakeForm({
   onSubmit,
   isLoading = false,
-}: AddReadyCakeFormProps) {
-  const form = useForm<AddReadyCakeFormValues>({
-    resolver: zodResolver(addReadyCakeSchema),
+}: AddSmallCakeFormProps) {
+  const { t } = useTranslation();
+
+  const form = useForm<AddSmallCakeFormValues>({
+    resolver: zodResolver(addSmallCakeSchema),
     defaultValues: {
       name: "",
       description: "",
-      image: "",
+      images: [],
       basePrice: 0,
       capacity: 0,
       tags: [],
@@ -70,8 +73,8 @@ export function AddReadyCakeForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cake Name</FormLabel>
-              <Input placeholder="e.g., Vanilla Dream" {...field} />
+              <FormLabel>{t("products.name")}</FormLabel>
+              <Input placeholder={t("smallCakes.namePlaceholder")} {...field} />
               <FormMessage />
             </FormItem>
           )}
@@ -82,11 +85,12 @@ export function AddReadyCakeForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
-              <Input placeholder="Describe your cake..." {...field} />
-              <FormDescription>
-                Minimum 10 characters, maximum 500
-              </FormDescription>
+              <FormLabel>{t("products.description")}</FormLabel>
+              <Input
+                placeholder={t("smallCakes.descriptionPlaceholder")}
+                {...field}
+              />
+              <FormDescription>{t("products.descriptionHint")}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -94,11 +98,13 @@ export function AddReadyCakeForm({
 
         <FormField
           control={form.control}
-          name="image"
+          name="images"
           render={({ field }) => (
-            <ImageUploadField
-              label="Image"
-              onImageChange={(base64) => field.onChange(base64)}
+            <MultiImageUploader
+              images={field.value}
+              onImagesChange={field.onChange}
+              label={t("products.images")}
+              maxImages={5}
             />
           )}
         />
@@ -109,7 +115,7 @@ export function AddReadyCakeForm({
             name="basePrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Base Price ($)</FormLabel>
+                <FormLabel>{t("products.price")}</FormLabel>
                 <Input
                   type="number"
                   placeholder="45"
@@ -126,7 +132,7 @@ export function AddReadyCakeForm({
             name="capacity"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Servings</FormLabel>
+                <FormLabel>{t("products.capacity")}</FormLabel>
                 <Input
                   type="number"
                   placeholder="10"
@@ -154,7 +160,7 @@ export function AddReadyCakeForm({
                     field.onChange([...current, tag]);
                   }
                 }}
-                label="Tags"
+                label={t("products.tags")}
               />
               <FormMessage />
             </FormItem>
@@ -182,7 +188,7 @@ export function AddReadyCakeForm({
         />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Creating..." : "Create Cake"}
+          {isLoading ? t("common.loading") : t("smallCakes.createCake")}
         </Button>
       </form>
     </Form>

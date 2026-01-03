@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -17,6 +18,7 @@ import { useState } from "react";
 import type { Region } from "@/data/regions";
 
 export default function RegionsPage() {
+  const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
   const addRegion = useRegionStore((state) => state.addRegion);
   const updateRegion = useRegionStore((state) => state.updateRegion);
@@ -46,7 +48,7 @@ export default function RegionsPage() {
     openDeleteDialog(
       {
         recordName: region.name,
-        recordType: "Region",
+        recordType: t("regions.recordType"),
       },
       () => {
         deleteRegion(region.id);
@@ -57,13 +59,13 @@ export default function RegionsPage() {
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Regions</h1>
+        <h1 className="text-3xl font-bold">{t("regions.title")}</h1>
         <Button
           className="gap-2"
           onClick={() => openAddRegionDialog({ mode: "add" }, handleAddRegion)}
         >
           <Plus className="w-4 h-4" />
-          Add Region
+          {t("regions.addRegion")}
         </Button>
       </div>
 
@@ -74,11 +76,8 @@ export default function RegionsPage() {
             <EmptyMedia variant="icon">
               <span className="text-3xl">🗺️</span>
             </EmptyMedia>
-            <EmptyTitle>No regions yet</EmptyTitle>
-            <EmptyDescription>
-              Start by creating your first region to organize your bakery
-              locations.
-            </EmptyDescription>
+            <EmptyTitle>{t("regions.noRegions")}</EmptyTitle>
+            <EmptyDescription>{t("regions.startCreating")}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button
@@ -88,7 +87,7 @@ export default function RegionsPage() {
               }
             >
               <Plus className="w-4 h-4" />
-              Create Region
+              {t("regions.createRegion")}
             </Button>
           </EmptyContent>
         </Empty>

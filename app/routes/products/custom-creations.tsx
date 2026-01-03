@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Empty,
   EmptyHeader,
@@ -6,21 +7,24 @@ import {
 } from "@/components/ui/empty";
 
 export default function CustomCreationsPage() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Custom Creations</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("customCreations.title")}
+        </h1>
         <p className="text-muted-foreground">
-          Manage your custom cake creations
+          {t("customCreations.description")}
         </p>
       </div>
 
       <div className="flex-1">
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>No custom creations yet</EmptyTitle>
+            <EmptyTitle>{t("customCreations.noCustomCreations")}</EmptyTitle>
             <EmptyDescription>
-              Create your first custom cake creation to get started
+              {t("customCreations.startCustom")}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

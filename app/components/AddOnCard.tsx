@@ -2,17 +2,13 @@ import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AddOn } from "@/data/products";
+import { ProductImageCarousel } from "@/components/ProductImageCarousel";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 
 const CATEGORY_COLORS: Record<string, string> = {
   card: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
@@ -53,28 +49,19 @@ export function AddOnCard({
   onDelete,
   onToggleActive,
 }: AddOnCardProps) {
+  // Support both old (image) and new (images) data structures
+  const images = Array.isArray(addOn.images)
+    ? addOn.images
+    : [(addOn as Record<string, unknown>).image as string];
+
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-      {/* Image */}
-      <div className="relative w-full h-48 bg-muted overflow-hidden">
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <img
-              src={addOn.image}
-              alt={addOn.name}
-              className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
-            />
-          </HoverCardTrigger>
-          <HoverCardContent side="right" className="w-auto p-2">
-            <img
-              src={addOn.image}
-              alt={addOn.name}
-              className="max-w-sm h-auto rounded-md"
-            />
-          </HoverCardContent>
-        </HoverCard>
+      {/* Image Carousel */}
+      <div className="p-3 bg-muted/30 relative">
+        <ProductImageCarousel images={images} name={addOn.name} />
+
         {/* Action Menu */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-5 right-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

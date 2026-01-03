@@ -1,4 +1,5 @@
 import { Users, Package, MoreVertical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import type { Bakery, BakeryType } from "@/data/bakeries";
 import {
@@ -30,8 +31,21 @@ interface BakeryCardProps {
 }
 
 export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
+  const navigate = useNavigate();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the dropdown menu
+    if ((e.target as HTMLElement).closest('[role="button"]')) {
+      return;
+    }
+    navigate(`/management/bakeries/${bakery.id}`);
+  };
+
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 relative">
+    <div
+      className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 relative cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Action Menu */}
       <div className="absolute top-4 right-4">
         <DropdownMenu>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -21,6 +22,7 @@ import type { AddOn } from "@/data/products";
 import { Plus } from "lucide-react";
 
 export default function AddOnsPage() {
+  const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState<AddOn | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -76,9 +78,9 @@ export default function AddOnsPage() {
   const handleDeleteAddOn = (addOn: AddOn) => {
     openDeleteDialog(
       {
-        title: "Delete Add-on",
-        description: `Are you sure you want to delete "${addOn.name}"?`,
-        recordType: "add-on",
+        title: t("addOns.deleteAddOn"),
+        description: `${t("messages.confirmDelete")}`,
+        recordType: t("addOns.recordType"),
         recordName: addOn.name,
       },
       () => deleteAddOn(addOn.id)
@@ -90,9 +92,11 @@ export default function AddOnsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add-ons</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("addOns.title")}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Manage cards, balloons, candles, and other add-on products
+            {t("addOns.description")}
           </p>
         </div>
         <Button
@@ -103,7 +107,7 @@ export default function AddOnsPage() {
           className="gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add New Add-on
+          {t("addOns.addNewAddOn")}
         </Button>
       </div>
 
@@ -123,12 +127,9 @@ export default function AddOnsPage() {
       {/* Empty State */}
       {filteredAddOns.length === 0 ? (
         <Empty>
-          <EmptyHeader>No add-ons found</EmptyHeader>
-          <EmptyTitle>Get started by adding your first add-on</EmptyTitle>
-          <EmptyDescription>
-            Create add-ons like cards, balloons, and candles to enhance your
-            product offerings
-          </EmptyDescription>
+          <EmptyHeader>{t("addOns.noAddOnsFound")}</EmptyHeader>
+          <EmptyTitle>{t("addOns.getStarted")}</EmptyTitle>
+          <EmptyDescription>{t("addOns.createAddOns")}</EmptyDescription>
         </Empty>
       ) : (
         /* Add-ons Grid */
@@ -150,7 +151,7 @@ export default function AddOnsPage() {
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
-              {editingAddOn ? "Edit Add-on" : "Add New Add-on"}
+              {editingAddOn ? t("addOns.editAddOn") : t("addOns.addNewAddOn")}
             </SheetTitle>
           </SheetHeader>
           <div className="mt-6">

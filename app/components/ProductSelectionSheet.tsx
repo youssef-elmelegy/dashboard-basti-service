@@ -6,11 +6,11 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { ReadyCake, Sweet } from "@/data/products";
+import type { ReadyCake, AddOn } from "@/data/products";
 
 interface ProductSelection {
   type: "cake" | "sweet";
-  product: ReadyCake | Sweet;
+  product: ReadyCake | AddOn;
   selectedSizes: Array<{ name: string; price: number }>;
 }
 
@@ -47,7 +47,7 @@ export function ProductSelectionSheet({
           {/* Product Image */}
           <div className="aspect-square rounded-lg overflow-hidden">
             <img
-              src={selectedProduct.product.image}
+              src={selectedProduct.product.images?.[0]}
               alt={selectedProduct.product.name}
               className="w-full h-full object-cover"
             />
@@ -70,7 +70,7 @@ export function ProductSelectionSheet({
                 Select Sizes (Multiple)
               </label>
               <div className="space-y-2">
-                {(selectedProduct.product as ReadyCake).sizes.map((size) => {
+                {(selectedProduct.product as SmallCake).sizes.map((size) => {
                   const isSelected = selectedProduct.selectedSizes.some(
                     (s) => s.name === size.name
                   );
@@ -114,7 +114,7 @@ export function ProductSelectionSheet({
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Price</span>
                 <span className="text-2xl font-bold">
-                  ${(selectedProduct.product as Sweet).price}
+                  ${(selectedProduct.product as AddOn).price}
                 </span>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { columns } from "@/components/ChefsColumns";
 import { ChefsDataTable } from "@/components/ChefsDataTable";
@@ -25,6 +26,7 @@ import { useBakeryStore, useChefStore, type Chef } from "@/stores";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 
 export default function ChefsPage() {
+  const { t } = useTranslation();
   const [selectedBakery, setSelectedBakery] = useState<string>("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -56,7 +58,7 @@ export default function ChefsPage() {
     openDeleteDialog(
       {
         recordName: chef.name,
-        recordType: "Chef",
+        recordType: t("chefs.recordType"),
       },
       () => {
         deleteChef(chef.id);
@@ -103,29 +105,29 @@ export default function ChefsPage() {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/management/regions">
-                Regions
+                {t("chefs.breadcrumbRegions")}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink href="/management/bakeries">
-                Bakeries
+                {t("chefs.breadcrumbBakeries")}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>Chefs</BreadcrumbPage>
+              <BreadcrumbPage>{t("chefs.breadcrumbChefs")}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Chefs</h1>
+          <h1 className="text-3xl font-bold">{t("chefs.title")}</h1>
           <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
             <SheetTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Chef
+                {t("chefs.addChef")}
               </Button>
             </SheetTrigger>
             <AddChef bakeries={bakeryNames} onSubmit={handleAddChef} />
@@ -135,13 +137,13 @@ export default function ChefsPage() {
 
       <div className="bg-secondary rounded-md p-4 flex-1">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold">All Chefs</h2>
+          <h2 className="font-semibold">{t("chefs.allChefs")}</h2>
           <Select value={selectedBakery} onValueChange={setSelectedBakery}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Bakeries</SelectItem>
+              <SelectItem value="all">{t("chefs.allBakeries")}</SelectItem>
               {bakeryNames.map((bakery) => (
                 <SelectItem key={bakery} value={bakery}>
                   {bakery}

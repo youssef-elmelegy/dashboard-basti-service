@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { TagSelector } from "@/components/TagSelector";
-import { ImageUploadField } from "@/components/ImageUploadField";
+import { MultiImageUploader } from "@/components/MultiImageUploader";
 import type { AddOn } from "@/data/products";
 
 const addOnSchema = z.object({
@@ -33,8 +34,15 @@ const addOnSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters")
     .max(500, "Description must be less than 500 characters"),
-  image: z.string().min(1, "Image is required"),
-  category: z.enum(["card", "balloon", "candle", "decoration", "other"]),
+  images: z.array(z.string()).min(1, "At least one image is required"),
+  category: z.enum([
+    "card",
+    "balloon",
+    "candle",
+    "decoration",
+    "sweets",
+    "other",
+  ]),
   price: z
     .number()
     .min(0.01, "Price must be at least $0.01")
@@ -51,17 +59,37 @@ interface AddOnFormProps {
   isLoading?: boolean;
 }
 
+const categoryLabels: Record<string, string> = {
+  card: "Card",
+  balloon: "Balloon",
+  candle: "Candle",
+  decoration: "Decoration",
+  sweets: "Sweets",
+  other: "Other",
+};
+
+const categoryLabelsAr: Record<string, string> = {
+  card: "بطاقة",
+  balloon: "بالون",
+  candle: "شمعة",
+  decoration: "زينة",
+  sweets: "حلويات",
+  other: "أخرى",
+};
+
 export function AddOnForm({
   initialAddOn,
   onSubmit,
   isLoading = false,
 }: AddOnFormProps) {
+  const { t, i18n } = useTranslation();
+
   const form = useForm<AddOnFormValues>({
     resolver: zodResolver(addOnSchema),
     defaultValues: {
       name: initialAddOn?.name || "",
       description: initialAddOn?.description || "",
-      image: initialAddOn?.image || "",
+      images: initialAddOn?.images || [],
       category: initialAddOn?.category || "card",
       price: initialAddOn?.price || 0,
       tags: initialAddOn?.tags || [],
@@ -69,21 +97,20 @@ export function AddOnForm({
     },
   });
 
-  const handleImageUpload = (base64: string) => {
-    form.setValue("image", base64);
-  };
-
   const handleSubmit = (values: AddOnFormValues) => {
     onSubmit({
       name: values.name,
       description: values.description,
-      image: values.image,
+      images: values.images,
       category: values.category,
       price: values.price,
       tags: values.tags,
       isActive: values.isActive,
     });
   };
+
+  const isArabic = i18n.language === "ar";
+  const categoryLabels_ = isArabic ? categoryLabelsAr : categoryLabels;
 
   return (
     <Form {...form}>
@@ -97,9 +124,9 @@ export function AddOnForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Add-on Name</FormLabel>
+              <FormLabel>{t("products.name")}</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Birthday Card" {...field} />
+                <Input placeholder={t("addOns.namePlaceholder")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -112,24 +139,30 @@ export function AddOnForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t("products.description")}</FormLabel>
               <FormControl>
-                <Input placeholder="Describe your add-on..." {...field} />
+                <Input
+                  placeholder={t("addOns.descriptionPlaceholder")}
+                  {...field}
+                />
               </FormControl>
-              <FormDescription>
-                Minimum 10 characters, maximum 500
-              </FormDescription>
+              <FormDescription>{t("products.descriptionHint")}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Image */}
+        {/* Images */}
         <FormField
           control={form.control}
-          name="image"
-          render={() => (
-            <ImageUploadField label="Image" onImageChange={handleImageUpload} />
+          name="images"
+          render={({ field }) => (
+            <MultiImageUploader
+              images={field.value}
+              onImagesChange={field.onChange}
+              label={t("products.images")}
+              maxImages={5}
+            />
           )}
         />
 
@@ -140,7 +173,7 @@ export function AddOnForm({
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>{t("addOns.category")}</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
@@ -151,11 +184,24 @@ export function AddOnForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="balloon">Balloon</SelectItem>
-                    <SelectItem value="candle">Candle</SelectItem>
-                    <SelectItem value="decoration">Decoration</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="card">
+                      {categoryLabels_["card"]}
+                    </SelectItem>
+                    <SelectItem value="balloon">
+                      {categoryLabels_["balloon"]}
+                    </SelectItem>
+                    <SelectItem value="candle">
+                      {categoryLabels_["candle"]}
+                    </SelectItem>
+                    <SelectItem value="decoration">
+                      {categoryLabels_["decoration"]}
+                    </SelectItem>
+                    <SelectItem value="sweets">
+                      {categoryLabels_["sweets"]}
+                    </SelectItem>
+                    <SelectItem value="other">
+                      {categoryLabels_["other"]}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -168,7 +214,7 @@ export function AddOnForm({
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price ($)</FormLabel>
+                <FormLabel>{t("products.price")}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -193,7 +239,7 @@ export function AddOnForm({
           name="tags"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Tags</FormLabel>
+              <FormLabel>{t("products.tags")}</FormLabel>
               <FormControl>
                 <TagSelector
                   selectedTags={field.value}
@@ -223,10 +269,10 @@ export function AddOnForm({
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
               <div className="space-y-0.5">
                 <FormLabel className="text-base cursor-pointer">
-                  Active
+                  {t("addOns.active")}
                 </FormLabel>
                 <FormDescription>
-                  Make this add-on available for selection
+                  {t("addOns.activeDescription")}
                 </FormDescription>
               </div>
               <FormControl>
@@ -244,10 +290,10 @@ export function AddOnForm({
         {/* Submit Button */}
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading
-            ? "Saving..."
+            ? t("common.loading")
             : initialAddOn
-            ? "Update Add-on"
-            : "Add Add-on"}
+            ? t("addOns.updateAddOn")
+            : t("addOns.createAddOn")}
         </Button>
       </form>
     </Form>
