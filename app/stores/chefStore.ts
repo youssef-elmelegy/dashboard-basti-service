@@ -1,90 +1,89 @@
-/**
- * Chef Store (Zustand)
- *
- * This store manages chef data globally with caching.
- *
- * Features:
- * - Single API call, cached across all pages
- * - Ready for real API integration
- * - Works with bakery store for filtering
- *
- * When real API is ready:
- * 1. Replace mock data with fetch('/api/chefs')
- * 2. Add loading/error states
- * 3. Implement cache invalidation strategy
- */
+import { create } from 'zustand';
+import { chefApi, type Chef, type CreateChefRequest, type UpdateChefRequest } from '@/lib/services/chef.service';
 
-import { create } from "zustand";
-import { CHEFS_DATA, type Chef } from "@/data/chefs";
-
-interface ChefState {
-  // Data
+interface ChefStore {
   chefs: Chef[];
   isLoading: boolean;
   error: string | null;
-
-  // Actions
-  fetchChefs: () => Promise<void>;
-  addChef: (chef: Chef) => void;
-  updateChef: (id: string, chef: Partial<Chef>) => void;
-  deleteChef: (id: string) => void;
+  
+  fetchChefs: (page?: number, limit?: number) => Promise<void>;
+  addChef: (data: CreateChefRequest) => Promise<void>;
+  updateChef: (id: string, data: UpdateChefRequest) => Promise<void>;
+  deleteChef: (id: string) => Promise<void>;
+  clearError: () => void;
   resetChefs: () => void;
 }
 
-export const useChefStore = create<ChefState>((set) => ({
-  // Initial state
-  chefs: CHEFS_DATA,
+export const useChefStore = create<ChefStore>((set) => ({
+  chefs: [],
   isLoading: false,
   error: null,
 
-  // Fetch from API (when ready)
-  fetchChefs: async () => {
+  fetchChefs: async (page = 1, limit = 10) => {
     set({ isLoading: true, error: null });
     try {
-      // TODO: Replace with real API when ready
-      // const response = await fetch('/api/chefs');
-      // const data = await response.json();
-
-      const data = CHEFS_DATA; // Using mock data for now
-
-      set({
-        chefs: data,
-        isLoading: false,
-      });
+      const response = await chefApi.getAll(page, limit);
+      if (response.success && response.data) {
+        set({ chefs: response.data.items, isLoading: false });
+      }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch chefs";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch chefs';
       set({ error: errorMessage, isLoading: false });
     }
   },
 
-  // Add new chef
-  addChef: (chef: Chef) => {
-    set((state) => ({
-      chefs: [...state.chefs, chef],
-    }));
+  addChef: async (data) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chefApi.create(data);
+      if (response.success && response.data) {
+        set((state) => ({
+          chefs: [...state.chefs, response.data],
+          isLoading: false,
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add chef';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
 
-  // Update existing chef
-  updateChef: (id: string, updates: Partial<Chef>) => {
-    set((state) => ({
-      chefs: state.chefs.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-    }));
+  updateChef: async (id, data) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chefApi.update(id, data);
+      if (response.success && response.data) {
+        set((state) => ({
+          chefs: state.chefs.map((chef) => (chef.id === id ? response.data : chef)),
+          isLoading: false,
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update chef';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
 
-  // Delete chef
-  deleteChef: (id: string) => {
-    set((state) => ({
-      chefs: state.chefs.filter((c) => c.id !== id),
-    }));
+  deleteChef: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await chefApi.delete(id);
+      if (response.success) {
+        set((state) => ({
+          chefs: state.chefs.filter((chef) => chef.id !== id),
+          isLoading: false,
+        }));
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete chef';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
 
-  // Reset to initial state
-  resetChefs: () => {
-    set({
-      chefs: CHEFS_DATA,
-      isLoading: false,
-      error: null,
-    });
-  },
+  clearError: () => set({ error: null }),
+
+  resetChefs: () => set({ chefs: [], isLoading: false, error: null }),
 }));

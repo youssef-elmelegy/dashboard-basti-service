@@ -13,7 +13,7 @@ import RegionDetailPage from "@/routes/management/region-detail";
 import BakeriesPage from "@/routes/management/bakeries";
 import BakeryDetailPage from "@/routes/management/bakery-detail";
 import ChefsPage from "@/routes/management/chefs";
-import CustomCreationsPage from "@/routes/products/custom-creations";
+import BigCakesPage from "@/routes/products/custom-creations";
 import SmallCakesPage from "@/routes/products/small-cakes";
 import AddOnsPage from "@/routes/products/add-ons";
 import NotFoundPage from "@/routes/not-found";
@@ -106,8 +106,8 @@ export const router = createBrowserRouter([
         element: <ChefsPage />,
       },
       {
-        path: "products/custom-creations",
-        element: <CustomCreationsPage />,
+        path: "products/large-cakes",
+        element: <BigCakesPage />,
       },
       {
         path: "products/small-cakes",

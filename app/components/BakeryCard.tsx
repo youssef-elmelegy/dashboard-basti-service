@@ -1,7 +1,7 @@
-import { Users, Package, MoreVertical } from "lucide-react";
+import { MapPin, Package, Star, MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import type { Bakery, BakeryType } from "@/data/bakeries";
+import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +18,7 @@ const BAKERY_TYPE_CONFIG: Record<
   }
 > = {
   basket_cakes: { label: "Basket Cakes", color: "default" },
-  midume: { label: "Midume", color: "secondary" },
+  medium_cakes: { label: "Medium Cakes", color: "secondary" },
   small_cakes: { label: "Small Cakes", color: "outline" },
   large_cakes: { label: "Large Cakes", color: "destructive" },
   custom: { label: "Custom", color: "default" },
@@ -73,7 +73,10 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
         <h3 className="text-lg font-semibold text-card-foreground mb-1">
           {bakery.name}
         </h3>
-        <p className="text-sm text-muted-foreground">{bakery.location}</p>
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <MapPin className="w-4 h-4" />
+          {bakery.locationDescription}
+        </div>
       </div>
 
       {/* Stats */}
@@ -89,50 +92,42 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-start gap-2">
-          <Users className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-xs text-muted-foreground font-medium">
-              Employees
-            </p>
-            <p className="text-lg font-semibold text-card-foreground">
-              {bakery.employees}
-            </p>
+        {bakery.averageRating !== null && (
+          <div className="flex items-start gap-2">
+            <Star className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0 fill-yellow-500" />
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Rating
+              </p>
+              <p className="text-lg font-semibold text-card-foreground">
+                {bakery.averageRating.toFixed(1)} ({bakery.totalReviews})
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Region Tag */}
-      <div className="mb-4">
-        <p className="text-xs text-muted-foreground font-medium mb-2">
-          Regions
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {bakery.regions.map((region) => (
-            <Badge key={region} variant="outline">
-              {region}
-            </Badge>
-          ))}
-        </div>
+        )}
       </div>
 
       {/* Types */}
       <div>
         <p className="text-xs text-muted-foreground font-medium mb-2">Types</p>
         <div className="flex flex-wrap gap-2">
-          {bakery.types.map((type: BakeryType) => (
-            <Badge
-              key={type}
-              variant={BAKERY_TYPE_CONFIG[type].color}
-              className={`text-xs ${
-                type === "custom"
-                  ? "bg-[oklch(87.79%_0.23094_129.081)] text-white dark:bg-[oklch(87.79%_0.23094_129.081/0.672)] dark:text-white"
-                  : ""
-              }`}
-            >
-              {BAKERY_TYPE_CONFIG[type].label}
-            </Badge>
-          ))}
+          {bakery.types && bakery.types.length > 0 ? (
+            bakery.types.map((type: BakeryType) => (
+              <Badge
+                key={type}
+                variant={BAKERY_TYPE_CONFIG[type]?.color || "outline"}
+                className={`text-xs ${
+                  type === "custom"
+                    ? "bg-[oklch(87.79%_0.23094_129.081)] text-white dark:bg-[oklch(87.79%_0.23094_129.081/0.672)] dark:text-white"
+                    : ""
+                }`}
+              >
+                {BAKERY_TYPE_CONFIG[type]?.label || type}
+              </Badge>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No types specified</p>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,33 +14,46 @@ import { useRegionStore } from "@/stores/regionStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useAddRegionStore } from "@/stores/addRegionStore";
 import { AddRegionDialog } from "@/components/AddRegionDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Region } from "@/data/regions";
 
 export default function RegionsPage() {
   const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
+  const isLoading = useRegionStore((state) => state.isLoading);
+  const error = useRegionStore((state) => state.error);
+  const fetchRegions = useRegionStore((state) => state.fetchRegions);
   const addRegion = useRegionStore((state) => state.addRegion);
   const updateRegion = useRegionStore((state) => state.updateRegion);
   const deleteRegion = useRegionStore((state) => state.deleteRegion);
+  const clearError = useRegionStore((state) => state.clearError);
 
   const { openDeleteDialog } = useDeleteDialog();
   const { openDialog: openAddRegionDialog } = useAddRegionStore();
 
   const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
 
-  const handleAddRegion = (name: string) => {
-    const newRegion: Region = {
-      id: `region${Date.now()}`,
-      name,
-    };
-    addRegion(newRegion);
+  // Fetch regions on component mount
+  useEffect(() => {
+    fetchRegions();
+  }, [fetchRegions]);
+
+  const handleAddRegion = async (name: string) => {
+    try {
+      await addRegion({ name });
+    } catch (error) {
+      console.error("Failed to add region:", error);
+    }
   };
 
-  const handleEditRegion = (name: string) => {
+  const handleEditRegion = async (name: string) => {
     if (selectedRegion) {
-      updateRegion(selectedRegion.id, { name });
-      setSelectedRegion(null);
+      try {
+        await updateRegion(selectedRegion.id, { name });
+        setSelectedRegion(null);
+      } catch (error) {
+        console.error("Failed to update region:", error);
+      }
     }
   };
 
@@ -50,8 +63,12 @@ export default function RegionsPage() {
         recordName: region.name,
         recordType: t("regions.recordType"),
       },
-      () => {
-        deleteRegion(region.id);
+      async () => {
+        try {
+          await deleteRegion(region.id);
+        } catch (error) {
+          console.error("Failed to delete region:", error);
+        }
       }
     );
   };
@@ -63,14 +80,39 @@ export default function RegionsPage() {
         <Button
           className="gap-2"
           onClick={() => openAddRegionDialog({ mode: "add" }, handleAddRegion)}
+          disabled={isLoading}
         >
           <Plus className="w-4 h-4" />
           {t("regions.addRegion")}
         </Button>
       </div>
 
-      {/* Regions Grid */}
-      {regions.length === 0 ? (
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-red-800">{t("common.error")}</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+            <button
+              onClick={clearError}
+              className="text-sm text-red-600 hover:text-red-800 mt-2 underline"
+            >
+              {t("common.dismiss")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && regions.length === 0 ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <p className="text-gray-600">{t("common.loading")}</p>
+          </div>
+        </div>
+      ) : regions.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">

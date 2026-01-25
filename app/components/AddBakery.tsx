@@ -18,78 +18,44 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { BakeryType, Bakery } from "@/data/bakeries";
 import { useRegionStore } from "@/stores/regionStore";
+
+export type BakeryType = "basket_cakes" | "medium_cakes" | "small_cakes" | "large_cakes" | "custom";
 
 const bakeryTypes: { label: string; value: BakeryType }[] = [
   { label: "Basket Cakes", value: "basket_cakes" },
-  { label: "Midume", value: "midume" },
+  { label: "Medium Cakes", value: "medium_cakes" },
   { label: "Small Cakes", value: "small_cakes" },
   { label: "Large Cakes", value: "large_cakes" },
   { label: "Custom", value: "custom" },
 ];
 
-const formSchema = z
-  .object({
-    name: z
-      .string()
-      .min(2, { message: "Bakery name must be at least 2 characters!" })
-      .max(50, { message: "Bakery name must not exceed 50 characters!" }),
-    location: z
-      .string()
-      .min(2, { message: "Location must be at least 2 characters!" })
-      .max(100, { message: "Location must not exceed 100 characters!" }),
-    capacity: z.string().min(1, { message: "Capacity is required!" }),
-    employees: z.string().min(1, { message: "Employees is required!" }),
-    regions: z
-      .array(z.string())
-      .min(1, { message: "Select at least one region!" }),
-    types: z
-      .array(
-        z.enum([
-          "basket_cakes",
-          "midume",
-          "small_cakes",
-          "large_cakes",
-          "custom",
-        ])
-      )
-      .min(1, { message: "Select at least one bakery type!" }),
-  })
-  .superRefine((data, ctx) => {
-    // Validate capacity as number
-    const capacity = parseInt(data.capacity);
-    if (isNaN(capacity) || capacity < 1 || capacity > 10000) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["capacity"],
-        message: "Capacity must be a number between 1 and 10000!",
-      });
-    }
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Bakery name must be at least 2 characters!" })
+    .max(255, { message: "Bakery name must not exceed 255 characters!" }),
+  locationDescription: z
+    .string()
+    .min(5, { message: "Location description must be at least 5 characters!" })
+    .max(500, { message: "Location description must not exceed 500 characters!" }),
+  regionId: z
+    .string()
+    .uuid({ message: "Please select a valid region!" })
+    .min(1, { message: "Region is required!" }),
+  capacity: z
+    .number({ invalid_type_error: "Capacity must be a number!" })
+    .min(1, { message: "Capacity must be at least 1!" })
+    .max(10000, { message: "Capacity must not exceed 10000!" }),
+  bakeryTypes: z
+    .array(z.enum(["basket_cakes", "medium_cakes", "small_cakes", "large_cakes", "custom"]))
+    .min(1, { message: "Select at least one bakery type!" }),
+});
 
-    // Validate employees as number
-    const employees = parseInt(data.employees);
-    if (isNaN(employees) || employees < 1 || employees > 1000) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["employees"],
-        message: "Employees must be a number between 1 and 1000!",
-      });
-    }
-  });
-
-// Extract the inferred type, but keep form values as strings for capacity/employees
-type FormValues = {
-  name: string;
-  location: string;
-  capacity: string;
-  employees: string;
-  regions: string[];
-  types: BakeryType[];
-};
+type FormValues = z.infer<typeof formSchema>;
 
 interface AddBakeryProps {
-  onSubmit: (data: Omit<Bakery, "id">) => void;
+  onSubmit: (data: FormValues) => void;
 }
 
 export function AddBakery({ onSubmit }: AddBakeryProps) {
@@ -99,47 +65,25 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      location: "",
-      capacity: "",
-      employees: "",
-      regions: [],
-      types: [],
+      locationDescription: "",
+      regionId: "",
+      capacity: undefined,
+      bakeryTypes: [],
     },
   });
 
-  const selectedRegions = form.watch("regions");
-  const selectedTypes = form.watch("types");
-
-  const handleRegionToggle = (region: string) => {
-    const current = form.getValues("regions");
-    const updated = current.includes(region)
-      ? current.filter((r) => r !== region)
-      : [...current, region];
-    form.setValue("regions", updated, { shouldValidate: true });
-  };
+  const selectedTypes = form.watch("bakeryTypes");
 
   const handleTypeToggle = (type: BakeryType) => {
-    const current = form.getValues("types");
+    const current = form.getValues("bakeryTypes");
     const updated = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];
-    form.setValue("types", updated, { shouldValidate: true });
+    form.setValue("bakeryTypes", updated, { shouldValidate: true });
   };
 
   const handleSubmit = (values: FormValues) => {
-    const capacity = parseInt(values.capacity);
-    const employees = parseInt(values.employees);
-
-    const bakeryData: Omit<Bakery, "id"> = {
-      name: values.name,
-      location: values.location,
-      capacity,
-      employees,
-      regions: values.regions,
-      types: values.types,
-    };
-
-    onSubmit(bakeryData);
+    onSubmit(values);
     form.reset();
   };
 
@@ -169,12 +113,12 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
 
               <FormField
                 control={form.control}
-                name="location"
+                name="locationDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Location Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter location" {...field} />
+                      <Input placeholder="Enter location (min 5 characters)" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,46 +127,10 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
 
               <FormField
                 control={form.control}
-                name="capacity"
+                name="regionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter capacity"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="employees"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Employees</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter number of employees"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="regions"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Regions</FormLabel>
+                    <FormLabel>Region</FormLabel>
                     {regions.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
                         No regions available. Create regions first.
@@ -233,10 +141,12 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                           <button
                             key={region.id}
                             type="button"
-                            onClick={() => handleRegionToggle(region.name)}
+                            onClick={() => {
+                              field.onChange(region.id);
+                            }}
                             className={cn(
                               "px-3 py-1 rounded-full text-sm border transition-colors",
-                              selectedRegions.includes(region.name)
+                              field.value === region.id
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "border-border hover:bg-muted"
                             )}
@@ -253,7 +163,26 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
 
               <FormField
                 control={form.control}
-                name="types"
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Capacity</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter capacity (orders per day)"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bakeryTypes"
                 render={() => (
                   <FormItem>
                     <FormLabel>Bakery Types</FormLabel>

@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useReviewStore } from "@/stores/reviewStore";
 import { useStockStore } from "@/stores/stockStore";
-import { useRegionProductSelectionStore } from "@/stores/regionProductSelectionStore";
 import type { Review } from "@/data/reviews";
 import type { AddOnStock } from "@/data/stock";
 import {
@@ -20,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, MapPin, Users, Package, Star, User } from "lucide-react";
+import { ChevronLeft, MapPin, Package, Star, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
 import { RestockDialog } from "@/components/RestockDialog";
@@ -109,9 +108,6 @@ export default function BakeryDetailPage() {
     (state) => state.getReviewsByBakeryId
   );
   const getAverageRating = useReviewStore((state) => state.getAverageRating);
-  const selectedProducts = useRegionProductSelectionStore(
-    (state) => state.selectedProducts
-  );
 
   const [selectedStock, setSelectedStock] = useState<AddOnStock | null>(null);
   const [isRestockOpen, setIsRestockOpen] = useState(false);
@@ -124,30 +120,13 @@ export default function BakeryDetailPage() {
     [bakery]
   );
 
-  // Filter stocks to only show add-ons that were selected for this bakery's regions
+  // Filter stocks to only show add-ons for this bakery's region
   const stocks = useMemo(() => {
     if (!bakery || !allStocks.length) return [];
 
-    // Get bakery's region IDs
-    const bakeryRegionIds = new Set(bakery.regions);
-
-    // Get selected add-on IDs for this bakery's regions
-    const selectedAddOnIds = new Set<string>();
-    bakery.regions.forEach((region) => {
-      selectedProducts.forEach((product) => {
-        if (product.regionName === region && product.type !== "cake") {
-          selectedAddOnIds.add(product.productId);
-        }
-      });
-    });
-
-    // Return only stocks for selected add-ons AND only for this bakery's regions
-    return allStocks.filter(
-      (stock) =>
-        selectedAddOnIds.has(stock.addOnId) &&
-        bakeryRegionIds.has(stock.regionName)
-    );
-  }, [bakery, allStocks, selectedProducts]);
+    // Return only stocks for this bakery's region
+    return allStocks.filter((stock) => stock.regionName === bakery.regionId);
+  }, [bakery, allStocks]);
 
   const reviews = useMemo(
     () => (bakery ? getReviewsByBakeryId(bakery.id) : []),
@@ -247,7 +226,7 @@ export default function BakeryDetailPage() {
                     {t("bakeriesManagement.location")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {bakery.location}
+                    {bakery.locationDescription}
                   </p>
                 </div>
               </div>
@@ -264,32 +243,7 @@ export default function BakeryDetailPage() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2">
-                <Users className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {t("bakeriesManagement.employees")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {bakery.employees} {t("bakeriesManagement.people")}
-                  </p>
-                </div>
-              </div>
-
               <Separator className="my-4" />
-
-              <div>
-                <p className="text-sm font-medium mb-2">
-                  {t("bakeriesManagement.servingRegions")}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {bakery.regions.map((region) => (
-                    <Badge key={region} variant="outline">
-                      {region}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
             </CardContent>
           </Card>
 

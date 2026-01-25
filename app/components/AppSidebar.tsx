@@ -66,8 +66,8 @@ const AppSidebar = () => {
 
   const productItems = [
     {
-      title: t("sidebar.customCreations"),
-      url: "/products/custom-creations",
+      title: t("sidebar.largeCakes"),
+      url: "/products/large-cakes",
       icon: Sparkles,
     },
     {

@@ -2,8 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
+interface Region {
+  id: string;
+  name: string;
+}
+
 interface BakeryFilterProps {
-  availableRegions: string[];
+  availableRegions: Region[];
   availableTypes: string[];
   selectedRegion: string;
   selectedTypes: string[];
@@ -51,12 +56,12 @@ export function BakeryFilter({
           </Badge>
           {availableRegions.map((region) => (
             <Badge
-              key={region}
-              variant={selectedRegion === region ? "default" : "outline"}
+              key={region.id}
+              variant={selectedRegion === region.id ? "default" : "outline"}
               className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => onRegionChange(region)}
+              onClick={() => onRegionChange(region.id)}
             >
-              {region}
+              {region.name}
             </Badge>
           ))}
         </div>

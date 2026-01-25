@@ -1,22 +1,18 @@
 /**
  * Bakery Store (Zustand)
  *
- * This store manages bakery data globally with caching.
+ * This store manages bakery data with API integration.
+ * It handles fetching, caching, and mutations for bakeries.
  *
  * Features:
- * - Single API call, cached across all pages
- * - Derived state (bakeryNames) automatically updates
- * - Ready for real API integration
- * - No provider needed (optional)
- *
- * When real API is ready:
- * 1. Replace BAKERIES_DATA with fetch('/api/bakeries')
- * 2. Add loading/error states
- * 3. Implement cache invalidation strategy
+ * - Centralized API calls through bakeryApi service
+ * - Loading and error state management
+ * - Automatic caching with manual refresh
+ * - Type-safe operations
  */
 
 import { create } from "zustand";
-import { BAKERIES_DATA, type Bakery } from "@/data/bakeries";
+import { bakeryApi, type Bakery } from "@/lib/services/bakery.service";
 
 interface BakeryState {
   // Data
@@ -24,83 +20,159 @@ interface BakeryState {
   isLoading: boolean;
   error: string | null;
 
-  // Derived data (cached)
-  bakeryNames: string[];
-
   // Actions
   fetchBakeries: () => Promise<void>;
-  addBakery: (bakery: Bakery) => void;
-  updateBakery: (id: string, bakery: Partial<Bakery>) => void;
-  deleteBakery: (id: string) => void;
+  addBakery: (bakeryData: {
+    name: string;
+    locationDescription: string;
+    regionId: string;
+    capacity: number;
+    bakeryTypes: string[];
+  }) => Promise<void>;
+  updateBakery: (
+    id: string,
+    bakeryData: {
+      name?: string;
+      locationDescription?: string;
+      regionId?: string;
+      capacity?: number;
+      bakeryTypes?: string[];
+    }
+  ) => Promise<void>;
+  deleteBakery: (id: string) => Promise<void>;
+  clearError: () => void;
   resetBakeries: () => void;
 }
 
 export const useBakeryStore = create<BakeryState>((set) => ({
   // Initial state
-  bakeries: BAKERIES_DATA,
-  bakeryNames: BAKERIES_DATA.map((b) => b.name),
+  bakeries: [],
   isLoading: false,
   error: null,
 
-  // Fetch from API (when ready)
+  // Fetch all bakeries from API
   fetchBakeries: async () => {
     set({ isLoading: true, error: null });
     try {
-      // TODO: Replace with real API when ready
-      // const response = await fetch('/api/bakeries');
-      // const data = await response.json();
+      const response = await bakeryApi.getAll();
 
-      const data = BAKERIES_DATA; // Using mock data for now
-
-      set({
-        bakeries: data,
-        bakeryNames: data.map((b) => b.name),
-        isLoading: false,
-      });
+      if (response.success && response.data) {
+        set({
+          bakeries: response.data,
+          isLoading: false,
+        });
+      } else {
+        throw new Error(response.message || "Failed to fetch bakeries");
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch bakeries";
       set({ error: errorMessage, isLoading: false });
+      throw error;
     }
   },
 
   // Add new bakery
-  addBakery: (bakery: Bakery) => {
-    set((state) => ({
-      bakeries: [...state.bakeries, bakery],
-      bakeryNames: [...state.bakeryNames, bakery.name],
-    }));
+  addBakery: async (bakeryData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await bakeryApi.create({
+        name: bakeryData.name,
+        locationDescription: bakeryData.locationDescription,
+        regionId: bakeryData.regionId,
+        capacity: bakeryData.capacity,
+        bakeryTypes: bakeryData.bakeryTypes as (
+          | "basket_cakes"
+          | "medium_cakes"
+          | "small_cakes"
+          | "large_cakes"
+          | "custom"
+        )[],
+      });
+
+      if (response.success && response.data) {
+        set((state) => ({
+          bakeries: [...state.bakeries, response.data as Bakery],
+          isLoading: false,
+        }));
+      } else {
+        throw new Error(response.message || "Failed to create bakery");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create bakery";
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
 
   // Update existing bakery
-  updateBakery: (id: string, updates: Partial<Bakery>) => {
-    set((state) => {
-      const updatedBakeries = state.bakeries.map((b) =>
-        b.id === id ? { ...b, ...updates } : b
-      );
-      return {
-        bakeries: updatedBakeries,
-        bakeryNames: updatedBakeries.map((b) => b.name),
-      };
-    });
+  updateBakery: async (id, bakeryData) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await bakeryApi.update(id, {
+        name: bakeryData.name,
+        locationDescription: bakeryData.locationDescription,
+        regionId: bakeryData.regionId,
+        capacity: bakeryData.capacity,
+        bakeryTypes: bakeryData.bakeryTypes as (
+          | "basket_cakes"
+          | "medium_cakes"
+          | "small_cakes"
+          | "large_cakes"
+          | "custom"
+        )[],
+      });
+
+      if (response.success && response.data) {
+        set((state) => ({
+          bakeries: state.bakeries.map((b) =>
+            b.id === id ? (response.data as Bakery) : b
+          ),
+          isLoading: false,
+        }));
+      } else {
+        throw new Error(response.message || "Failed to update bakery");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update bakery";
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
 
   // Delete bakery
-  deleteBakery: (id: string) => {
-    set((state) => {
-      const updatedBakeries = state.bakeries.filter((b) => b.id !== id);
-      return {
-        bakeries: updatedBakeries,
-        bakeryNames: updatedBakeries.map((b) => b.name),
-      };
-    });
+  deleteBakery: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await bakeryApi.delete(id);
+
+      if (response.success) {
+        set((state) => ({
+          bakeries: state.bakeries.filter((b) => b.id !== id),
+          isLoading: false,
+        }));
+      } else {
+        throw new Error(response.message || "Failed to delete bakery");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete bakery";
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Clear error message
+  clearError: () => {
+    set({ error: null });
   },
 
   // Reset to initial state
   resetBakeries: () => {
     set({
-      bakeries: BAKERIES_DATA,
-      bakeryNames: BAKERIES_DATA.map((b) => b.name),
+      bakeries: [],
       isLoading: false,
       error: null,
     });

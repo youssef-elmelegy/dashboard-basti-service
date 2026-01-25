@@ -18,50 +18,73 @@ import {
 } from "./ui/form";
 import { Input } from "./ui/input";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { ChefImageUpload } from "@/components/ChefImageUpload";
-import { BakerySelect } from "@/components/BakerySelect";
+import { useEffect } from "react";
+import { cn } from "@/lib/utils";
+import type { Chef } from "@/lib/services/chef.service";
+import { useBakeryStore } from "@/stores/bakeryStore";
 
-type Chef = {
-  id: string;
-  name: string;
-  image: string;
-  bakery: string;
-  rating: number;
-};
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(2, { message: "Chef name must be at least 2 characters!" })
+    .max(255, { message: "Chef name must not exceed 255 characters!" }),
+  specialization: z
+    .string()
+    .min(2, { message: "Specialization must be at least 2 characters!" })
+    .max(255, { message: "Specialization must not exceed 255 characters!" }),
+  image: z
+    .string()
+    .url({ message: "Image must be a valid URL!" })
+    .optional()
+    .or(z.literal("")),
+  bakeryId: z
+    .string()
+    .uuid({ message: "Please select a valid bakery!" })
+    .min(1, { message: "Bakery is required!" }),
+});
 
-import { chefFormSchema as formSchema } from "@/schemas/chefFormSchema";
+type FormValues = z.infer<typeof formSchema>;
 
 interface EditChefProps {
   chef: Chef;
-  bakeries: string[];
-  onSubmit?: (data: z.infer<typeof formSchema>) => void;
+  onSubmit: (data: Omit<Chef, "id" | "createdAt" | "updatedAt">) => void;
 }
 
-const EditChef = ({ chef, bakeries, onSubmit }: EditChefProps) => {
-  const [imagePreview, setImagePreview] = useState<string>(chef.image);
+const EditChef = ({ chef, onSubmit }: EditChefProps) => {
+  const bakeries = useBakeryStore((state) => state.bakeries);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: chef.name,
-      bakery: chef.bakery,
-      image: chef.image,
+      specialization: chef.specialization,
+      image: chef.image || "",
+      bakeryId: chef.bakeryId,
     },
   });
 
   useEffect(() => {
     form.reset({
       name: chef.name,
-      bakery: chef.bakery,
-      image: chef.image,
+      specialization: chef.specialization,
+      image: chef.image || "",
+      bakeryId: chef.bakeryId,
     });
-    setImagePreview(chef.image);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chef.id]);
+  }, [chef.id, form]);
 
-  const handleSubmit = (data: z.infer<typeof formSchema>) => {
-    onSubmit?.(data);
+  const selectedBakeryId = form.watch("bakeryId");
+
+  const handleBakerySelect = (bakeryId: string) => {
+    form.setValue("bakeryId", bakeryId, { shouldValidate: true });
+  };
+
+  const handleSubmit = (data: FormValues) => {
+    onSubmit({
+      name: data.name,
+      specialization: data.specialization,
+      image: data.image || null,
+      bakeryId: data.bakeryId,
+    } as any);
   };
 
   return (
@@ -72,18 +95,8 @@ const EditChef = ({ chef, bakeries, onSubmit }: EditChefProps) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-8"
+              className="space-y-6"
             >
-              <ChefImageUpload
-                imagePreview={imagePreview}
-                chefName={form.getValues("name")}
-                onImageChange={(base64) => {
-                  setImagePreview(base64);
-                  form.setValue("image", base64);
-                }}
-                error={form.formState.errors.image?.message}
-              />
-
               <FormField
                 control={form.control}
                 name="name"
@@ -99,13 +112,72 @@ const EditChef = ({ chef, bakeries, onSubmit }: EditChefProps) => {
                 )}
               />
 
-              <BakerySelect bakeries={bakeries} control={form.control} />
+              <FormField
+                control={form.control}
+                name="specialization"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specialization</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Pastry Chef, Head Chef" {...field} />
+                    </FormControl>
+                    <FormDescription>Chef's area of expertise.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              {bakeries.length === 0 && (
-                <div className="text-center text-sm text-muted-foreground mb-2">
-                  No bakeries available. Please add a bakery first.
-                </div>
-              )}
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="https://example.com/chef-image.jpg" 
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>Chef's profile image URL.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bakeryId"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Bakery</FormLabel>
+                    {bakeries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No bakeries available. Create bakeries first.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {bakeries.map((bakery) => (
+                          <button
+                            key={bakery.id}
+                            type="button"
+                            onClick={() => handleBakerySelect(bakery.id)}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-sm border transition-colors",
+                              selectedBakeryId === bakery.id
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border hover:bg-muted"
+                            )}
+                          >
+                            {bakery.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <Button
                 type="submit"
