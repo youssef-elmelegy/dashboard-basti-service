@@ -2,6 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useOrderStore } from "@/stores/orderStore";
+import { LocationMap } from "@/components/location-map";
+import type { OrderItem } from "@/data/orders";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +26,9 @@ import {
   Mail,
   Clock,
   DollarSign,
-  MessageSquare,
   CheckCircle,
+  Download,
+  MessageSquare,
 } from "lucide-react";
 
 const statusColors = {
@@ -36,6 +39,90 @@ const statusColors = {
   delivered: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
+
+/**
+ * Get the category type of an order item
+ */
+function getItemCategory(item: OrderItem): string {
+  if (item.addonId) return "Add-on";
+  if (item.sweetId) return "Sweet";
+  if (item.featuredCakeId) return "Featured Cake";
+  if (item.predesignedCakeId) return "Predesigned Cake";
+  if (item.customCake) return "Custom Cake";
+  return "Item";
+}
+
+// Function to download greeting card as image
+function downloadCardAsImage(cardMessage: {
+  to: string;
+  from: string;
+  message: string;
+}) {
+  // Create a canvas element
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 600;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) return;
+
+  // Draw gradient background
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#fef3c7"); // amber-50
+  gradient.addColorStop(1, "#fed7aa"); // orange-50
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw border
+  ctx.strokeStyle = "#fbbf24"; // amber-200
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+  // Set text properties
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.textAlign = "center";
+
+  // Draw "To"
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#b45309"; // amber-700
+  ctx.textAlign = "left";
+  ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
+
+  // Draw message
+  ctx.font = "italic 28px Georgia";
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.textAlign = "center";
+  const lines = cardMessage.message.split("\n");
+  let yPos = 240;
+  lines.forEach((line: string) => {
+    ctx.fillText(line, canvas.width / 2, yPos);
+    yPos += 40;
+  });
+
+  // Draw signature
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#b45309"; // amber-700
+  ctx.textAlign = "right";
+  ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+
+  ctx.font = "24px Georgia";
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
+
+  // Convert canvas to blob and download
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  });
+}
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -105,63 +192,113 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Product Information */}
+        {/* Order Items */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              {t("orderDetail.productInformation")}
+              {t("orderDetail.orderItems") || "Order Items"}
+              {order.orderItems && order.orderItems.length > 0 && (
+                <Badge variant="secondary" className="ml-auto">
+                  {order.orderItems.length}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-6">
-              <div className="shrink-0">
-                <img
-                  src={order.productImage}
-                  alt={order.productName}
-                  className="w-48 h-48 object-cover rounded-lg border"
-                />
+            {order.orderItems && order.orderItems.length > 0 ? (
+              <div
+                className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
+                style={{ scrollbarWidth: "thin" }}
+              >
+                {order.orderItems.map((item, index) => {
+                  // Get image from different sources based on item type
+                  const itemData = item.data as Record<string, unknown>;
+                  const imageUrl =
+                    (Array.isArray(itemData?.images) &&
+                      (itemData.images[0] as string)) ||
+                    (typeof itemData?.thumbnailUrl === "string" &&
+                      itemData.thumbnailUrl) ||
+                    (typeof itemData?.decorationTopView === "string" &&
+                      itemData.decorationTopView) ||
+                    "";
+
+                  return (
+                    <div key={item.id} className="border rounded-lg p-4">
+                      <div className="flex gap-4">
+                        {/* Item Image */}
+                        {imageUrl && (
+                          <div className="shrink-0">
+                            <img
+                              src={imageUrl}
+                              alt={item.data?.name}
+                              className="w-24 h-24 object-cover rounded-lg border"
+                            />
+                          </div>
+                        )}
+
+                        {/* Item Details */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="text-sm font-semibold">
+                                {item.data?.name || "Item"}
+                              </h4>
+                              <Badge
+                                variant="outline"
+                                className="mt-1 capitalize"
+                              >
+                                {getItemCategory(item)}
+                              </Badge>
+                            </div>
+                            <span className="text-lg font-bold text-primary">
+                              {item.price} EGP
+                            </span>
+                          </div>
+
+                          {item.data?.description && (
+                            <p className="text-xs text-muted-foreground">
+                              {item.data.description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-4 pt-2 text-sm">
+                            <span className="font-medium">
+                              Quantity:{" "}
+                              <span className="font-bold text-primary">
+                                {item.quantity}
+                              </span>
+                            </span>
+                            <span className="text-muted-foreground">
+                              Total: {item.quantity * item.price} EGP
+                            </span>
+                          </div>
+
+                          {item.size && (
+                            <div className="text-xs text-muted-foreground">
+                              Size: {item.size}
+                            </div>
+                          )}
+
+                          {item.flavor && (
+                            <div className="text-xs text-muted-foreground">
+                              Flavor: {item.flavor}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {index < order.orderItems!.length - 1 && (
+                        <Separator className="mt-4" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex-1 space-y-4">
-                <div>
-                  <h3 className="text-2xl font-semibold mb-1">
-                    {order.productName}
-                  </h3>
-                  <Badge variant="secondary" className="capitalize">
-                    {order.type}
-                  </Badge>
-                </div>
-
-                {order.size && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      {t("orderDetail.size")}:
-                    </span>
-                    <span className="text-sm">{order.size}</span>
-                  </div>
-                )}
-
-                {order.flavor && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      {t("orderDetail.flavor")}:
-                    </span>
-                    <span className="text-sm">{order.flavor}</span>
-                  </div>
-                )}
-
-                {order.textOnCake && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm font-medium text-muted-foreground min-w-20">
-                      {t("orderDetail.textOnCake")}:
-                    </span>
-                    <span className="text-sm font-medium bg-muted px-3 py-1 rounded">
-                      "{order.textOnCake}"
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No items in this order
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -248,6 +385,26 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Delivery Location Map */}
+        {order.deliveryLatitude && order.deliveryLongitude && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                {t("orderDetail.deliveryMap") || "Delivery Location Map"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LocationMap
+                latitude={order.deliveryLatitude}
+                longitude={order.deliveryLongitude}
+                address={order.deliveryLocation}
+                className="w-full h-64 rounded-lg border"
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Order Timeline */}
         <Card>
           <CardHeader>
@@ -331,22 +488,30 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Special Requests */}
-        {order.specialRequests && (
-          <Card className="lg:col-span-3">
-            <CardHeader>
+        {/* General Order Details */}
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                {t("orderDetail.specialRequests")}
+                <Package className="w-5 h-5" />
+                General Order Details
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm bg-muted p-4 rounded-lg">
-                {order.specialRequests}
+              <Badge variant={order.keepAnonymous ? "default" : "secondary"}>
+                {order.keepAnonymous ? "Anonymous Order" : "Not Anonymous"}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <span className="text-xs text-muted-foreground">
+                Delivery Note
+              </span>
+              <p className="text-sm bg-muted p-3 rounded-lg mt-1">
+                {order.deliveryNote || "No delivery note provided"}
               </p>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Quality Control Progress */}
         {order.qualityChecks && Object.keys(order.qualityChecks).length > 0 && (
@@ -362,7 +527,7 @@ export default function OrderDetailPage() {
                 const checks = order.qualityChecks;
                 const totalChecks = Object.keys(checks).length;
                 const completedChecks = Object.values(checks).filter(
-                  (v) => v === true
+                  (v) => v === true,
                 ).length;
                 const progress = (completedChecks / totalChecks) * 100;
 
@@ -471,10 +636,135 @@ export default function OrderDetailPage() {
                   {order.finalImageUploadedAt
                     ? format(
                         new Date(order.finalImageUploadedAt),
-                        "MMM d, yyyy 'at' h:mm a"
+                        "MMM d, yyyy 'at' h:mm a",
                       )
                     : ""}
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Greeting Card Details */}
+        {order.cardMessage && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Greeting Card
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadCardAsImage(order.cardMessage!)}
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download Card
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Card Preview */}
+                <div className="flex-1">
+                  <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+
+                    {/* Top - To field */}
+                    <div className="relative z-10">
+                      <p className="text-sm text-amber-700/70 font-medium">
+                        To:{" "}
+                        <span className="font-semibold">
+                          {order.cardMessage.to}
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Middle - Centered Message */}
+                    <div className="relative z-10 flex-1 flex items-center justify-center">
+                      <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center">
+                        {order.cardMessage.message}
+                      </p>
+                    </div>
+
+                    {/* Bottom - Signature */}
+                    <div className="relative z-10 text-right">
+                      <p className="text-sm text-amber-700/70">
+                        With warm wishes,
+                      </p>
+                      <p className="text-lg font-serif text-amber-900">
+                        {order.cardMessage.from}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Details */}
+                <div className="lg:w-64 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">
+                      From
+                    </label>
+                    <p className="text-sm font-medium">
+                      {order.cardMessage.from}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">
+                      To
+                    </label>
+                    <p className="text-sm font-medium">
+                      {order.cardMessage.to}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  {order.recipientData && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">
+                          Recipient Name
+                        </label>
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          {order.recipientData.name}
+                        </p>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">
+                          Email
+                        </label>
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          {order.recipientData.email}
+                        </p>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">
+                          Phone
+                        </label>
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          {order.recipientData.phoneNumber}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

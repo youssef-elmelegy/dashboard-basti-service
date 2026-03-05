@@ -3,10 +3,14 @@ import type { Region } from "@/data/regions";
 
 export interface CreateRegionRequest {
   name: string;
+  image?: string;
+  isAvailable?: boolean;
 }
 
 export interface UpdateRegionRequest {
   name: string;
+  image?: string;
+  isAvailable?: boolean;
 }
 
 export const regionApi = {
@@ -36,7 +40,7 @@ export const regionApi = {
    */
   async update(
     id: string,
-    data: UpdateRegionRequest
+    data: UpdateRegionRequest,
   ): Promise<ApiResponse<Region>> {
     return apiClient.patch<Region>(`/regions/${id}`, data);
   },

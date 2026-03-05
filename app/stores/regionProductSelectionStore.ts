@@ -21,7 +21,7 @@ interface RegionProductSelectionStore {
     regionId: string,
     type: "cake" | "sweet",
     product: SmallCake | AddOn,
-    selectedSizes?: Array<{ name: string; price: number }>
+    selectedSizes?: Array<{ name: string; price: number }>,
   ) => void;
   removeProduct: (id: string) => void;
   clearAll: () => void;
@@ -34,7 +34,7 @@ export const useRegionProductSelectionStore =
     updateProduct: (id, updated) => {
       set((state) => ({
         selectedProducts: state.selectedProducts.map((p) =>
-          p.id === id ? { ...p, ...updated } : p
+          p.id === id ? { ...p, ...updated } : p,
         ),
       }));
     },
@@ -47,7 +47,7 @@ export const useRegionProductSelectionStore =
 
         if (type === "cake") {
           const cake = product as SmallCake;
-          basePrice = cake.basePrice;
+          basePrice = cake.mainPrice;
 
           // If selectedSizes provided, use them; otherwise use the base price
           if (selectedSizes && selectedSizes.length > 0) {
@@ -55,7 +55,7 @@ export const useRegionProductSelectionStore =
           }
         } else {
           const addon = product as AddOn;
-          basePrice = addon.price;
+          basePrice = addon.price || 0;
         }
 
         const newProduct: SelectedProductItem = {

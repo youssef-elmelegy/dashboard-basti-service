@@ -23,7 +23,7 @@ import { useRegionStore } from "@/stores/regionStore";
 
 const bakeryTypes: { label: string; value: BakeryType }[] = [
   { label: "Basket Cakes", value: "basket_cakes" },
-  { label: "Medium Cakes", value: "medium_cakes" },
+  { label: "Midume", value: "midume" },
   { label: "Small Cakes", value: "small_cakes" },
   { label: "Large Cakes", value: "large_cakes" },
   { label: "Custom", value: "custom" },
@@ -50,11 +50,11 @@ const formSchema = z.object({
     .array(
       z.enum([
         "basket_cakes",
-        "medium_cakes",
+        "midume",
         "small_cakes",
         "large_cakes",
         "custom",
-      ])
+      ]),
     )
     .min(1, { message: "Select at least one bakery type!" }),
 });
@@ -67,7 +67,7 @@ interface EditBakeryProps {
     data: Omit<
       Bakery,
       "id" | "averageRating" | "totalReviews" | "createdAt" | "updatedAt"
-    >
+    >,
   ) => void;
 }
 
@@ -107,7 +107,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
       regionId: values.regionId,
       capacity: values.capacity,
       types: values.bakeryTypes,
-    } as any);
+    });
   };
 
   return (
@@ -193,7 +193,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                               "px-3 py-1 rounded-full text-sm border transition-colors",
                               selectedRegionId === region.id
                                 ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border hover:bg-muted"
+                                : "border-border hover:bg-muted",
                             )}
                           >
                             {region.name}
@@ -222,7 +222,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                             "px-3 py-1 rounded-full text-sm border transition-colors",
                             selectedTypes.includes(type.value)
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "border-border hover:bg-muted"
+                              : "border-border hover:bg-muted",
                           )}
                         >
                           {type.label}

@@ -7,7 +7,7 @@ export type CakeTag =
   | "custom";
 
 export type CakeSize = {
-  name: string;
+  size: string;
   price: number;
 };
 
@@ -17,10 +17,13 @@ export type AddOn = {
   description: string;
   images: string[]; // Multiple images support
   category: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
-  price: number;
-  tags: string[];
+  price?: number;
+  tags?: string[];
+  tagId?: string;
+  tagName?: string;
   isActive: boolean;
   createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export type SmallCake = {
@@ -29,7 +32,7 @@ export type SmallCake = {
   description: string;
   images: string[]; // Multiple images support
   tags: string[];
-  basePrice: number;
+  mainPrice: number;
   capacity: number; // servings
   flavors: string[]; // list of available flavors
   sizes: CakeSize[]; // each size with different price

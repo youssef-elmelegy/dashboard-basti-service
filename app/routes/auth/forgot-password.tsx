@@ -7,17 +7,28 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const { forgotPassword, isLoading, error } = useAuth();
   const [email, setEmail] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle password reset logic here
-    if (email) {
-      // Send OTP to email and redirect to verification page
-      navigate("/auth/otp-verify");
+    setLocalError(null);
+
+    if (!email) {
+      setLocalError("Please enter your email address");
+      return;
+    }
+
+    try {
+      await forgotPassword(email);
+      navigate("/auth/otp-verify", { state: { email } });
+    } catch (err) {
+      setLocalError(error || "Failed to send reset code. Please try again.");
     }
   };
 
@@ -41,10 +52,17 @@ export default function ForgotPasswordPage() {
                 <div className="flex flex-col items-center gap-1 text-center">
                   <h1 className="text-2xl font-bold">Reset your password</h1>
                   <p className="text-muted-foreground text-sm text-balance">
-                    Enter your email address and we'll send you a link to reset
+                    Enter your email address and we'll send you a code to reset
                     your password
                   </p>
                 </div>
+
+                {(localError || error) && (
+                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                    {localError || error}
+                  </div>
+                )}
+
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
@@ -54,16 +72,20 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </Field>
                 <Field>
-                  <Button type="submit">Send reset link</Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? "Sending..." : "Send reset code"}
+                  </Button>
                 </Field>
                 <Field>
                   <button
                     type="button"
                     onClick={() => navigate("/auth/login")}
                     className="flex items-center justify-center gap-2 text-sm hover:underline w-full"
+                    disabled={isLoading}
                   >
                     <ArrowLeft className="size-4" />
                     Back to login

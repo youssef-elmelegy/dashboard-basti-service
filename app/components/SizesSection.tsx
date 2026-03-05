@@ -10,10 +10,14 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 
+interface FieldObject {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface SizesSectionProps<T extends FieldValues = FieldValues> {
   control: Control<T>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fields: any[];
+  fields: FieldObject[];
   fieldName: string;
   onAppend: () => void;
   onRemove: (index: number) => void;
@@ -46,7 +50,7 @@ export function SizesSection<T extends FieldValues = FieldValues>({
           <div key={field.id} className="flex gap-2">
             <FormField
               control={control}
-              name={getFieldName(index, "name")}
+              name={getFieldName(index, "size")}
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormControl>

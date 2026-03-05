@@ -81,9 +81,9 @@ function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
             onNavigate(order.id);
           }}
           className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-          title={`Click to view order ${order.id}`}
+          title={`Click to view order ${order.referenceNumber || order.id}`}
         >
-          #{order.id}
+          {order.referenceNumber || `#${order.id}`}
         </button>
         <div className="flex-1 min-w-0">
           <CardTitle className="text-sm font-semibold truncate">
@@ -129,10 +129,11 @@ export function OrdersSidebarRight({
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
   const orders = useOrderStore((state) => state.orders);
+  const isLoading = useOrderStore((state) => state.isLoading);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc" | null>(null);
   const [regionFilter, setRegionFilter] = React.useState<string>("all");
   const [dateFilter, setDateFilter] = React.useState<Date | undefined>(
-    undefined
+    undefined,
   );
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
@@ -142,7 +143,7 @@ export function OrdersSidebarRight({
   // Filter by region and unassigned orders only
   const filteredOrders = React.useMemo(() => {
     const unassignedOrders = orders.filter(
-      (order): order is Order => !order.assignedBakeryId
+      (order): order is Order => !order.assignedBakeryId,
     );
     let filtered = unassignedOrders;
 
@@ -154,7 +155,7 @@ export function OrdersSidebarRight({
     // Apply date filter
     if (dateFilter) {
       filtered = filtered.filter((order) =>
-        isSameDay(new Date(order.deliverDay), dateFilter)
+        isSameDay(new Date(order.deliverDay), dateFilter),
       );
     }
 
@@ -225,15 +226,15 @@ export function OrdersSidebarRight({
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded focus:outline-none"
             onClick={() =>
               setSortDir((d) =>
-                d === null ? "asc" : d === "asc" ? "desc" : null
+                d === null ? "asc" : d === "asc" ? "desc" : null,
               )
             }
             title={
               sortDir === "asc"
                 ? `${t("orders.sortByTime")} (${t("common.loading")})`
                 : sortDir === "desc"
-                ? `${t("orders.sortByTime")} (${t("common.loading")})`
-                : `${t("common.loading")} ${t("orders.sortByTime")}`
+                  ? `${t("orders.sortByTime")} (${t("common.loading")})`
+                  : `${t("common.loading")} ${t("orders.sortByTime")}`
             }
           >
             <span>{t("orders.sortByTime")}</span>
@@ -247,24 +248,35 @@ export function OrdersSidebarRight({
           </button>
         </div>
         <ScrollArea className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 mb-2">
-          <div
-            key={sortDir + regionFilter}
-            className="flex flex-col gap-2 transition-opacity duration-200 animate-fadein"
-          >
-            {sortedOrders.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                {t("orders.noOrders")}
+          {isLoading ? (
+            <div className="flex items-center justify-center flex-1 py-8">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                <p className="text-xs text-muted-foreground">
+                  {t("common.loading") || "Loading..."}
+                </p>
               </div>
-            ) : (
-              sortedOrders.map((order: Order) => (
-                <DraggableOrderCard
-                  key={order.id}
-                  order={order}
-                  onNavigate={handleOrderClick}
-                />
-              ))
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              key={sortDir + regionFilter}
+              className="flex flex-col gap-2 transition-opacity duration-200 animate-fadein"
+            >
+              {sortedOrders.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  {t("orders.noOrders")}
+                </div>
+              ) : (
+                sortedOrders.map((order: Order) => (
+                  <DraggableOrderCard
+                    key={order.id}
+                    order={order}
+                    onNavigate={handleOrderClick}
+                  />
+                ))
+              )}
+            </div>
+          )}
         </ScrollArea>
 
         <SidebarSeparator className="mx-0 w-full mb-2" />

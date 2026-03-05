@@ -55,13 +55,13 @@ export function ProductImageCarousel({
   return (
     <div className="space-y-3">
       {/* Main Image */}
-      <div className="relative w-full h-48 bg-muted overflow-hidden rounded-lg group">
+      <div className="relative w-full h-48 bg-muted overflow-hidden rounded-lg group flex items-center justify-center">
         <HoverCard>
           <HoverCardTrigger asChild>
             <img
               src={currentImage}
               alt={`${name} - Image ${currentIndex + 1}`}
-              className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+              className="w-full h-full object-contain hover:scale-105 transition-transform cursor-pointer"
             />
           </HoverCardTrigger>
           <HoverCardContent side="right" className="w-auto p-2">

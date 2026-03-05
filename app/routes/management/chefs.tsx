@@ -2,6 +2,7 @@ import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { debugAuth, debugRequest } from "@/lib/debug";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,7 +35,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash2, Edit2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function ChefsPage() {
   const { t } = useTranslation();
@@ -46,8 +46,9 @@ export default function ChefsPage() {
   const updateChef = useChefStore((state) => state.updateChef);
   const deleteChef = useChefStore((state) => state.deleteChef);
   const clearError = useChefStore((state) => state.clearError);
-  
+
   const bakeries = useBakeryStore((state) => state.bakeries);
+  const fetchBakeries = useBakeryStore((state) => state.fetchBakeries);
   const { openDeleteDialog } = useDeleteDialog();
 
   const [selectedBakery, setSelectedBakery] = useState<string>("all");
@@ -55,10 +56,12 @@ export default function ChefsPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingChef, setEditingChef] = useState<Chef | null>(null);
 
-  // Fetch chefs on mount
+  // Fetch chefs and bakeries on mount
   useEffect(() => {
+    console.log("ChefsPage: Mounting, fetching chefs and bakeries...");
     fetchChefs();
-  }, [fetchChefs]);
+    fetchBakeries();
+  }, [fetchChefs, fetchBakeries]);
 
   // Filter chefs by bakery
   const filteredChefs = useMemo(() => {
@@ -85,31 +88,49 @@ export default function ChefsPage() {
         } catch (error) {
           console.error("Failed to delete chef:", error);
         }
-      }
+      },
     );
   };
 
   const handleAddChef = async (formData: {
     name: string;
     specialization: string;
+    bio?: string;
     image?: string;
     bakeryId: string;
   }) => {
     try {
-      await addChef(formData);
+      // Debug: Check auth before making request
+      console.log("Before adding chef:");
+      console.log("Form data:", formData);
+      console.log("BakeryId:", formData.bakeryId);
+      console.log("BakeryId type:", typeof formData.bakeryId);
+      debugAuth();
+      debugRequest("POST", "/api/chefs");
+
+      await addChef({
+        name: formData.name,
+        specialization: formData.specialization,
+        bio: formData.bio || undefined,
+        image: formData.image || undefined,
+        bakeryId: formData.bakeryId,
+      });
       setIsAddOpen(false);
     } catch (error) {
       console.error("Failed to add chef:", error);
     }
   };
 
-  const handleUpdateChef = async (data: Omit<Chef, "id" | "createdAt" | "updatedAt">) => {
+  const handleUpdateChef = async (
+    data: Omit<Chef, "id" | "createdAt" | "updatedAt">,
+  ) => {
     if (editingChef) {
       try {
         await updateChef(editingChef.id, {
           name: data.name,
           specialization: data.specialization,
-          image: data.image,
+          bio: data.bio || undefined,
+          image: data.image || undefined,
           bakeryId: data.bakeryId,
         });
         setIsEditOpen(false);
@@ -147,7 +168,13 @@ export default function ChefsPage() {
           <h1 className="text-3xl font-bold">{t("chefs.title")}</h1>
           <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
             <SheetTrigger asChild>
-              <Button className="gap-2" disabled={isLoading}>
+              <Button
+                className="gap-2"
+                disabled={isLoading || bakeries.length === 0}
+                title={
+                  bakeries.length === 0 ? "Load bakeries first" : "Add chef"
+                }
+              >
                 <Plus className="w-4 h-4" />
                 {t("chefs.addChef")}
               </Button>
@@ -160,7 +187,7 @@ export default function ChefsPage() {
       {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-red-800">{t("common.error")}</h3>
             <p className="text-sm text-red-700 mt-1">{error}</p>
@@ -189,9 +216,7 @@ export default function ChefsPage() {
               <span className="text-3xl">👨‍🍳</span>
             </EmptyMedia>
             <EmptyTitle>{t("chefs.noChefs")}</EmptyTitle>
-            <EmptyDescription>
-              {t("chefs.startCreating")}
-            </EmptyDescription>
+            <EmptyDescription>{t("chefs.startCreating")}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -244,7 +269,22 @@ export default function ChefsPage() {
                   const bakery = bakeries.find((b) => b.id === chef.bakeryId);
                   return (
                     <TableRow key={chef.id}>
-                      <TableCell className="font-medium">{chef.name}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                          {chef.image ? (
+                            <img
+                              src={chef.image}
+                              alt={chef.name}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium flex-shrink-0">
+                              {chef.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span>{chef.name}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{chef.specialization}</TableCell>
                       <TableCell>{bakery?.name || "Unknown"}</TableCell>
                       <TableCell className="text-right">

@@ -17,11 +17,14 @@ import { bakeryApi, type Bakery } from "@/lib/services/bakery.service";
 interface BakeryState {
   // Data
   bakeries: Bakery[];
+  currentBakery: Bakery | null;
   isLoading: boolean;
   error: string | null;
+  lastFetchTime: number | null;
 
   // Actions
   fetchBakeries: () => Promise<void>;
+  getBakeryById: (id: string) => Promise<Bakery | null>;
   addBakery: (bakeryData: {
     name: string;
     locationDescription: string;
@@ -37,38 +40,95 @@ interface BakeryState {
       regionId?: string;
       capacity?: number;
       bakeryTypes?: string[];
-    }
+    },
   ) => Promise<void>;
   deleteBakery: (id: string) => Promise<void>;
   clearError: () => void;
   resetBakeries: () => void;
 }
 
-export const useBakeryStore = create<BakeryState>((set) => ({
+const BAKERY_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export const useBakeryStore = create<BakeryState>((set, get) => ({
   // Initial state
   bakeries: [],
+  currentBakery: null,
   isLoading: false,
   error: null,
+  lastFetchTime: null,
 
-  // Fetch all bakeries from API
+  // Fetch all bakeries from API with caching
   fetchBakeries: async () => {
+    const state = get();
+    const now = Date.now();
+
+    // Return cached data if it's still fresh
+    if (
+      state.bakeries.length > 0 &&
+      state.lastFetchTime &&
+      now - state.lastFetchTime < BAKERY_CACHE_DURATION
+    ) {
+      console.log("BakeryStore: Using cached bakeries");
+      return;
+    }
+
+    console.log("BakeryStore: Fetching bakeries...");
     set({ isLoading: true, error: null });
     try {
       const response = await bakeryApi.getAll();
+      console.log("BakeryStore: API response:", response);
 
       if (response.success && response.data) {
+        // Extract items from paginated response
+        const bakeriesData = Array.isArray(response.data)
+          ? response.data
+          : "items" in (response.data as Record<string, unknown>)
+            ? (response.data as Record<string, unknown>).items
+            : [];
+
+        console.log(
+          "BakeryStore: Bakeries fetched successfully:",
+          bakeriesData,
+        );
         set({
-          bakeries: response.data,
+          bakeries: bakeriesData as Bakery[],
           isLoading: false,
+          lastFetchTime: now,
         });
       } else {
-        throw new Error(response.message || "Failed to fetch bakeries");
+        const error = response.message || "Failed to fetch bakeries";
+        console.error("BakeryStore: API returned error:", error);
+        throw new Error(error);
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch bakeries";
+      console.error("BakeryStore: Fetch failed:", errorMessage, error);
       set({ error: errorMessage, isLoading: false });
       throw error;
+    }
+  },
+
+  // Get single bakery by ID
+  getBakeryById: async (id: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await bakeryApi.getOne(id);
+
+      if (response.success && response.data) {
+        set({
+          currentBakery: response.data,
+          isLoading: false,
+        });
+        return response.data;
+      } else {
+        throw new Error(response.message || "Failed to fetch bakery");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch bakery";
+      set({ error: errorMessage, isLoading: false });
+      return null;
     }
   },
 
@@ -83,7 +143,7 @@ export const useBakeryStore = create<BakeryState>((set) => ({
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes as (
           | "basket_cakes"
-          | "medium_cakes"
+          | "midume"
           | "small_cakes"
           | "large_cakes"
           | "custom"
@@ -117,7 +177,7 @@ export const useBakeryStore = create<BakeryState>((set) => ({
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes as (
           | "basket_cakes"
-          | "medium_cakes"
+          | "midume"
           | "small_cakes"
           | "large_cakes"
           | "custom"
@@ -127,7 +187,7 @@ export const useBakeryStore = create<BakeryState>((set) => ({
       if (response.success && response.data) {
         set((state) => ({
           bakeries: state.bakeries.map((b) =>
-            b.id === id ? (response.data as Bakery) : b
+            b.id === id ? (response.data as Bakery) : b,
           ),
           isLoading: false,
         }));

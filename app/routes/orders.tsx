@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { env } from "@/config/env";
 import {
   DndContext,
   DragOverlay,
@@ -23,6 +24,8 @@ import { OrdersSidebarRight } from "@/components/orders-sidebar-right";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
 import type { Order } from "@/data/orders";
+import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
+import { httpRequest } from "@/lib/http-handler";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -36,6 +39,15 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+
+const statusColors = {
+  pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  confirmed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  preparing: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  ready: "bg-green-500/10 text-green-500 border-green-500/20",
+  delivered: "bg-gray-500/10 text-gray-500 border-gray-500/20",
+  cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
+};
 
 // Sortable Order Card within column
 function SortableOrderCard({ order }: { order: Order }) {
@@ -78,7 +90,7 @@ function SortableOrderCard({ order }: { order: Order }) {
       <Card
         className={cn(
           "bg-background hover:bg-accent/50 transition-colors cursor-grab active:cursor-grabbing",
-          isDragging && "opacity-50"
+          isDragging && "opacity-50",
         )}
         onClick={handleClick}
         {...listeners}
@@ -91,9 +103,9 @@ function SortableOrderCard({ order }: { order: Order }) {
                 navigate(`/orders/${order.id}`);
               }}
               className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-              title={`Click to view order ${order.id}`}
+              title={`Click to view order ${order.referenceNumber || order.id}`}
             >
-              #{order.id}
+              {order.referenceNumber || `#${order.id}`}
             </button>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -105,9 +117,20 @@ function SortableOrderCard({ order }: { order: Order }) {
                   <span className="truncate">{order.customerName}</span>
                 </div>
               </div>
-              <Badge variant="outline" className="capitalize text-xs shrink-0">
-                {order.type}
-              </Badge>
+              <div className="flex flex-col gap-1 items-end shrink-0">
+                <Badge variant="outline" className="capitalize text-xs">
+                  {order.type}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "capitalize text-xs",
+                    statusColors[order.status],
+                  )}
+                >
+                  {order.status}
+                </Badge>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -190,7 +213,7 @@ function BakeryColumn({
   // Calculate used capacity
   const usedCapacity = orders.reduce(
     (sum, order) => sum + order.capacitySlots,
-    0
+    0,
   );
   const capacityPercentage = (usedCapacity / capacity) * 100;
 
@@ -201,7 +224,7 @@ function BakeryColumn({
         className={cn(
           "flex flex-col h-[calc(100vh-16rem)] rounded-lg border bg-card shadow-sm transition-all w-16 overflow-hidden",
           isOver && !isIncompatible && "ring-2 ring-primary",
-          isIncompatible && "opacity-50 cursor-not-allowed"
+          isIncompatible && "opacity-50 cursor-not-allowed",
         )}
       >
         {/* Collapsed Header with rotated text */}
@@ -223,7 +246,7 @@ function BakeryColumn({
               className={cn(
                 "absolute bottom-0 left-0 right-0 transition-all",
                 getCapacityColor(capacityPercentage),
-                isIncompatible && "opacity-50"
+                isIncompatible && "opacity-50",
               )}
               style={{ height: `${Math.min(capacityPercentage, 100)}%` }}
             />
@@ -253,7 +276,7 @@ function BakeryColumn({
       className={cn(
         "flex flex-col h-[calc(100vh-16rem)] rounded-lg border bg-card shadow-sm transition-all overflow-hidden",
         isOver && !isIncompatible && "ring-2 ring-primary",
-        isIncompatible && "opacity-50 cursor-not-allowed"
+        isIncompatible && "opacity-50 cursor-not-allowed",
       )}
     >
       {/* Column Header */}
@@ -261,7 +284,9 @@ function BakeryColumn({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{bakeryName}</h3>
-            <p className="text-xs text-muted-foreground truncate">{location}</p>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {location}
+            </p>
             {types && types.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {types.map((type) => (
@@ -270,7 +295,9 @@ function BakeryColumn({
                     variant="secondary"
                     className={cn(
                       "text-xs",
-                      isIncompatible && activeOrderType !== type && "opacity-50"
+                      isIncompatible &&
+                        activeOrderType !== type &&
+                        "opacity-50",
                     )}
                   >
                     {formatBakeryType(type)}
@@ -303,7 +330,7 @@ function BakeryColumn({
             <div
               className={cn(
                 "h-full transition-all rounded-full",
-                getCapacityColor(capacityPercentage)
+                getCapacityColor(capacityPercentage),
               )}
               style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
             />
@@ -319,7 +346,7 @@ function BakeryColumn({
                 capacityPercentage >= 60 &&
                   capacityPercentage < 85 &&
                   "text-orange-500",
-                capacityPercentage < 60 && "text-green-500"
+                capacityPercentage < 60 && "text-green-500",
               )}
             >
               {capacity - usedCapacity} {t("orders.available")}
@@ -357,12 +384,42 @@ function BakeryColumn({
 const Orders = () => {
   const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
+  const fetchBakeries = useBakeryStore((state) => state.fetchBakeries);
   const orders = useOrderStore((state) => state.orders);
   const updateOrder = useOrderStore((state) => state.updateOrder);
+  const fetchOrders = useOrderStore((state) => state.fetchOrders);
+  const isLoading = useOrderStore((state) => state.isLoading);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Fetch bakeries and orders only once on mount
+  useEffect(() => {
+    if (hasInitialized) return; // Skip if already initialized
+
+    const initializeData = async () => {
+      try {
+        await fetchBakeries();
+      } catch (error) {
+        console.error("Failed to fetch bakeries:", error);
+      }
+
+      try {
+        // Fetch orders with all statuses except cancelled and completed
+        await fetchOrders({
+          status: ["pending", "confirmed", "preparing", "ready"],
+        });
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      }
+
+      setHasInitialized(true);
+    };
+
+    initializeData();
+  }, [hasInitialized, fetchBakeries, fetchOrders]);
 
   // Local state for managing order positions
   const [orderPositions, setOrderPositions] = useState<Record<string, number>>(
@@ -374,7 +431,7 @@ const Orders = () => {
         }
       });
       return positions;
-    }
+    },
   );
 
   // Sensors for drag and drop
@@ -389,7 +446,7 @@ const Orders = () => {
         delay: 200,
         tolerance: 6,
       },
-    })
+    }),
   );
 
   // Get orders for each bakery, sorted by position
@@ -399,7 +456,7 @@ const Orders = () => {
       const bakeryOrderList = orders
         .filter((order) => order.assignedBakeryId === bakery.id)
         .sort(
-          (a, b) => (orderPositions[a.id] || 0) - (orderPositions[b.id] || 0)
+          (a, b) => (orderPositions[a.id] || 0) - (orderPositions[b.id] || 0),
         );
       ordersByBakery[bakery.id] = bakeryOrderList;
     });
@@ -416,6 +473,109 @@ const Orders = () => {
       }
       return newSet;
     });
+  };
+
+  // API function to assign order to bakery
+  const assignOrderToBakery = async (orderId: string, bakeryId: string) => {
+    try {
+      const response = await httpRequest(
+        `${env.API_BASE_URL}/orders/${orderId}/assign-bakery`,
+        {
+          method: "PATCH",
+          body: { bakeryId },
+        },
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Failed to assign order:", error);
+        return false;
+      }
+
+      const result = await response.json();
+      // Update local store with the response
+      const bakery = bakeries.find((b) => b.id === bakeryId);
+      updateOrder(orderId, {
+        assignedBakeryId: result.data.bakeryId,
+        assignedBakeryName: bakery?.name || "",
+        assignedAt: new Date().toISOString(),
+      });
+      return true;
+    } catch (error) {
+      console.error("Error assigning order:", error);
+      return false;
+    }
+  };
+
+  // Validation function to check if an order can be assigned to a bakery
+  const canAssignOrderToBakery = (
+    order: Order,
+    bakery: Bakery & { regions?: string[] },
+  ): { valid: boolean; reason?: string } => {
+    // 1. Check if bakery supports the order's cartType
+    const orderCartType = (order as Record<string, unknown>).cartType as
+      | string
+      | undefined;
+    if (orderCartType && bakery.types) {
+      const bakeryTypeMap: Record<string, BakeryType[]> = {
+        big_cakes: ["large_cakes"],
+        small_cakes: ["small_cakes"],
+        others: ["basket_cakes", "midume"], // Featured, sweets, addons
+      };
+
+      const requiredTypes = bakeryTypeMap[orderCartType];
+      const hasRequiredType =
+        requiredTypes &&
+        requiredTypes.some((type) => bakery.types.includes(type));
+
+      if (!hasRequiredType) {
+        return {
+          valid: false,
+          reason: `Bakery doesn't support ${orderCartType} orders`,
+        };
+      }
+    }
+
+    // 2. Check if bakery is in the same region
+    const orderRegion = (order as Record<string, unknown>).regionName as
+      | string
+      | undefined;
+    if (orderRegion && bakery.regions) {
+      const isInRegion = bakery.regions.includes(orderRegion);
+      if (!isInRegion) {
+        return {
+          valid: false,
+          reason: `Bakery is not in the ${orderRegion} region`,
+        };
+      }
+    }
+
+    // 3. Check available capacity
+    const orderCapacity =
+      ((order as Record<string, unknown>).totalCapacity as number) ||
+      order.capacitySlots ||
+      0;
+    const currentBakeryOrders = orders.filter(
+      (o) => o.assignedBakeryId === bakery.id,
+    );
+    const usedCapacity = currentBakeryOrders.reduce((sum, o) => {
+      const capacity =
+        ((o as Record<string, unknown>).totalCapacity as number) ||
+        o.capacitySlots ||
+        0;
+      return sum + capacity;
+    }, 0);
+
+    const availableCapacity = bakery.capacity - usedCapacity;
+
+    if (orderCapacity > availableCapacity) {
+      return {
+        valid: false,
+        reason: `Not enough capacity: need ${orderCapacity}, available ${availableCapacity}`,
+      };
+    }
+
+    return { valid: true };
   };
 
   const handleDragStart = (event: DragEndEvent) => {
@@ -442,27 +602,26 @@ const Orders = () => {
     const overOrder = orders.find((o) => o.id === overId);
 
     if (overBakery) {
-      // Check if bakery supports this order type
-      if (!overBakery.types.includes(activeOrder.type)) {
-        return; // Don't allow drop on incompatible bakery
+      // Validate if order can be assigned to this bakery
+      const validation = canAssignOrderToBakery(activeOrder, overBakery);
+      if (!validation.valid) {
+        console.warn(validation.reason);
+        return; // Don't allow assignment - bakery incompatible
       }
-
-      // Dragging over a bakery column
-      if (activeOrder.assignedBakeryId !== overBakery.id) {
-        updateOrder(activeId, {
-          assignedBakeryId: overBakery.id,
-          assignedBakeryName: overBakery.name,
-          assignedAt: new Date().toISOString(),
-        });
-      }
+      // Just update UI preview - API call happens on drop
     } else if (overOrder && overOrder.assignedBakeryId) {
-      // Dragging over another order - move to that bakery
+      // Dragging over another order
       if (activeOrder.assignedBakeryId !== overOrder.assignedBakeryId) {
-        updateOrder(activeId, {
-          assignedBakeryId: overOrder.assignedBakeryId,
-          assignedBakeryName: overOrder.assignedBakeryName,
-          assignedAt: new Date().toISOString(),
-        });
+        const targetBakery = bakeries.find(
+          (b) => b.id === overOrder.assignedBakeryId,
+        );
+        if (targetBakery) {
+          const validation = canAssignOrderToBakery(activeOrder, targetBakery);
+          if (!validation.valid) {
+            console.warn(validation.reason);
+            return; // Don't allow assignment
+          }
+        }
       }
     }
   };
@@ -488,17 +647,15 @@ const Orders = () => {
     const overBakery = bakeries.find((b) => b.id === overId);
 
     if (overBakery) {
-      // Check if bakery supports this order type
-      if (!overBakery.types.includes(activeOrder.type)) {
+      // Validate if order can be assigned to this bakery
+      const validation = canAssignOrderToBakery(activeOrder, overBakery);
+      if (!validation.valid) {
+        console.error("Cannot assign order:", validation.reason);
         return; // Don't allow drop on incompatible bakery
       }
 
-      // Dropping on a bakery column
-      updateOrder(activeId, {
-        assignedBakeryId: overBakery.id,
-        assignedBakeryName: overBakery.name,
-        assignedAt: new Date().toISOString(),
-      });
+      // Dropping on a bakery column - call API to assign
+      assignOrderToBakery(activeId, overBakery.id);
     } else if (overOrder && overOrder.assignedBakeryId) {
       // Dropping on another order - reorder within the same bakery
       const bakeryId = overOrder.assignedBakeryId;
@@ -521,15 +678,20 @@ const Orders = () => {
       if (activeOrder.assignedBakeryId !== bakeryId) {
         const bakery = bakeries.find((b) => b.id === bakeryId);
         if (bakery) {
-          updateOrder(activeId, {
-            assignedBakeryId: bakery.id,
-            assignedBakeryName: bakery.name,
-            assignedAt: new Date().toISOString(),
-          });
+          // Validate before assigning to the bakery
+          const validation = canAssignOrderToBakery(activeOrder, bakery);
+          if (!validation.valid) {
+            console.error("Cannot assign order:", validation.reason);
+            return;
+          }
+
+          // Call API to assign order to bakery
+          assignOrderToBakery(activeId, bakery.id);
         }
       }
     } else if (overId === "unassigned-sidebar") {
       // Dropping on the unassigned sidebar - remove bakery assignment
+      // For now, just update local state as there may not be an unassign endpoint
       updateOrder(activeId, {
         assignedBakeryId: undefined,
         assignedBakeryName: undefined,
@@ -561,40 +723,53 @@ const Orders = () => {
             <p className="text-muted-foreground">{t("orders.description")}</p>
           </div>
 
-          {/* Kanban Board - Only horizontal scroll here */}
-          <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
-            <div className="flex gap-4 h-full pb-4 min-h-fit">
-              {bakeries.map((bakery) => {
-                // Check if bakery is compatible with active order
-                const isIncompatible =
-                  activeOrder && !bakery.types.includes(activeOrder.type);
-
-                return (
-                  <div
-                    key={bakery.id}
-                    className={cn(
-                      "transition-all shrink-0",
-                      collapsedColumns.has(bakery.id) ? "w-16" : "w-75"
-                    )}
-                  >
-                    <BakeryColumn
-                      bakeryId={bakery.id}
-                      bakeryName={bakery.name}
-                      location={bakery.location}
-                      capacity={bakery.capacity}
-                      orders={bakeryOrders[bakery.id] || []}
-                      types={bakery.types}
-                      isCollapsed={collapsedColumns.has(bakery.id)}
-                      onToggleCollapse={() => toggleColumnCollapse(bakery.id)}
-                      t={t}
-                      activeOrderType={activeOrder?.type}
-                      isIncompatible={isIncompatible || false}
-                    />
-                  </div>
-                );
-              })}
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="flex items-center justify-center flex-1">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+                <p className="text-sm text-muted-foreground">
+                  {t("common.loading") || "Loading orders..."}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {!isLoading && (
+            <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
+              <div className="flex gap-4 h-full pb-4 min-h-fit">
+                {bakeries.map((bakery) => {
+                  // Check if bakery is compatible with active order
+                  const isIncompatible =
+                    activeOrder && !bakery.types.includes(activeOrder.type);
+
+                  return (
+                    <div
+                      key={bakery.id}
+                      className={cn(
+                        "transition-all shrink-0",
+                        collapsedColumns.has(bakery.id) ? "w-16" : "w-75",
+                      )}
+                    >
+                      <BakeryColumn
+                        bakeryId={bakery.id}
+                        bakeryName={bakery.name}
+                        location={bakery.locationDescription}
+                        capacity={bakery.capacity}
+                        orders={bakeryOrders[bakery.id] || []}
+                        types={bakery.types}
+                        isCollapsed={collapsedColumns.has(bakery.id)}
+                        onToggleCollapse={() => toggleColumnCollapse(bakery.id)}
+                        t={t}
+                        activeOrderType={activeOrder?.type}
+                        isIncompatible={isIncompatible || false}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar - Scrollable, fixed width, absolutely positioned */}
@@ -610,7 +785,7 @@ const Orders = () => {
             <CardHeader className="py-2 px-3">
               <div className="space-y-1.5">
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary w-fit">
-                  #{activeOrder.id}
+                  {activeOrder.referenceNumber || `#${activeOrder.id}`}
                 </span>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">

@@ -19,19 +19,17 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    navigate(
-      `/management/regions/${region.name.toLowerCase().replace(/\s+/g, "-")}`
-    );
+    navigate(`/management/regions/${region.id}`);
   };
 
   return (
     <div
-      className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 relative min-h-40 flex items-center justify-center cursor-pointer"
+      className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col cursor-pointer relative"
       onClick={handleCardClick}
     >
       {/* Action Menu */}
       <div
-        className="absolute top-4 right-4"
+        className="absolute top-4 right-4 z-50"
         onClick={(e) => e.stopPropagation()}
       >
         <DropdownMenu>
@@ -54,10 +52,35 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
         </DropdownMenu>
       </div>
 
-      {/* Region Name */}
-      <h3 className="text-2xl font-semibold text-card-foreground text-center">
-        {region.name}
-      </h3>
+      {/* Region Image - Fixed Size Box */}
+      {region.image && (
+        <div className="w-full h-48 bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden rounded-t-lg">
+          <img
+            src={region.image}
+            alt={region.name}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
+
+      {/* Content Footer - Name and Availability */}
+      <div className="p-4 flex items-center justify-between gap-3">
+        {/* Region Name */}
+        <h3 className="text-lg font-semibold text-card-foreground flex-1">
+          {region.name}
+        </h3>
+
+        {/* Availability Badge */}
+        <div
+          className={`px-3 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap ${
+            region.isAvailable
+              ? "bg-[color:var(--color-chart-1)]"
+              : "bg-[color:var(--color-destructive)]"
+          }`}
+        >
+          {region.isAvailable ? "Available" : "Unavailable"}
+        </div>
+      </div>
     </div>
   );
 }

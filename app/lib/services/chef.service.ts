@@ -4,6 +4,7 @@ export type Chef = {
   id: string;
   name: string;
   specialization: string;
+  bio?: string | null;
   image: string | null;
   bakeryId: string;
   createdAt: string;
@@ -13,6 +14,7 @@ export type Chef = {
 export type CreateChefRequest = {
   name: string;
   specialization: string;
+  bio?: string;
   image?: string;
   bakeryId: string;
 };
@@ -32,10 +34,10 @@ export type PaginatedChefResponse = {
 export const chefApi = {
   getAll: async (
     page = 1,
-    limit = 10
+    limit = 10,
   ): Promise<ApiResponse<PaginatedChefResponse>> => {
     return apiClient.get<PaginatedChefResponse>(
-      `/chefs?page=${page}&limit=${limit}`
+      `/chefs?page=${page}&limit=${limit}`,
     );
   },
 
@@ -49,7 +51,7 @@ export const chefApi = {
 
   update: async (
     id: string,
-    data: UpdateChefRequest
+    data: UpdateChefRequest,
   ): Promise<ApiResponse<Chef>> => {
     return apiClient.patch<Chef>(`/chefs/${id}`, data);
   },

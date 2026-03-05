@@ -1,20 +1,22 @@
 import { create } from "zustand";
+import type { Region } from "@/data/regions";
 
 export interface AddRegionConfig {
   mode: "add" | "edit";
   initialValue?: string;
+  region?: Region;
 }
 
 interface AddRegionState {
   isOpen: boolean;
   config: AddRegionConfig | null;
   inputValue: string;
-  onConfirmCallback: ((name: string) => void) | null;
+  callback: ((values: Record<string, unknown>) => void) | null;
 
   // Actions
   openDialog: (
     config: AddRegionConfig,
-    onConfirm: (name: string) => void
+    onCallback?: (values: Record<string, unknown>) => void,
   ) => void;
   closeDialog: () => void;
   setInputValue: (value: string) => void;
@@ -25,14 +27,14 @@ export const useAddRegionStore = create<AddRegionState>((set, get) => ({
   isOpen: false,
   config: null,
   inputValue: "",
-  onConfirmCallback: null,
+  callback: null,
 
-  openDialog: (config, onConfirm) => {
+  openDialog: (config, onCallback) => {
     set({
       isOpen: true,
       config,
       inputValue: config.initialValue || "",
-      onConfirmCallback: onConfirm,
+      callback: onCallback,
     });
   },
 
@@ -41,16 +43,16 @@ export const useAddRegionStore = create<AddRegionState>((set, get) => ({
       isOpen: false,
       config: null,
       inputValue: "",
-      onConfirmCallback: null,
+      callback: null,
     });
   },
 
   setInputValue: (value) => set({ inputValue: value }),
 
   confirm: () => {
-    const { inputValue, onConfirmCallback, closeDialog } = get();
-    if (inputValue.trim() && onConfirmCallback) {
-      onConfirmCallback(inputValue.trim());
+    const { callback, closeDialog } = get();
+    if (callback) {
+      callback({});
       closeDialog();
     }
   },

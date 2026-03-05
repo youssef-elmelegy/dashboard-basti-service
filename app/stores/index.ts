@@ -13,3 +13,4 @@ export { useAddRegionStore } from "@/stores/addRegionStore";
 export type { Chef } from "@/data/chefs";
 export type { Bakery } from "@/data/bakeries";
 export type { Region } from "@/data/regions";
+export type { Cake } from "@/lib/services/cake.service";

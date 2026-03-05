@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import Root from "@/root";
-import Dashboard from "@/routes/dashboard";
+import ManagerDashboard from "@/routes/manager-dashboard";
 import Orders from "@/routes/orders";
 import BakeryOrders from "@/routes/bakery-orders";
 import Customers from "@/routes/customers";
@@ -13,15 +13,22 @@ import RegionDetailPage from "@/routes/management/region-detail";
 import BakeriesPage from "@/routes/management/bakeries";
 import BakeryDetailPage from "@/routes/management/bakery-detail";
 import ChefsPage from "@/routes/management/chefs";
-import BigCakesPage from "@/routes/products/custom-creations";
-import SmallCakesPage from "@/routes/products/small-cakes";
+import AdminsPage from "@/routes/management/admins";
+import SliderImagesPage from "@/routes/management/slider-images";
+import FeaturedCakesPage from "@/routes/products/featured-cakes";
 import AddOnsPage from "@/routes/products/add-ons";
+import SweetsPage from "@/routes/sweets";
+import FlavorsPage from "@/routes/custom-cakes/flavors";
+import ShapesPage from "@/routes/custom-cakes/shapes";
+import DecorationsPage from "@/routes/custom-cakes/decorations";
+import PredesignedCakesPage from "@/routes/custom-cakes/predesigned-cakes";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
 import ForgotPasswordPage from "@/routes/auth/forgot-password";
 import OTPVerifyPage from "@/routes/auth/otp-verify";
 import ResetPasswordPage from "@/routes/auth/reset-password";
 import OrderDetailPage from "@/routes/order-detail";
+import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
@@ -29,29 +36,49 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "login",
-        element: <LoginPage />,
+        element: (
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        ),
       },
       {
         path: "forgot-password",
-        element: <ForgotPasswordPage />,
+        element: (
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        ),
       },
       {
         path: "otp-verify",
-        element: <OTPVerifyPage />,
+        element: (
+          <PublicRoute>
+            <OTPVerifyPage />
+          </PublicRoute>
+        ),
       },
       {
         path: "reset-password",
-        element: <ResetPasswordPage />,
+        element: (
+          <PublicRoute>
+            <ResetPasswordPage />
+          </PublicRoute>
+        ),
       },
     ],
   },
   {
     path: "/",
-    element: <Root />,
+    element: (
+      <ProtectedRoute>
+        <Root />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <ManagerDashboard />,
       },
       {
         path: "orders",
@@ -90,7 +117,7 @@ export const router = createBrowserRouter([
         element: <RegionsPage />,
       },
       {
-        path: "management/regions/:name",
+        path: "management/regions/:id",
         element: <RegionDetailPage />,
       },
       {
@@ -106,16 +133,40 @@ export const router = createBrowserRouter([
         element: <ChefsPage />,
       },
       {
-        path: "products/large-cakes",
-        element: <BigCakesPage />,
+        path: "management/admins",
+        element: <AdminsPage />,
       },
       {
-        path: "products/small-cakes",
-        element: <SmallCakesPage />,
+        path: "management/slider-images",
+        element: <SliderImagesPage />,
+      },
+      {
+        path: "products/featured-cakes",
+        element: <FeaturedCakesPage />,
       },
       {
         path: "products/add-ons",
         element: <AddOnsPage />,
+      },
+      {
+        path: "sweets",
+        element: <SweetsPage />,
+      },
+      {
+        path: "custom-cakes/flavors",
+        element: <FlavorsPage />,
+      },
+      {
+        path: "custom-cakes/shapes",
+        element: <ShapesPage />,
+      },
+      {
+        path: "custom-cakes/decorations",
+        element: <DecorationsPage />,
+      },
+      {
+        path: "custom-cakes/predesigned-cakes",
+        element: <PredesignedCakesPage />,
       },
     ],
   },

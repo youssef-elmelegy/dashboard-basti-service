@@ -11,7 +11,7 @@ import type { ApiResponse } from "@/lib/api-client";
  */
 export type BakeryType =
   | "basket_cakes"
-  | "medium_cakes"
+  | "midume"
   | "small_cakes"
   | "large_cakes"
   | "custom";
@@ -72,16 +72,16 @@ export const bakeryApi = {
     return apiClient.get<Bakery>(`/bakeries/${id}`);
   },
 
-/**
- * Create new bakery
- * 
- * REQUIRED FIELDS:
- * - name: string (2-255 chars)
- * - locationDescription: string (min 5 chars)
- * - regionId: string (valid UUID)
- * - capacity: number (>= 0)
- * - bakeryTypes: string[] (valid types: basket_cakes, medium_cakes, small_cakes, large_cakes, custom)
- */
+  /**
+   * Create new bakery
+   *
+   * REQUIRED FIELDS:
+   * - name: string (2-255 chars)
+   * - locationDescription: string (min 5 chars)
+   * - regionId: string (valid UUID)
+   * - capacity: number (>= 0)
+   * - bakeryTypes: string[] (valid types: basket_cakes, midume, small_cakes, large_cakes, custom)
+   */
   create: (bakeryData: CreateBakeryRequest): Promise<ApiResponse<Bakery>> => {
     return apiClient.post<Bakery>("/bakeries", bakeryData);
   },
@@ -91,7 +91,7 @@ export const bakeryApi = {
    */
   update: (
     id: string,
-    bakeryData: UpdateBakeryRequest
+    bakeryData: UpdateBakeryRequest,
   ): Promise<ApiResponse<Bakery>> => {
     return apiClient.patch<Bakery>(`/bakeries/${id}`, bakeryData);
   },

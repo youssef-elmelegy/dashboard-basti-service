@@ -5,20 +5,44 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import type { SmallCake, AddOn } from "@/data/products";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+
+type ProductType =
+  | "featured-cake"
+  | "addon"
+  | "flavor"
+  | "shape"
+  | "decoration"
+  | "sweet"
+  | "predesigned-cake";
+
+interface ProductData {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  images?: string[];
+  shapeUrl?: string;
+  flavorUrl?: string;
+  decorationUrl?: string;
+  mainPrice?: number;
+  price?: number;
+  sizes?: Array<{ name: string; price: number } | string>;
+}
 
 interface ProductSelection {
-  type: "cake" | "sweet";
-  product: SmallCake | AddOn;
-  selectedSizes: Array<{ name: string; price: number }>;
+  type: ProductType;
+  product: ProductData;
+  selectedSizes?: Array<{ name: string; price: number }>;
 }
 
 interface ProductSelectionSheetProps {
   selectedProduct: ProductSelection | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (price: number, sizePrices?: Record<string, number>) => void;
   onSelectSize: (size: { name: string; price: number }) => void;
   onRemoveSize: (sizeName: string) => void;
 }
@@ -28,111 +52,135 @@ export function ProductSelectionSheet({
   isOpen,
   onOpenChange,
   onConfirm,
-  onSelectSize,
-  onRemoveSize,
 }: ProductSelectionSheetProps) {
+  const [regionPrice, setRegionPrice] = useState<number>(0);
+  const [sizePrices, setSizePrices] = useState<Record<string, number>>({});
+
   if (!selectedProduct) return null;
 
+  const isCake = selectedProduct.type === "featured-cake";
   const isSweet = selectedProduct.type === "sweet";
-  const isCake = selectedProduct.type === "cake";
+  const productName =
+    selectedProduct.product.name || selectedProduct.product.title || "Product";
+  const productImage =
+    selectedProduct.product.images?.[0] ||
+    selectedProduct.product.shapeUrl ||
+    selectedProduct.product.flavorUrl ||
+    selectedProduct.product.decorationUrl;
+  const productPrice = isCake
+    ? selectedProduct.product.mainPrice
+    : selectedProduct.product.price;
+  const productSizes = selectedProduct.product.sizes || [];
+  const showSizeSelection = (isCake || isSweet) && productSizes.length > 0;
+
+  // Normalize sizes to always be strings
+  const normalizedSizes = productSizes.map((size) =>
+    typeof size === "string" ? size : size.name,
+  );
+
+  const handleConfirm = () => {
+    if (regionPrice <= 0) {
+      alert("Please enter a valid price");
+      return;
+    }
+    onConfirm(regionPrice, showSizeSelection ? sizePrices : undefined);
+    setRegionPrice(0);
+    setSizePrices({});
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Select {isCake ? "Cake" : "Sweet"}</SheetTitle>
+          <SheetTitle>Product Details</SheetTitle>
         </SheetHeader>
 
         <div className="mt-6 space-y-6 px-4 pb-6">
           {/* Product Image */}
-          <div className="aspect-square rounded-lg overflow-hidden">
-            <img
-              src={selectedProduct.product.images?.[0]}
-              alt={selectedProduct.product.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {/* Product Info */}
-          <div>
-            <h3 className="text-xl font-bold">
-              {selectedProduct.product.name}
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              {selectedProduct.product.description}
-            </p>
-          </div>
-
-          {/* Size Selection for Cakes */}
-          {isCake && (
-            <div className="space-y-3">
-              <label className="text-sm font-medium">
-                Select Sizes (Multiple)
-              </label>
-              <div className="space-y-2">
-                {(selectedProduct.product as SmallCake).sizes.map(
-                  (size: { name: string; price: number }) => {
-                    const isSelected = selectedProduct.selectedSizes.some(
-                      (s) => s.name === size.name
-                    );
-                    return (
-                      <Button
-                        key={size.name}
-                        variant={isSelected ? "default" : "outline"}
-                        className="w-full justify-between"
-                        onClick={() => {
-                          if (isSelected) {
-                            onRemoveSize(size.name);
-                          } else {
-                            onSelectSize(size);
-                          }
-                        }}
-                      >
-                        <span>{size.name}</span>
-                        <span className="font-bold">${size.price}</span>
-                      </Button>
-                    );
-                  }
-                )}
-              </div>
-              {selectedProduct.selectedSizes.length > 0 && (
-                <div className="bg-muted p-2 rounded text-sm">
-                  <p className="font-semibold mb-1">Selected Sizes:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProduct.selectedSizes.map((size) => (
-                      <Badge key={size.name} variant="secondary">
-                        {size.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {productImage && (
+            <div className="aspect-square rounded-lg overflow-hidden">
+              <img
+                src={productImage}
+                alt={productName}
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
 
-          {/* Price Display for Sweets */}
-          {isSweet && (
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Price</span>
-                <span className="text-2xl font-bold">
-                  ${(selectedProduct.product as AddOn).price}
-                </span>
-              </div>
+          {/* Product Info */}
+          <div>
+            <h3 className="text-xl font-bold">{productName}</h3>
+            {selectedProduct.product.description && (
+              <p className="text-muted-foreground mt-2">
+                {selectedProduct.product.description}
+              </p>
+            )}
+            {selectedProduct.product.category && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Category: {selectedProduct.product.category}
+              </p>
+            )}
+          </div>
+
+          {/* Regional Price Input */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Price in this Region</label>
+            <div className="flex gap-2">
+              <span className="flex items-center text-muted-foreground">$</span>
+              <Input
+                type="number"
+                placeholder="Enter price"
+                value={regionPrice || ""}
+                onChange={(e) =>
+                  setRegionPrice(parseFloat(e.target.value) || 0)
+                }
+                min="0"
+                step="0.01"
+              />
+            </div>
+            {productPrice && (
+              <p className="text-xs text-muted-foreground">
+                Original price: ${productPrice}
+              </p>
+            )}
+          </div>
+
+          {/* Size Price Inputs for Cakes and Sweets */}
+          {showSizeSelection && (
+            <div className="space-y-4">
+              {normalizedSizes.map((sizeName) => (
+                <div key={sizeName} className="space-y-2">
+                  <label className="text-sm font-medium">{sizeName}</label>
+                  <div className="flex gap-2">
+                    <span className="flex items-center text-muted-foreground">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      placeholder={`Enter ${sizeName} price`}
+                      value={sizePrices[sizeName] || ""}
+                      onChange={(e) =>
+                        setSizePrices({
+                          ...sizePrices,
+                          [sizeName]: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {/* Confirm Button */}
           <Button
             className="w-full"
-            disabled={isCake && selectedProduct.selectedSizes.length === 0}
-            onClick={onConfirm}
+            disabled={regionPrice <= 0}
+            onClick={handleConfirm}
           >
-            {isCake
-              ? selectedProduct.selectedSizes.length > 0
-                ? `Add to Selection (${selectedProduct.selectedSizes.length} sizes)`
-                : "Select at least one size"
-              : "Add to Selection"}
+            Add to Region
           </Button>
         </div>
       </SheetContent>

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,23 +17,54 @@ import logoSvg from "@/assets/logo.svg";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function OTPPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { verifyOtp, forgotPassword, isLoading, error } = useAuth();
   const [otp, setOtp] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+  const email = (location.state as { email: string } | null)?.email || "";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle OTP verification
-    if (otp.length === 6) {
-      // OTP verified, redirect to reset password page
-      navigate("/auth/reset-password");
+    setLocalError(null);
+
+    if (otp.length !== 6) {
+      setLocalError("Please enter a valid 6-digit code");
+      return;
+    }
+
+    if (!email) {
+      setLocalError("Email is missing. Please try again.");
+      return;
+    }
+
+    try {
+      const resetToken = await verifyOtp(email, otp);
+      // Store resetToken in localStorage as fallback
+      localStorage.setItem("resetToken", resetToken);
+      navigate("/auth/reset-password", { state: { email, resetToken } });
+    } catch (err) {
+      setLocalError(error || "Failed to verify code. Please try again.");
     }
   };
 
-  const handleResend = () => {
-    // Handle resend OTP logic
+  const handleResend = async () => {
+    setLocalError(null);
     setOtp("");
+
+    if (!email) {
+      setLocalError("Email is missing. Please go back and try again.");
+      return;
+    }
+
+    try {
+      await forgotPassword(email);
+    } catch (err) {
+      setLocalError(error || "Failed to resend code. Please try again.");
+    }
   };
 
   return (
@@ -62,6 +93,13 @@ export default function OTPPage() {
                       We sent a 6-digit code to your email.
                     </p>
                   </div>
+
+                  {(localError || error) && (
+                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+                      {localError || error}
+                    </div>
+                  )}
+
                   <Field>
                     <FieldLabel htmlFor="otp" className="sr-only">
                       Verification code
@@ -72,6 +110,7 @@ export default function OTPPage() {
                       required
                       value={otp}
                       onChange={setOtp}
+                      disabled={isLoading}
                     >
                       <InputOTPGroup className="gap-2 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
                         <InputOTPSlot index={0} />
@@ -92,15 +131,19 @@ export default function OTPPage() {
                       Enter the 6-digit code sent to your email.
                     </FieldDescription>
                   </Field>
-                  <Button type="submit" disabled={otp.length !== 6}>
-                    Verify
+                  <Button
+                    type="submit"
+                    disabled={otp.length !== 6 || isLoading}
+                  >
+                    {isLoading ? "Verifying..." : "Verify"}
                   </Button>
                   <FieldDescription className="text-center">
                     Didn&apos;t receive the code?{" "}
                     <button
                       type="button"
                       onClick={handleResend}
-                      className="underline hover:text-foreground"
+                      className="underline hover:text-foreground disabled:opacity-50"
+                      disabled={isLoading}
                     >
                       Resend
                     </button>

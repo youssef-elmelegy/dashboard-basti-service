@@ -5,20 +5,32 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const navigate = useNavigate();
+  const { login, isLoading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Check if both email and password are filled
-    if (email && password) {
+    setLocalError(null);
+
+    if (!email || !password) {
+      setLocalError("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await login({ email, password });
       navigate("/");
+    } catch (err) {
+      setLocalError(error || "Login failed. Please try again.");
     }
   };
 
@@ -35,6 +47,13 @@ export function LoginForm({
             Enter your email and password below to login
           </p>
         </div>
+
+        {(localError || error) && (
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            {localError || error}
+          </div>
+        )}
+
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
@@ -44,6 +63,7 @@ export function LoginForm({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
           />
         </Field>
         <Field>
@@ -53,6 +73,7 @@ export function LoginForm({
               type="button"
               onClick={() => navigate("/auth/forgot-password")}
               className="ml-auto text-sm underline-offset-4 hover:underline"
+              disabled={isLoading}
             >
               Forgot your password?
             </button>
@@ -63,12 +84,14 @@ export function LoginForm({
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
           />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </Button>
         </Field>
-        <Field></Field>
       </FieldGroup>
     </form>
   );

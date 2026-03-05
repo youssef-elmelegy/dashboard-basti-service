@@ -1,123 +1,244 @@
 import { create } from "zustand";
-import type { AddOn } from "@/data/products";
+import {
+  addOnApi,
+  type AddOn,
+  type CreateAddOnRequest,
+  type UpdateAddOnRequest,
+} from "@/lib/services/addOn.service";
+import {
+  uploadImage,
+  deleteImages,
+  type CloudinaryUploadResult,
+  type DeleteImageResult,
+} from "@/lib/api/addOn.api";
 
 interface AddOnStore {
+  // Data
   addOns: AddOn[];
-  addAddOn: (addOn: AddOn) => void;
-  updateAddOn: (id: string, addOn: Omit<AddOn, "id">) => void;
-  deleteAddOn: (id: string) => void;
-  toggleAddOnActive: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  fetchAddOns: (page?: number, limit?: number) => Promise<void>;
+  addAddOn: (addOn: CreateAddOnRequest) => Promise<AddOn>;
+  updateAddOn: (id: string, addOn: UpdateAddOnRequest) => Promise<AddOn>;
+  deleteAddOn: (id: string) => Promise<void>;
+  toggleAddOnActive: (id: string) => Promise<AddOn>;
+  uploadAddOnImage: (file: File) => Promise<CloudinaryUploadResult>;
+  deleteAddOnImages: (urls: string[]) => Promise<DeleteImageResult>;
+  clearError: () => void;
 }
 
 export const useAddOnStore = create<AddOnStore>((set) => ({
-  addOns: [
-    {
-      id: "sweet1",
-      name: "Chocolate Truffles",
-      description: "Rich, creamy chocolate truffles with various flavors",
-      images: [
-        "https://images.unsplash.com/photo-1624353365960-3da42522f891?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1599599810694-2fa3a60c7f49?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1571877227200-a0fb556c2a11?w=500&h=500&fit=crop",
-      ],
-      category: "sweets",
-      price: 25,
-      tags: ["birthday", "custom"],
-      isActive: true,
-    },
-    {
-      id: "sweet2",
-      name: "Macarons Set",
-      description: "Delicate French macarons in assorted colors and flavors",
-      images: [
-        "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1587080190519-41793a63f3cb?w=500&h=500&fit=crop",
-      ],
-      category: "sweets",
-      price: 35,
-      tags: ["wedding", "anniversary"],
-      isActive: true,
-    },
-    {
-      id: "addon1",
-      name: "Birthday Card",
-      description: "Beautiful custom birthday greeting card",
-      images: [
-        "https://imgs.search.brave.com/bbgBcVcY31G6tKq5FJzOdT7LWuKlSXA6KIxqyveu-JM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/cGFwZXJzb3VyY2Uu/Y29tL2Nkbi9zaG9w/L2ZpbGVzLzYyMjkw/ODAxNy5qcGc_dj0x/NzUzMzkxNzU2Jndp/ZHRoPTk5Ng",
-        "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.3",
-      ],
-      category: "card",
-      price: 5,
-      tags: ["birthday", "greeting"],
-      isActive: true,
-    },
-    {
-      id: "addon2",
-      name: "Helium Balloons",
-      description: "Colorful helium balloons bundle (12 pack)",
-      images: [
-        "https://imgs.search.brave.com/G857IE5Qf94BmG1140eECgSNWpfXQJvjwYDTBm1tLi4/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMudW5zcGxhc2gu/Y29tL3Bob3RvLTE1/MDQxOTY2MDY2NzIt/YWVmNWM5Y2VmYzky/P2ZtPWpwZyZxPTYw/Jnc9MzAwMCZpeGxp/Yj1yYi00LjEuMCZp/eGlkPU0zd3hNakEz/ZkRCOE1IeHlaV0Z5/WTJoOE9IeDhZbUZz/Ykc5dmJuTjhaVzU4/TUh4OE1IeDhmREE9",
-        "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.4&fp-y=0.5",
-      ],
-      category: "balloon",
-      price: 15,
-      tags: ["birthday", "decoration"],
-      isActive: true,
-    },
-    {
-      id: "addon3",
-      name: "Scented Candles",
-      description: "Premium scented candles for cake decoration",
-      images: [
-        "https://imgs.search.brave.com/MSHbWiK77YQSnv8fnG2eGWfo6SG0qLf_PvNZD5PXTPU/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvMTU3/MTgyNDU5L3Bob3Rv/L2JpcnRoZGF5LWNh/a2UuanBnP3M9NjEy/eDYxMiZ3PTAmaz0y/MCZjPUsyMTdkLWlk/QWdVa2ZKeFd2d2p0/X0h1OWI4U0l5QVNP/OGVHcTN6a1FQRlE9",
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.4",
-      ],
-      category: "candle",
-      price: 10,
-      tags: ["decoration", "premium"],
-      isActive: true,
-    },
-    {
-      id: "addon4",
-      name: "Confetti Set",
-      description: "Colorful confetti for cake topping and decoration",
-      images: [
-        "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=500&h=500&fit=crop",
-        "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.3",
-        "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=500&h=500&fit=crop&crop=focalpoint&fp-x=0.5&fp-y=0.7",
-      ],
-      category: "decoration",
-      price: 8,
-      tags: ["birthday", "decoration"],
-      isActive: true,
-    },
-  ],
+  // Initial state
+  addOns: [],
+  isLoading: false,
+  error: null,
 
-  addAddOn: (addOn) =>
-    set((state) => ({
-      addOns: [...state.addOns, addOn],
-    })),
+  // Fetch all add-ons from API
+  fetchAddOns: async (page = 1, limit = 10) => {
+    console.log(
+      `AddOnStore: Fetching add-ons (page: ${page}, limit: ${limit})...`,
+    );
+    set({ isLoading: true, error: null });
+    try {
+      const response = await addOnApi.getAll({ page, limit });
+      console.log("AddOnStore: API response:", response);
 
-  updateAddOn: (id, updatedAddOn) =>
-    set((state) => ({
-      addOns: state.addOns.map((addOn) =>
-        addOn.id === id ? { ...addOn, ...updatedAddOn, id } : addOn
-      ),
-    })),
+      if (response.success && response.data) {
+        console.log("AddOnStore: Add-ons fetched successfully:", response.data);
+        set({
+          addOns: response.data.items,
+          isLoading: false,
+        });
+      } else {
+        const error = response.message || "Failed to fetch add-ons";
+        console.error("AddOnStore: API returned error:", error);
+        throw new Error(error);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch add-ons";
+      console.error("AddOnStore: Fetch failed:", errorMessage, error);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
 
-  deleteAddOn: (id) =>
-    set((state) => ({
-      addOns: state.addOns.filter((addOn) => addOn.id !== id),
-    })),
+  // Create new add-on
+  addAddOn: async (addOn: CreateAddOnRequest) => {
+    console.log("AddOnStore: Creating add-on...", addOn);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await addOnApi.create(addOn);
+      console.log("AddOnStore: Create response:", response);
 
-  toggleAddOnActive: (id) =>
-    set((state) => ({
-      addOns: state.addOns.map((addOn) =>
-        addOn.id === id ? { ...addOn, isActive: !addOn.isActive } : addOn
-      ),
-    })),
+      if (response.success && response.data) {
+        console.log("AddOnStore: Add-on created successfully:", response.data);
+        set((state) => ({
+          addOns: [...state.addOns, response.data] as AddOn[],
+          isLoading: false,
+        }));
+        return response.data;
+      } else {
+        throw new Error(response.message || "Failed to create add-on");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create add-on";
+      console.error("AddOnStore: Create failed:", errorMessage);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Update add-on
+  updateAddOn: async (id: string, addOn: UpdateAddOnRequest) => {
+    console.log(`AddOnStore: Updating add-on ${id}...`, addOn);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await addOnApi.update(id, addOn);
+      console.log("AddOnStore: Update response:", response);
+
+      if (response.success && response.data) {
+        console.log("AddOnStore: Add-on updated successfully:", response.data);
+        const updatedAddOn = response.data;
+        set((state) => ({
+          addOns: state.addOns.map((a: AddOn) =>
+            a.id === id ? updatedAddOn : a,
+          ) as AddOn[],
+          isLoading: false,
+        }));
+        return updatedAddOn;
+      } else {
+        throw new Error(response.message || "Failed to update add-on");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update add-on";
+      console.error("AddOnStore: Update failed:", errorMessage);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Delete add-on
+  deleteAddOn: async (id: string) => {
+    console.log(`AddOnStore: Deleting add-on ${id}...`);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await addOnApi.delete(id);
+      console.log("AddOnStore: Delete response:", response);
+
+      if (response.success) {
+        console.log("AddOnStore: Add-on deleted successfully");
+        set((state) => ({
+          addOns: state.addOns.filter((a: AddOn) => a.id !== id) as AddOn[],
+          isLoading: false,
+        }));
+      } else {
+        throw new Error(response.message || "Failed to delete add-on");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete add-on";
+      console.error("AddOnStore: Delete failed:", errorMessage);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Toggle add-on status
+  toggleAddOnActive: async (id: string) => {
+    console.log(`AddOnStore: Toggling add-on status ${id}...`);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await addOnApi.toggleStatus(id);
+      console.log("AddOnStore: Toggle status response:", response);
+
+      if (response.success && response.data) {
+        console.log(
+          "AddOnStore: Add-on status toggled successfully:",
+          response.data,
+        );
+        const toggledAddOn = response.data;
+        set((state) => ({
+          addOns: state.addOns.map((a: AddOn) =>
+            a.id === id ? toggledAddOn : a,
+          ) as AddOn[],
+          isLoading: false,
+        }));
+        return toggledAddOn;
+      } else {
+        throw new Error(response.message || "Failed to toggle add-on status");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to toggle add-on status";
+      console.error("AddOnStore: Toggle status failed:", errorMessage);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Upload add-on image
+  uploadAddOnImage: async (file: File) => {
+    console.log(
+      "AddOnStore.uploadAddOnImage called with file:",
+      file.name,
+      "size:",
+      file.size,
+      "type:",
+      file.type,
+    );
+    set({ isLoading: true, error: null });
+    try {
+      console.log("Calling uploadImage with folder: basti/addons");
+      const response = await uploadImage(file, "basti/addons");
+      console.log("Image upload response:", response);
+
+      if (response.success && response.data) {
+        console.log("Upload successful, returning data:", response.data);
+        set({ isLoading: false });
+        return response.data;
+      }
+      const errorMsg = response.message || "Image upload failed";
+      console.error("Upload failed - response indicates error:", errorMsg);
+      throw new Error(errorMsg);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to upload image";
+      console.error("Error uploading image:", errorMessage, error);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Delete add-on images
+  deleteAddOnImages: async (urls: string[]) => {
+    console.log("AddOnStore.deleteAddOnImages called with urls:", urls);
+    set({ isLoading: true, error: null });
+    try {
+      const response = await deleteImages(urls);
+      console.log("Image delete response:", response);
+      if (response.success && response.data) {
+        set({ isLoading: false });
+        return response.data;
+      }
+      const errorMsg = response.message || "Image deletion failed";
+      console.error("Deletion failed - response indicates error:", errorMsg);
+      throw new Error(errorMsg);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete images";
+      console.error("Error deleting images:", errorMessage, error);
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Clear error state
+  clearError: () => set({ error: null }),
 }));

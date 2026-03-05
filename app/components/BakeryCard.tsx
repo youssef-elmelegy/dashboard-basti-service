@@ -18,7 +18,7 @@ const BAKERY_TYPE_CONFIG: Record<
   }
 > = {
   basket_cakes: { label: "Basket Cakes", color: "default" },
-  medium_cakes: { label: "Medium Cakes", color: "secondary" },
+  midume: { label: "Midume", color: "secondary" },
   small_cakes: { label: "Small Cakes", color: "outline" },
   large_cakes: { label: "Large Cakes", color: "destructive" },
   custom: { label: "Custom", color: "default" },

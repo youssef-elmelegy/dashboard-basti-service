@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
-import type { Order } from "@/data/orders";
+import { LocationMap } from "@/components/location-map";
+import type { Order, OrderItem } from "@/data/orders";
+import { orderApi, type OrderResponse } from "@/lib/services/order.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,12 +21,14 @@ import {
   Phone,
   Mail,
   Clock,
-  MessageSquare,
   Check,
   X,
   ChevronLeft,
   Upload,
   RotateCw,
+  Download,
+  FileText,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +48,90 @@ const qualityCheckItems = [
   { id: "decoration", label: "Decoration Quality" },
   { id: "freshness", label: "Freshness Check" },
 ];
+
+/**
+ * Get the category type of an order item
+ */
+function getItemCategory(item: OrderItem): string {
+  if (item.addonId) return "Add-on";
+  if (item.sweetId) return "Sweet";
+  if (item.featuredCakeId) return "Featured Cake";
+  if (item.predesignedCakeId) return "Predesigned Cake";
+  if (item.customCake) return "Custom Cake";
+  return "Item";
+}
+
+// Function to download greeting card as image
+function downloadCardAsImage(cardMessage: {
+  to: string;
+  from: string;
+  message: string;
+}) {
+  // Create a canvas element
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 600;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) return;
+
+  // Draw gradient background
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#fef3c7"); // amber-50
+  gradient.addColorStop(1, "#fed7aa"); // orange-50
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw border
+  ctx.strokeStyle = "#fbbf24"; // amber-200
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+  // Set text properties
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.textAlign = "center";
+
+  // Draw "To"
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#b45309"; // amber-700
+  ctx.textAlign = "left";
+  ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
+
+  // Draw message
+  ctx.font = "italic 28px Georgia";
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.textAlign = "center";
+  const lines = cardMessage.message.split("\n");
+  let yPos = 240;
+  lines.forEach((line: string) => {
+    ctx.fillText(line, canvas.width / 2, yPos);
+    yPos += 40;
+  });
+
+  // Draw signature
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "#b45309"; // amber-700
+  ctx.textAlign = "right";
+  ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+
+  ctx.font = "24px Georgia";
+  ctx.fillStyle = "#78350f"; // amber-900
+  ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
+
+  // Convert canvas to blob and download
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  });
+}
 
 // Standalone Image Upload Component (without form context)
 function ImageUpload({
@@ -156,7 +244,7 @@ const OrderTimer = memo(function OrderTimer({
         "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded",
         isExpiring
           ? "bg-red-500/10 text-red-500"
-          : "bg-muted text-muted-foreground"
+          : "bg-muted text-muted-foreground",
       )}
     >
       <Clock className="w-3 h-3" />
@@ -196,7 +284,7 @@ function CancellationDialog({
         "fixed inset-0 z-50 flex items-center justify-center transition-all duration-200",
         isOpen
           ? "bg-black/50 opacity-100 visible"
-          : "bg-black/0 opacity-0 invisible"
+          : "bg-black/0 opacity-0 invisible",
       )}
       onClick={onClose}
     >
@@ -273,7 +361,7 @@ function OrderSidebarCard({
       <Card
         className={cn(
           "cursor-pointer transition-all hover:shadow-md",
-          isSelected && "ring-2 ring-primary"
+          isSelected && "ring-2 ring-primary",
         )}
         onClick={onSelect}
       >
@@ -285,9 +373,9 @@ function OrderSidebarCard({
                 onSelect();
               }}
               className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-              title={`Order ${order.id}`}
+              title={`Order ${order.referenceNumber}`}
             >
-              #{order.id}
+              #{order.referenceNumber}
             </button>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
@@ -302,7 +390,7 @@ function OrderSidebarCard({
                 variant="outline"
                 className={cn(
                   "capitalize text-xs shrink-0",
-                  statusColors[order.status]
+                  statusColors[order.status],
                 )}
               >
                 {order.status}
@@ -371,47 +459,212 @@ export default function BakeryOrdersPage() {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
-  const bakeries = useBakeryStore((state) => state.bakeries);
-  const orders = useOrderStore((state) => state.orders);
+  const currentBakery = useBakeryStore((state) => state.currentBakery);
+  const getBakeryById = useBakeryStore((state) => state.getBakeryById);
   const updateOrder = useOrderStore((state) => state.updateOrder);
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [qualityChecks, setQualityChecks] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [uploadedImage, setUploadedImage] = useState<string>("");
+  const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
 
-  const bakery = bakeries.find((b) => b.id === id);
-  const bakeryOrders = useMemo(
-    () => orders.filter((order) => order.assignedBakeryId === id),
-    [orders, id]
-  );
+  // Fetch bakery details on mount or when id changes
+  useEffect(() => {
+    if (id) {
+      getBakeryById(id).catch((error) => {
+        console.error("Failed to fetch bakery:", error);
+      });
+    }
+  }, [id, getBakeryById]);
 
+  // Fetch bakery-specific orders
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchBakeryOrders = async () => {
+      try {
+        // Statuses to fetch (all except completed and cancelled)
+        const statuses = [
+          "pending",
+          "confirmed",
+          "preparing",
+          "ready",
+          "delivered",
+        ];
+
+        // Fetch orders for this specific bakery with status filter
+        const response = await orderApi.getBakeryOrders(id, {
+          status: statuses,
+        });
+
+        if (response.success && response.data) {
+          // Convert API responses to internal Order format
+          const bakeryOrdersList = response.data.map(
+            (apiOrder: OrderResponse) => {
+              const orderItems = [
+                ...(apiOrder.addons || []),
+                ...(apiOrder.sweets || []),
+                ...(apiOrder.featuredCakes || []),
+                ...(apiOrder.predesignedCakes || []),
+                ...(apiOrder.customCakes || []),
+              ];
+
+              const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
+                ? apiOrder.featuredCakes
+                : [];
+              const firstFeaturedImage =
+                featuredCakesArray.length > 0 &&
+                featuredCakesArray[0]?.data?.images
+                  ? (featuredCakesArray[0].data.images as string[])[0]
+                  : "";
+
+              return {
+                id: apiOrder.id,
+                referenceNumber: apiOrder.referenceNumber,
+                customerName:
+                  apiOrder.userData?.firstName +
+                  " " +
+                  apiOrder.userData?.lastName,
+                customerPhone: apiOrder.userData?.phoneNumber,
+                customerEmail: apiOrder.userData?.email,
+                type:
+                  (apiOrder.cartType as
+                    | "basket_cakes"
+                    | "midume"
+                    | "small_cakes"
+                    | "large_cakes"
+                    | "custom") || "basket_cakes",
+                productName: apiOrder.cartType || "Custom Order",
+                productImage: firstFeaturedImage || "",
+                basePrice: apiOrder.totalPrice,
+                totalPrice: apiOrder.finalPrice,
+                deliveryLocation: apiOrder.locationData?.description || "",
+                region: apiOrder.regionName,
+                deliverDay: apiOrder.willDeliverAt,
+                orderedAt: apiOrder.createdAt,
+                status: apiOrder.orderStatus as
+                  | "pending"
+                  | "confirmed"
+                  | "preparing"
+                  | "ready"
+                  | "delivered"
+                  | "cancelled",
+                capacitySlots: apiOrder.totalCapacity,
+                assignedBakeryId: apiOrder.bakeryId || undefined,
+                specialRequests: apiOrder.deliveryNote || undefined,
+                deliveryNote: apiOrder.deliveryNote || undefined,
+                keepAnonymous: apiOrder.keepAnonymous,
+                deliveryLatitude: apiOrder.locationData?.latitude,
+                deliveryLongitude: apiOrder.locationData?.longitude,
+                orderItems,
+                addons: apiOrder.addons,
+                sweets: apiOrder.sweets,
+                featuredCakes: apiOrder.featuredCakes,
+                predesignedCakes: apiOrder.predesignedCakes,
+                customCakes: apiOrder.customCakes,
+                cardMessage: apiOrder.cardMessage
+                  ? (() => {
+                      try {
+                        const parsed =
+                          typeof apiOrder.cardMessage === "string"
+                            ? JSON.parse(apiOrder.cardMessage)
+                            : apiOrder.cardMessage;
+                        return {
+                          to: parsed.to,
+                          from: parsed.from,
+                          message: parsed.message,
+                        };
+                      } catch {
+                        return undefined;
+                      }
+                    })()
+                  : undefined,
+                recipientData: apiOrder.recipientData
+                  ? (() => {
+                      try {
+                        const parsed =
+                          typeof apiOrder.recipientData === "string"
+                            ? JSON.parse(apiOrder.recipientData)
+                            : apiOrder.recipientData;
+                        return {
+                          name: parsed.name,
+                          email: parsed.email,
+                          phoneNumber: parsed.phoneNumber,
+                        };
+                      } catch {
+                        return undefined;
+                      }
+                    })()
+                  : undefined,
+              } as Order;
+            },
+          );
+
+          // Server already filters by bakery, just set the orders
+          setBakeryOrders(bakeryOrdersList);
+        }
+      } catch (error) {
+        console.error("Failed to fetch bakery orders:", error);
+      }
+    };
+
+    fetchBakeryOrders();
+  }, [id]);
+
+  const bakery = currentBakery;
   const selectedOrder = bakeryOrders.find((o) => o.id === selectedOrderId);
 
   // Calculate capacity
   const usedCapacity = bakeryOrders.reduce(
     (sum, order) => sum + order.capacitySlots,
-    0
+    0,
   );
   const capacityPercentage = bakery
     ? (usedCapacity / bakery.capacity) * 100
     : 0;
 
-  const handleConfirm = (orderId: string) => {
-    updateOrder(orderId, { status: "confirmed" });
+  const handleConfirm = async (orderId: string) => {
+    try {
+      // Call the status change endpoint to set status to confirmed
+      const response = await orderApi.changeOrderStatus(orderId, "confirmed");
+
+      if (response.success) {
+        // Update the local bakery orders list with the new status
+        setBakeryOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId ? { ...order, status: "confirmed" } : order,
+          ),
+        );
+
+        // Also update the global order store
+        updateOrder(orderId, { status: "confirmed" });
+      }
+    } catch (error) {
+      console.error("Failed to confirm order:", error);
+    }
   };
 
-  const handleDecline = (orderId: string, reason: string) => {
-    updateOrder(orderId, {
-      status: "cancelled",
-      cancellationReason: reason,
-    });
-    // Remove from bakery orders by unassigning
-    updateOrder(orderId, {
-      assignedBakeryId: undefined,
-      assignedBakeryName: undefined,
-    });
+  const handleDecline = async (orderId: string, reason: string) => {
+    try {
+      // Call the unassign-bakery endpoint with the reason
+      const response = await orderApi.unassignFromBakery(orderId, reason);
+
+      if (response.success) {
+        // Remove the order from the bakery orders list
+        setBakeryOrders((prevOrders) =>
+          prevOrders.filter((order) => order.id !== orderId),
+        );
+
+        // Reset selected order if it's the one being removed
+        if (selectedOrderId === orderId) {
+          setSelectedOrderId(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to unassign order from bakery:", error);
+    }
   };
 
   const handleQualityCheck = (checkId: string, checked: boolean) => {
@@ -419,7 +672,7 @@ export default function BakeryOrdersPage() {
   };
 
   const handleStatusChange = (
-    newStatus: "preparing" | "ready" | "delivered"
+    newStatus: "preparing" | "ready" | "delivered",
   ) => {
     if (selectedOrderId) {
       updateOrder(selectedOrderId, { status: newStatus });
@@ -444,7 +697,7 @@ export default function BakeryOrdersPage() {
       <div
         className={cn(
           "flex-1 flex flex-col overflow-hidden",
-          isRTL ? "pl-88 order-last" : "pr-88 order-first"
+          isRTL ? "pl-88 order-last" : "pr-88 order-first",
         )}
       >
         {/* Header */}
@@ -454,7 +707,9 @@ export default function BakeryOrdersPage() {
               <h1 className="text-3xl font-bold tracking-tight">
                 {bakery.name}
               </h1>
-              <p className="text-muted-foreground mt-1">{bakery.location}</p>
+              <p className="text-muted-foreground mt-1">
+                {bakery.locationDescription}
+              </p>
             </div>
 
             {/* Capacity Circle */}
@@ -487,7 +742,7 @@ export default function BakeryOrdersPage() {
                       capacityPercentage >= 60 &&
                         capacityPercentage < 85 &&
                         "text-orange-500",
-                      capacityPercentage < 60 && "text-green-500"
+                      capacityPercentage < 60 && "text-green-500",
                     )}
                   />
                 </svg>
@@ -509,69 +764,143 @@ export default function BakeryOrdersPage() {
           {selectedOrder ? (
             <ScrollArea className="h-full w-full">
               <div className="grid gap-6 md:grid-cols-2 pb-4 pr-4">
-                {/* Product Information */}
+                {/* Order Items */}
                 <Card className="md:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="w-5 h-5" />
-                      Product Information
+                      Order Items
+                      {selectedOrder.orderItems &&
+                        selectedOrder.orderItems.length > 0 && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {selectedOrder.orderItems.length}
+                          </Badge>
+                        )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-6">
-                      <div className="shrink-0">
-                        <img
-                          src={selectedOrder.productImage}
-                          alt={selectedOrder.productName}
-                          className="w-48 h-48 object-cover rounded-lg border"
-                        />
+                    {selectedOrder.orderItems &&
+                    selectedOrder.orderItems.length > 0 ? (
+                      <div
+                        className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
+                        style={{ scrollbarWidth: "thin" }}
+                      >
+                        {selectedOrder.orderItems.map((item, index) => {
+                          // Get image from different sources based on item type
+                          const itemData = item.data as Record<string, unknown>;
+                          const imageUrl =
+                            (Array.isArray(itemData?.images) &&
+                              (itemData.images[0] as string)) ||
+                            (typeof itemData?.thumbnailUrl === "string" &&
+                              itemData.thumbnailUrl) ||
+                            (typeof itemData?.decorationTopView === "string" &&
+                              itemData.decorationTopView) ||
+                            "";
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="border rounded-lg p-4"
+                            >
+                              <div className="flex gap-4">
+                                {/* Item Image */}
+                                {imageUrl && (
+                                  <div className="shrink-0">
+                                    <img
+                                      src={imageUrl}
+                                      alt={item.data?.name}
+                                      className="w-24 h-24 object-cover rounded-lg border"
+                                    />
+                                  </div>
+                                )}
+
+                                {/* Item Details */}
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <h4 className="text-sm font-semibold">
+                                        {item.data?.name || "Item"}
+                                      </h4>
+                                      <Badge
+                                        variant="outline"
+                                        className="mt-1 capitalize"
+                                      >
+                                        {getItemCategory(item)}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  {item.data?.description && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.data.description}
+                                    </p>
+                                  )}
+
+                                  <div className="flex items-center gap-4 pt-2 text-sm">
+                                    <span className="font-medium">
+                                      Quantity:{" "}
+                                      <span className="font-bold text-primary">
+                                        {item.quantity}
+                                      </span>
+                                    </span>
+                                  </div>
+
+                                  {item.size && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Size: {item.size}
+                                    </div>
+                                  )}
+
+                                  {item.flavor && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Flavor: {item.flavor}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {index < selectedOrder.orderItems!.length - 1 && (
+                                <Separator className="mt-4" />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <h3 className="text-2xl font-semibold mb-1">
-                            {selectedOrder.productName}
-                          </h3>
-                          <Badge variant="secondary" className="capitalize">
-                            {selectedOrder.type}
-                          </Badge>
-                        </div>
-
-                        {selectedOrder.size && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-sm font-medium text-muted-foreground min-w-20">
-                              Size:
-                            </span>
-                            <span className="text-sm">
-                              {selectedOrder.size}
-                            </span>
-                          </div>
-                        )}
-
-                        {selectedOrder.flavor && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-sm font-medium text-muted-foreground min-w-20">
-                              Flavor:
-                            </span>
-                            <span className="text-sm">
-                              {selectedOrder.flavor}
-                            </span>
-                          </div>
-                        )}
-
-                        {selectedOrder.textOnCake && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-sm font-medium text-muted-foreground min-w-20">
-                              Text on Cake:
-                            </span>
-                            <span className="text-sm font-medium bg-muted px-3 py-1 rounded">
-                              "{selectedOrder.textOnCake}"
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No items in this order
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
+
+                {/* Order Design */}
+                {selectedOrder.designFile && (
+                  <Card className="md:col-span-2">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Order Design
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <img
+                          src={selectedOrder.designFile}
+                          alt="Order Design"
+                          className="w-full h-auto max-h-96 object-cover rounded-lg border"
+                        />
+                        <a
+                          href={selectedOrder.designFile}
+                          download
+                          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors w-full justify-center"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download Design
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Customer Information */}
                 <Card>
@@ -641,13 +970,34 @@ export default function BakeryOrdersPage() {
                         <p className="text-sm font-medium">
                           {format(
                             new Date(selectedOrder.deliverDay),
-                            "EEEE, MMMM d, yyyy"
+                            "EEEE, MMMM d, yyyy",
                           )}
                         </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Delivery Location Map */}
+                {selectedOrder.deliveryLatitude &&
+                  selectedOrder.deliveryLongitude && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <MapPin className="w-5 h-5" />
+                          Delivery Location Map
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <LocationMap
+                          latitude={selectedOrder.deliveryLatitude}
+                          longitude={selectedOrder.deliveryLongitude}
+                          address={selectedOrder.deliveryLocation}
+                          className="w-full h-64 rounded-lg border"
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
 
                 {/* Quality Control */}
                 <Card className="md:col-span-2">
@@ -734,19 +1084,161 @@ export default function BakeryOrdersPage() {
                   </CardContent>
                 </Card>
 
-                {/* Special Requests */}
-                {selectedOrder.specialRequests && (
+                {/* General Order Details */}
+                <Card className="md:col-span-2">
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        General Order Details
+                      </CardTitle>
+                      <Badge
+                        variant={
+                          selectedOrder.keepAnonymous ? "default" : "secondary"
+                        }
+                      >
+                        {selectedOrder.keepAnonymous
+                          ? "Anonymous Order"
+                          : "Not Anonymous"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        Delivery Note
+                      </span>
+                      <p className="text-sm bg-muted p-3 rounded-lg mt-1">
+                        {selectedOrder.deliveryNote ||
+                          "No delivery note provided"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Greeting Card Details */}
+                {selectedOrder.cardMessage && (
                   <Card className="md:col-span-2">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5" />
-                        Special Requests
-                      </CardTitle>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="flex items-center gap-2">
+                          <MessageSquare className="w-5 h-5" />
+                          Greeting Card
+                        </CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            downloadCardAsImage(selectedOrder.cardMessage!)
+                          }
+                          className="gap-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download Card
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm bg-muted p-4 rounded-lg">
-                        {selectedOrder.specialRequests}
-                      </p>
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        {/* Card Preview */}
+                        <div className="flex-1">
+                          <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
+                            {/* Decorative elements */}
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+
+                            {/* Top - To field */}
+                            <div className="relative z-10">
+                              <p className="text-sm text-amber-700/70 font-medium">
+                                To:{" "}
+                                <span className="font-semibold">
+                                  {selectedOrder.cardMessage.to}
+                                </span>
+                              </p>
+                            </div>
+
+                            {/* Middle - Centered Message */}
+                            <div className="relative z-10 flex-1 flex items-center justify-center">
+                              <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center">
+                                {selectedOrder.cardMessage.message}
+                              </p>
+                            </div>
+
+                            {/* Bottom - Signature */}
+                            <div className="relative z-10 text-right">
+                              <p className="text-sm text-amber-700/70">
+                                With warm wishes,
+                              </p>
+                              <p className="text-lg font-serif text-amber-900">
+                                {selectedOrder.cardMessage.from}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Card Details */}
+                        <div className="lg:w-64 space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase">
+                              From
+                            </label>
+                            <p className="text-sm font-medium">
+                              {selectedOrder.cardMessage.from}
+                            </p>
+                          </div>
+
+                          <Separator />
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase">
+                              To
+                            </label>
+                            <p className="text-sm font-medium">
+                              {selectedOrder.cardMessage.to}
+                            </p>
+                          </div>
+
+                          <Separator />
+
+                          {selectedOrder.recipientData && (
+                            <>
+                              <div className="space-y-2">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                                  Recipient Name
+                                </label>
+                                <p className="text-sm font-medium flex items-center gap-2">
+                                  <User className="w-4 h-4 text-muted-foreground" />
+                                  {selectedOrder.recipientData.name}
+                                </p>
+                              </div>
+
+                              <Separator />
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                                  Email
+                                </label>
+                                <p className="text-sm font-medium flex items-center gap-2">
+                                  <Mail className="w-4 h-4 text-muted-foreground" />
+                                  {selectedOrder.recipientData.email}
+                                </p>
+                              </div>
+
+                              <Separator />
+
+                              <div className="space-y-2">
+                                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                                  Phone
+                                </label>
+                                <p className="text-sm font-medium flex items-center gap-2">
+                                  <Phone className="w-4 h-4 text-muted-foreground" />
+                                  {selectedOrder.recipientData.phoneNumber}
+                                </p>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -765,7 +1257,7 @@ export default function BakeryOrdersPage() {
       <div
         className={cn(
           "fixed top-16 h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden",
-          isRTL ? "left-0 border-r order-first" : "right-0 border-l order-last"
+          isRTL ? "left-0 border-r order-first" : "right-0 border-l order-last",
         )}
       >
         <div className="shrink-0 border-b px-4 py-3">

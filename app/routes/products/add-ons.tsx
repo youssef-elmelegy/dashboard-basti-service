@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,14 +31,24 @@ export default function AddOnsPage() {
   >("all");
 
   const addOns = useAddOnStore((state) => state.addOns);
+  const isLoading = useAddOnStore((state) => state.isLoading);
+  const error = useAddOnStore((state) => state.error);
+  const fetchAddOns = useAddOnStore((state) => state.fetchAddOns);
   const addAddOn = useAddOnStore((state) => state.addAddOn);
   const updateAddOn = useAddOnStore((state) => state.updateAddOn);
   const deleteAddOn = useAddOnStore((state) => state.deleteAddOn);
   const toggleAddOnActive = useAddOnStore((state) => state.toggleAddOnActive);
   const { openDeleteDialog } = useDeleteDialog();
 
+  // Fetch add-ons on mount
+  useEffect(() => {
+    fetchAddOns();
+  }, [fetchAddOns]);
+
   // Get all unique tags from add-ons
-  const allTags = Array.from(new Set(addOns.flatMap((a) => a.tags))).sort();
+  const allTags = Array.from(
+    new Set(addOns.flatMap((a) => a.tags || [])),
+  ).sort();
 
   // Filter add-ons based on selected filters
   const filteredAddOns = addOns.filter((addOn) => {
@@ -48,30 +58,40 @@ export default function AddOnsPage() {
 
     // Filter by tags (if any selected, show products that have at least one matching tag)
     if (selectedTags.length > 0) {
-      return selectedTags.some((tag) => addOn.tags.includes(tag));
+      return selectedTags.some((tag) => (addOn.tags || []).includes(tag));
     }
     return true;
   });
 
-  const handleAddAddOn = (formData: Omit<AddOn, "id">) => {
-    const newAddOn: AddOn = {
-      id: `addon-${Date.now()}`,
-      ...formData,
-    };
-    addAddOn(newAddOn);
-    setIsAddOpen(false);
-  };
-
-  const handleEditAddOn = (addOn: AddOn) => {
-    setEditingAddOn(addOn);
-    setIsAddOpen(true);
-  };
-
-  const handleUpdateAddOn = (formData: Omit<AddOn, "id">) => {
-    if (editingAddOn) {
-      updateAddOn(editingAddOn.id, formData);
-      setEditingAddOn(null);
+  const handleAddAddOn = async (
+    formData: Omit<AddOn, "id" | "createdAt" | "updatedAt">,
+  ) => {
+    console.log("handleAddAddOn called with formData:", formData);
+    try {
+      console.log("Calling addAddOn...");
+      await addAddOn(formData);
+      console.log("addAddOn completed successfully");
       setIsAddOpen(false);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to create add-on";
+      console.error("Failed to create add-on:", errorMsg, err);
+    }
+  };
+
+  const handleUpdateAddOn = async (
+    formData: Omit<AddOn, "id" | "createdAt" | "updatedAt">,
+  ) => {
+    if (editingAddOn) {
+      try {
+        await updateAddOn(editingAddOn.id, formData);
+        setEditingAddOn(null);
+        setIsAddOpen(false);
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to update add-on";
+        console.error("Failed to update add-on:", errorMsg, err);
+      }
     }
   };
 
@@ -83,8 +103,31 @@ export default function AddOnsPage() {
         recordType: t("addOns.recordType"),
         recordName: addOn.name,
       },
-      () => deleteAddOn(addOn.id)
+      async () => {
+        try {
+          await deleteAddOn(addOn.id);
+        } catch (err) {
+          const errorMsg =
+            err instanceof Error ? err.message : "Failed to delete add-on";
+          console.error("Failed to delete add-on:", errorMsg, err);
+        }
+      },
     );
+  };
+
+  const handleEditAddOn = (addOn: AddOn) => {
+    setEditingAddOn(addOn);
+    setIsAddOpen(true);
+  };
+
+  const handleToggleAddOn = async (id: string) => {
+    try {
+      await toggleAddOnActive(id);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to toggle add-on status";
+      console.error("Failed to toggle add-on status:", errorMsg, err);
+    }
   };
 
   return (
@@ -112,17 +155,36 @@ export default function AddOnsPage() {
       </div>
 
       {/* Filters */}
-      <ProductFilter
-        availableTags={allTags}
-        selectedTags={selectedTags}
-        onTagToggle={(tag) => {
-          setSelectedTags((prev) =>
-            prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-          );
-        }}
-        activeFilter={activeFilter}
-        onActiveFilterChange={(filter) => setActiveFilter(filter)}
-      />
+      <div className="bg-muted/50 p-4 rounded-lg border">
+        <ProductFilter
+          availableTags={allTags}
+          selectedTags={selectedTags}
+          onTagToggle={(tag) => {
+            setSelectedTags((prev) =>
+              prev.includes(tag)
+                ? prev.filter((t) => t !== tag)
+                : [...prev, tag],
+            );
+          }}
+          activeFilter={activeFilter}
+          onActiveFilterChange={(filter) => setActiveFilter(filter)}
+        />
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-lg flex items-center justify-between">
+          <span>{error}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fetchAddOns()}
+            disabled={isLoading}
+          >
+            {isLoading ? t("common.loading") : t("common.retry")}
+          </Button>
+        </div>
+      )}
 
       {/* Empty State */}
       {filteredAddOns.length === 0 ? (
@@ -132,7 +194,6 @@ export default function AddOnsPage() {
           <EmptyDescription>{t("addOns.createAddOns")}</EmptyDescription>
         </Empty>
       ) : (
-        /* Add-ons Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAddOns.map((addOn) => (
             <AddOnCard
@@ -140,7 +201,7 @@ export default function AddOnsPage() {
               addOn={addOn}
               onEdit={handleEditAddOn}
               onDelete={handleDeleteAddOn}
-              onToggleActive={toggleAddOnActive}
+              onToggleActive={() => handleToggleAddOn(addOn.id)}
             />
           ))}
         </div>
@@ -148,7 +209,7 @@ export default function AddOnsPage() {
 
       {/* Add/Edit Sheet */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent className="overflow-y-auto max-w-2xl">
           <SheetHeader>
             <SheetTitle>
               {editingAddOn ? t("addOns.editAddOn") : t("addOns.addNewAddOn")}
@@ -158,6 +219,7 @@ export default function AddOnsPage() {
             <AddOnForm
               initialAddOn={editingAddOn || undefined}
               onSubmit={editingAddOn ? handleUpdateAddOn : handleAddAddOn}
+              isLoading={isLoading}
             />
           </div>
         </SheetContent>

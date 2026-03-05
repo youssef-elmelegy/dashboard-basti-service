@@ -5,6 +5,7 @@ export interface DeleteConfig {
   recordType: string;
   title?: string;
   description?: string;
+  actionType?: "delete" | "block" | "unblock";
 }
 
 interface DeleteDialogStore {

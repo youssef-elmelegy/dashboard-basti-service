@@ -46,7 +46,17 @@ export function DeleteDialogProvider({ children }: { children: ReactNode }) {
               onClick={confirmDelete}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete"}
+              {isLoading
+                ? config?.actionType === "block"
+                  ? "Blocking..."
+                  : config?.actionType === "unblock"
+                    ? "Unblocking..."
+                    : "Deleting..."
+                : config?.actionType === "block"
+                  ? "Block"
+                  : config?.actionType === "unblock"
+                    ? "Unblock"
+                    : "Delete"}
             </Button>
           </SheetFooter>
         </SheetContent>

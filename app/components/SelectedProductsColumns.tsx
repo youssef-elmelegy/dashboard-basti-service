@@ -13,7 +13,7 @@ import type { SelectedProductItem } from "@/stores/regionProductSelectionStore";
 
 export const selectedProductsColumns = (
   onRemove: (id: string) => void,
-  onEdit: (item: SelectedProductItem) => void
+  onEdit: (item: SelectedProductItem) => void,
 ): ColumnDef<SelectedProductItem>[] => [
   {
     accessorKey: "productImage",
@@ -33,14 +33,29 @@ export const selectedProductsColumns = (
     header: "Product Name",
     size: 200,
     enableSorting: false,
-    cell: ({ row }) => (
-      <div>
-        <p className="font-semibold">{row.original.productName}</p>
-        <Badge variant="outline" className="mt-1">
-          {row.original.type === "cake" ? "Cake" : "Sweet"}
-        </Badge>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const productType = row.original.type;
+      const typeLabels: Record<string, string> = {
+        "featured-cake": "Featured Cake",
+        addon: "Add-on",
+        sweet: "Sweet",
+        flavor: "Flavor",
+        shape: "Shape",
+        decoration: "Decoration",
+        "predesigned-cake": "Predesigned Cake",
+        cake: "Cake",
+      };
+      const typeLabel = typeLabels[productType] || productType;
+
+      return (
+        <div>
+          <p className="font-semibold">{row.original.productName}</p>
+          <Badge variant="outline" className="mt-1">
+            {typeLabel}
+          </Badge>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "selectedSizes",
@@ -73,8 +88,10 @@ export const selectedProductsColumns = (
           type="button"
           onClick={() => {
             // cycle: none -> asc -> desc -> none
-            if (!sorted) column.toggleSorting(false); // asc
-            else if (sorted === "asc") column.toggleSorting(true); // desc
+            if (!sorted)
+              column.toggleSorting(false); // asc
+            else if (sorted === "asc")
+              column.toggleSorting(true); // desc
             else column.clearSorting(); // none
           }}
           className="flex items-center gap-2 hover:bg-muted px-2 py-1 rounded cursor-pointer select-none"
@@ -84,7 +101,7 @@ export const selectedProductsColumns = (
       );
     },
     size: 100,
-    cell: ({ row }) => `$${row.original.basePrice.toFixed(2)}`,
+    cell: ({ row }) => `$${(row.original.basePrice ?? 0).toFixed(2)}`,
   },
   {
     id: "actions",

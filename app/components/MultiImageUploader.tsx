@@ -16,6 +16,8 @@ interface MultiImageUploaderProps {
   description?: string;
   error?: string;
   maxImages?: number;
+  compact?: boolean;
+  compactSize?: "sm" | "md" | "lg";
 }
 
 export function MultiImageUploader({
@@ -25,9 +27,35 @@ export function MultiImageUploader({
   description,
   error,
   maxImages = 5,
+  compact = false,
+  compactSize = "md",
 }: MultiImageUploaderProps) {
   const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
+
+  // Size mappings for compact mode
+  const sizeClasses = {
+    sm: {
+      box: "w-20 h-20",
+      icon: "w-3 h-3",
+      uploadIcon: "w-4 h-4",
+      gap: "gap-1",
+    },
+    md: {
+      box: "w-24 h-24",
+      icon: "w-3 h-3",
+      uploadIcon: "w-4 h-4",
+      gap: "gap-2",
+    },
+    lg: {
+      box: "w-32 h-32",
+      icon: "w-4 h-4",
+      uploadIcon: "w-6 h-6",
+      gap: "gap-3",
+    },
+  };
+
+  const currentSize = compact ? sizeClasses[compactSize] : null;
 
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
@@ -77,25 +105,34 @@ export function MultiImageUploader({
 
   return (
     <FormItem>
-      <FormLabel>{label}</FormLabel>
+      {label && <FormLabel>{label}</FormLabel>}
       <FormControl>
-        <div className="space-y-4">
+        <div className={compact ? "space-y-2" : "space-y-4"}>
           {/* Images Grid */}
           {images.length > 0 && (
-            <div className="grid grid-cols-3 gap-3">
+            <div
+              className={
+                compact ? `flex ${currentSize?.gap}` : "grid grid-cols-3 gap-3"
+              }
+            >
               {images.map((image, index) => (
-                <div key={index} className="relative group">
+                <div
+                  key={index}
+                  className={`relative group ${
+                    compact ? `${currentSize?.box} shrink-0` : ""
+                  }`}
+                >
                   <img
                     src={image}
                     alt={`Upload ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg border border-border"
+                    className={`w-full h-full object-cover rounded-lg border border-border`}
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
                     className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </button>
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity flex items-center justify-center text-white text-xs font-medium">
                     {t("common.image")} {index + 1}
@@ -112,19 +149,37 @@ export function MultiImageUploader({
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
-              className={`flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              className={`flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                compact
+                  ? `${currentSize?.box} border-2 border-dashed rounded-lg px-2 py-2`
+                  : "w-full px-4 py-6 border-2 border-dashed rounded-lg"
+              } ${
                 dragActive
                   ? "border-primary bg-primary/5"
                   : "border-border hover:bg-muted/50"
               }`}
             >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-sm font-medium">{t("common.uploadImage")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("common.imageFormats")}
-                </p>
-                {images.length > 0 && (
+              <div
+                className={`flex flex-col items-center justify-center ${
+                  compact ? "pt-2 pb-2" : "pt-5 pb-6"
+                }`}
+              >
+                <Upload
+                  className={`text-muted-foreground mb-1 ${
+                    compact ? currentSize?.uploadIcon : "w-8 h-8"
+                  }`}
+                />
+                {!compact && (
+                  <>
+                    <p className="text-sm font-medium">
+                      {t("common.uploadImage")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("common.imageFormats")}
+                    </p>
+                  </>
+                )}
+                {images.length > 0 && !compact && (
                   <p className="text-xs text-muted-foreground mt-2">
                     {images.length} / {maxImages} {t("common.uploaded")}
                   </p>
@@ -140,7 +195,7 @@ export function MultiImageUploader({
             </label>
           )}
 
-          {images.length === 0 && (
+          {images.length === 0 && !compact && (
             <p className="text-xs text-destructive">
               {t("common.imageRequired")}
             </p>

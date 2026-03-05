@@ -19,12 +19,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRegionStore } from "@/stores/regionStore";
-
-export type BakeryType = "basket_cakes" | "medium_cakes" | "small_cakes" | "large_cakes" | "custom";
+import type { BakeryType } from "@/lib/services/bakery.service";
 
 const bakeryTypes: { label: string; value: BakeryType }[] = [
   { label: "Basket Cakes", value: "basket_cakes" },
-  { label: "Medium Cakes", value: "medium_cakes" },
+  { label: "Midume", value: "midume" },
   { label: "Small Cakes", value: "small_cakes" },
   { label: "Large Cakes", value: "large_cakes" },
   { label: "Custom", value: "custom" },
@@ -38,17 +37,27 @@ const formSchema = z.object({
   locationDescription: z
     .string()
     .min(5, { message: "Location description must be at least 5 characters!" })
-    .max(500, { message: "Location description must not exceed 500 characters!" }),
+    .max(500, {
+      message: "Location description must not exceed 500 characters!",
+    }),
   regionId: z
     .string()
     .uuid({ message: "Please select a valid region!" })
     .min(1, { message: "Region is required!" }),
   capacity: z
-    .number({ invalid_type_error: "Capacity must be a number!" })
+    .number({ message: "Capacity must be a number!" })
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(z.enum(["basket_cakes", "medium_cakes", "small_cakes", "large_cakes", "custom"]))
+    .array(
+      z.enum([
+        "basket_cakes",
+        "midume",
+        "small_cakes",
+        "large_cakes",
+        "custom",
+      ]),
+    )
     .min(1, { message: "Select at least one bakery type!" }),
 });
 
@@ -118,7 +127,10 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                   <FormItem>
                     <FormLabel>Location Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter location (min 5 characters)" {...field} />
+                      <Input
+                        placeholder="Enter location (min 5 characters)"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -148,7 +160,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                               "px-3 py-1 rounded-full text-sm border transition-colors",
                               field.value === region.id
                                 ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border hover:bg-muted"
+                                : "border-border hover:bg-muted",
                             )}
                           >
                             {region.name}
@@ -196,7 +208,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                             "px-3 py-1 rounded-full text-sm border transition-colors",
                             selectedTypes.includes(type.value)
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "border-border hover:bg-muted"
+                              : "border-border hover:bg-muted",
                           )}
                         >
                           {type.label}

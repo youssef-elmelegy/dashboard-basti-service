@@ -9,11 +9,10 @@ import {
 } from "@/components/ui/popover";
 import { useTagsStore } from "@/stores/tagsStore";
 import { Plus } from "lucide-react";
-import type { CakeTag } from "@/data/products";
 
 interface TagSelectorProps {
   selectedTags: string[];
-  onTagToggle: (tag: string) => void;
+  onTagToggle: (tagName: string) => void;
   label?: string;
 }
 
@@ -25,18 +24,22 @@ export function TagSelector({
   const [newTag, setNewTag] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const availableTags = useTagsStore((state) => state.tags);
-  const addTag = useTagsStore((state) => state.addTag);
 
   const handleAddNewTag = () => {
-    if (newTag.trim() && !availableTags.includes(newTag as CakeTag)) {
-      addTag(newTag as CakeTag);
-      onTagToggle(newTag);
-      setNewTag("");
+    if (newTag.trim()) {
+      // Check if tag name already exists
+      const tagExists = availableTags.some(
+        (t) => t.name.toLowerCase() === newTag.toLowerCase(),
+      );
+      if (!tagExists) {
+        onTagToggle(newTag);
+        setNewTag("");
+      }
     }
   };
 
-  const handleTagClick = (tag: string) => {
-    onTagToggle(tag);
+  const handleTagClick = (tagName: string) => {
+    onTagToggle(tagName);
   };
 
   return (
@@ -50,14 +53,14 @@ export function TagSelector({
               No tags selected
             </span>
           ) : (
-            selectedTags.map((tag) => (
+            selectedTags.map((tagName) => (
               <Badge
-                key={tag}
+                key={tagName}
                 variant="default"
                 className="cursor-pointer gap-1"
-                onClick={() => handleTagClick(tag)}
+                onClick={() => handleTagClick(tagName)}
               >
-                {tag}
+                {tagName}
                 <span className="ml-1">×</span>
               </Badge>
             ))
@@ -80,12 +83,14 @@ export function TagSelector({
               <div className="flex flex-wrap gap-2">
                 {availableTags.map((tag) => (
                   <Badge
-                    key={tag}
-                    variant={selectedTags.includes(tag) ? "default" : "outline"}
+                    key={tag.id}
+                    variant={
+                      selectedTags.includes(tag.name) ? "default" : "outline"
+                    }
                     className="cursor-pointer"
-                    onClick={() => handleTagClick(tag)}
+                    onClick={() => handleTagClick(tag.name)}
                   >
-                    {tag}
+                    {tag.name}
                   </Badge>
                 ))}
               </div>

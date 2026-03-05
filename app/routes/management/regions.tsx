@@ -13,8 +13,8 @@ import { RegionCard } from "@/components/RegionCard";
 import { useRegionStore } from "@/stores/regionStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useAddRegionStore } from "@/stores/addRegionStore";
-import { AddRegionDialog } from "@/components/AddRegionDialog";
-import { useEffect, useState } from "react";
+import { RegionFormDialog } from "@/components/RegionFormDialog";
+import { useEffect } from "react";
 import type { Region } from "@/data/regions";
 
 export default function RegionsPage() {
@@ -23,39 +23,16 @@ export default function RegionsPage() {
   const isLoading = useRegionStore((state) => state.isLoading);
   const error = useRegionStore((state) => state.error);
   const fetchRegions = useRegionStore((state) => state.fetchRegions);
-  const addRegion = useRegionStore((state) => state.addRegion);
-  const updateRegion = useRegionStore((state) => state.updateRegion);
   const deleteRegion = useRegionStore((state) => state.deleteRegion);
   const clearError = useRegionStore((state) => state.clearError);
 
   const { openDeleteDialog } = useDeleteDialog();
   const { openDialog: openAddRegionDialog } = useAddRegionStore();
 
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-
   // Fetch regions on component mount
   useEffect(() => {
     fetchRegions();
   }, [fetchRegions]);
-
-  const handleAddRegion = async (name: string) => {
-    try {
-      await addRegion({ name });
-    } catch (error) {
-      console.error("Failed to add region:", error);
-    }
-  };
-
-  const handleEditRegion = async (name: string) => {
-    if (selectedRegion) {
-      try {
-        await updateRegion(selectedRegion.id, { name });
-        setSelectedRegion(null);
-      } catch (error) {
-        console.error("Failed to update region:", error);
-      }
-    }
-  };
 
   const handleDeleteRegion = (region: Region) => {
     openDeleteDialog(
@@ -69,7 +46,7 @@ export default function RegionsPage() {
         } catch (error) {
           console.error("Failed to delete region:", error);
         }
-      }
+      },
     );
   };
 
@@ -79,7 +56,7 @@ export default function RegionsPage() {
         <h1 className="text-3xl font-bold">{t("regions.title")}</h1>
         <Button
           className="gap-2"
-          onClick={() => openAddRegionDialog({ mode: "add" }, handleAddRegion)}
+          onClick={() => openAddRegionDialog({ mode: "add" })}
           disabled={isLoading}
         >
           <Plus className="w-4 h-4" />
@@ -124,9 +101,7 @@ export default function RegionsPage() {
           <EmptyContent>
             <Button
               className="gap-2"
-              onClick={() =>
-                openAddRegionDialog({ mode: "add" }, handleAddRegion)
-              }
+              onClick={() => openAddRegionDialog({ mode: "add" })}
             >
               <Plus className="w-4 h-4" />
               {t("regions.createRegion")}
@@ -140,11 +115,10 @@ export default function RegionsPage() {
               key={region.id}
               region={region}
               onEdit={(r) => {
-                setSelectedRegion(r);
-                openAddRegionDialog(
-                  { mode: "edit", initialValue: r.name },
-                  handleEditRegion
-                );
+                openAddRegionDialog({
+                  mode: "edit",
+                  region: r,
+                });
               }}
               onDelete={handleDeleteRegion}
             />
@@ -152,7 +126,7 @@ export default function RegionsPage() {
         </div>
       )}
 
-      <AddRegionDialog />
+      <RegionFormDialog />
     </div>
   );
 }

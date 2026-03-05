@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -23,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { TagSelector } from "@/components/TagSelector";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
+import { useAddOnStore } from "@/stores/addOnStore";
 import type { AddOn } from "@/data/products";
 
 const addOnSchema = z.object({
@@ -60,21 +62,12 @@ interface AddOnFormProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  card: "Card",
-  balloon: "Balloon",
-  candle: "Candle",
-  decoration: "Decoration",
+  card: "Cards",
+  balloon: "Balloons",
+  candle: "Candles",
+  decoration: "Decorations",
   sweets: "Sweets",
   other: "Other",
-};
-
-const categoryLabelsAr: Record<string, string> = {
-  card: "بطاقة",
-  balloon: "بالون",
-  candle: "شمعة",
-  decoration: "زينة",
-  sweets: "حلويات",
-  other: "أخرى",
 };
 
 export function AddOnForm({
@@ -82,7 +75,12 @@ export function AddOnForm({
   onSubmit,
   isLoading = false,
 }: AddOnFormProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const uploadAddOnImage = useAddOnStore((state) => state.uploadAddOnImage);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>(
+    initialAddOn?.images || [],
+  );
 
   const form = useForm<AddOnFormValues>({
     resolver: zodResolver(addOnSchema),
@@ -90,27 +88,111 @@ export function AddOnForm({
       name: initialAddOn?.name || "",
       description: initialAddOn?.description || "",
       images: initialAddOn?.images || [],
-      category: initialAddOn?.category || "card",
+      category:
+        (initialAddOn?.category as
+          | "card"
+          | "balloon"
+          | "candle"
+          | "decoration"
+          | "sweets"
+          | "other") || "decoration",
       price: initialAddOn?.price || 0,
       tags: initialAddOn?.tags || [],
       isActive: initialAddOn?.isActive ?? true,
     },
   });
 
-  const handleSubmit = (values: AddOnFormValues) => {
-    onSubmit({
-      name: values.name,
-      description: values.description,
-      images: values.images,
-      category: values.category,
-      price: values.price,
-      tags: values.tags,
-      isActive: values.isActive,
-    });
+  const handleImagesChange = async (images: string[]) => {
+    console.log("handleImagesChange called with images:", images);
+    form.setValue("images", images, { shouldValidate: true });
+
+    // If images were removed
+    if (images.length === 0) {
+      setUploadedImageUrls([]);
+      return;
+    }
+
+    // Upload images that are base64 or data URLs
+    const urlsToUpload: string[] = [];
+    const alreadyUploadedUrls: string[] = [];
+
+    for (const image of images) {
+      if (image.startsWith("data:") || image.startsWith("blob:")) {
+        urlsToUpload.push(image);
+      } else {
+        // Already a Cloudinary URL
+        alreadyUploadedUrls.push(image);
+      }
+    }
+
+    if (urlsToUpload.length > 0) {
+      try {
+        setUploadingImage(true);
+        const uploadedUrls: string[] = [];
+
+        for (const imageUrl of urlsToUpload) {
+          console.log("Uploading image to Cloudinary...");
+          console.log("Image data URL length:", imageUrl.length);
+
+          // Convert data URL to File
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          console.log("Blob created - size:", blob.size, "type:", blob.type);
+
+          const file = new File([blob], "addon-image.jpg", {
+            type: "image/jpeg",
+          });
+          console.log(
+            "File object created - size:",
+            file.size,
+            "type:",
+            file.type,
+            "name:",
+            file.name,
+          );
+
+          // Upload to Cloudinary using store
+          console.log("Calling uploadAddOnImage with file:", file);
+          const result = await uploadAddOnImage(file);
+          console.log("Upload result:", result);
+
+          uploadedUrls.push(result.secure_url);
+          console.log("Image uploaded successfully:", result.secure_url);
+        }
+
+        // Combine uploaded URLs with already uploaded ones
+        const allUrls = [...alreadyUploadedUrls, ...uploadedUrls];
+        setUploadedImageUrls(allUrls);
+        form.setValue("images", allUrls, { shouldValidate: true });
+      } catch (error) {
+        console.error("Error uploading images:", error);
+        // Keep the uploaded URLs that succeeded
+        setUploadedImageUrls(alreadyUploadedUrls);
+        form.setValue("images", alreadyUploadedUrls, { shouldValidate: true });
+      } finally {
+        setUploadingImage(false);
+      }
+    } else {
+      // All images are already uploaded
+      setUploadedImageUrls(alreadyUploadedUrls);
+    }
   };
 
-  const isArabic = i18n.language === "ar";
-  const categoryLabels_ = isArabic ? categoryLabelsAr : categoryLabels;
+  const handleSubmit = (values: AddOnFormValues) => {
+    console.log("AddOnForm.handleSubmit called with values:", values);
+    console.log("uploadedImageUrls:", uploadedImageUrls);
+
+    // Use uploaded URLs instead of data URLs
+    const finalValues = {
+      ...values,
+      images: uploadedImageUrls.length > 0 ? uploadedImageUrls : values.images,
+    };
+    console.log("finalValues to submit:", finalValues);
+
+    onSubmit(finalValues);
+    form.reset();
+    setUploadedImageUrls([]);
+  };
 
   return (
     <Form {...form}>
@@ -159,7 +241,7 @@ export function AddOnForm({
           render={({ field }) => (
             <MultiImageUploader
               images={field.value}
-              onImagesChange={field.onChange}
+              onImagesChange={handleImagesChange}
               label={t("products.images")}
               maxImages={5}
             />
@@ -184,23 +266,20 @@ export function AddOnForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="card">
-                      {categoryLabels_["card"]}
+                    <SelectItem value="balloons">
+                      {categoryLabels["balloons"]}
                     </SelectItem>
-                    <SelectItem value="balloon">
-                      {categoryLabels_["balloon"]}
+                    <SelectItem value="cards">
+                      {categoryLabels["cards"]}
                     </SelectItem>
-                    <SelectItem value="candle">
-                      {categoryLabels_["candle"]}
+                    <SelectItem value="candles">
+                      {categoryLabels["candles"]}
                     </SelectItem>
-                    <SelectItem value="decoration">
-                      {categoryLabels_["decoration"]}
-                    </SelectItem>
-                    <SelectItem value="sweets">
-                      {categoryLabels_["sweets"]}
+                    <SelectItem value="decorations">
+                      {categoryLabels["decorations"]}
                     </SelectItem>
                     <SelectItem value="other">
-                      {categoryLabels_["other"]}
+                      {categoryLabels["other"]}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -243,12 +322,12 @@ export function AddOnForm({
               <FormControl>
                 <TagSelector
                   selectedTags={field.value}
-                  onTagToggle={(tag) => {
+                  onTagToggle={(tagName) => {
                     const current = field.value;
-                    if (current.includes(tag)) {
-                      field.onChange(current.filter((t) => t !== tag));
+                    if (current.includes(tagName)) {
+                      field.onChange(current.filter((t) => t !== tagName));
                     } else {
-                      field.onChange([...current, tag]);
+                      field.onChange([...current, tagName]);
                     }
                   }}
                   label=""
@@ -288,12 +367,18 @@ export function AddOnForm({
         />
 
         {/* Submit Button */}
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading || uploadingImage}
+        >
+          {uploadingImage
             ? t("common.loading")
-            : initialAddOn
-            ? t("addOns.updateAddOn")
-            : t("addOns.createAddOn")}
+            : isLoading
+              ? t("common.loading")
+              : initialAddOn
+                ? t("addOns.updateAddOn")
+                : t("addOns.createAddOn")}
         </Button>
       </form>
     </Form>

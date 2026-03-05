@@ -1,6 +1,7 @@
 import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import type { AddOn } from "@/data/products";
 import { ProductImageCarousel } from "@/components/ProductImageCarousel";
 import {
@@ -49,6 +50,7 @@ export function AddOnCard({
   onDelete,
   onToggleActive,
 }: AddOnCardProps) {
+  const { t } = useTranslation();
   // Support both old (image) and new (images) data structures
   const images = Array.isArray(addOn.images)
     ? addOn.images
@@ -74,13 +76,13 @@ export function AddOnCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(addOn)}>
-                Edit
+                {t("common.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(addOn)}
                 className="text-destructive focus:text-destructive"
               >
-                Delete
+                {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -100,7 +102,7 @@ export function AddOnCard({
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {addOn.tags.map((tag) => (
+          {(addOn.tags || []).map((tag) => (
             <Badge
               key={tag}
               variant="secondary"
@@ -127,14 +129,19 @@ export function AddOnCard({
         </div>
 
         {/* Price */}
-        <div className="py-3 border-t border-b border-border text-center">
-          <p className="text-xs text-muted-foreground font-medium mb-1">
-            Price
-          </p>
-          <p className="text-2xl font-semibold text-card-foreground">
-            ${addOn.price.toFixed(2)}
-          </p>
-        </div>
+        {addOn.price !== undefined ? (
+          <div className="py-3 border-t border-b border-border text-center">
+            <p className="text-xs text-muted-foreground font-medium mb-1">
+              Price
+            </p>
+            <p className="text-2xl font-semibold text-card-foreground">
+              $
+              {typeof addOn.price === "string"
+                ? parseFloat(addOn.price).toFixed(2)
+                : addOn.price.toFixed(2)}
+            </p>
+          </div>
+        ) : null}
 
         {/* Toggle Active Button */}
         <Button
@@ -143,7 +150,8 @@ export function AddOnCard({
           variant={addOn.isActive ? "default" : "outline"}
           onClick={() => onToggleActive(addOn.id)}
         >
-          {addOn.isActive ? "✓ Active" : "○ Inactive"}
+          {addOn.isActive ? "✓ " : "○ "}
+          {addOn.isActive ? t("common.active") : t("common.inactive")}
         </Button>
       </div>
     </div>

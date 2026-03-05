@@ -25,8 +25,33 @@ export type OrderAddOn = {
   quantity: number;
 };
 
+export type OrderItem = {
+  id: string;
+  orderId: string;
+  addonId: string | null;
+  sweetId: string | null;
+  predesignedCakeId: string | null;
+  featuredCakeId: string | null;
+  customCake: string | null;
+  quantity: number;
+  size: string | null;
+  flavor: string | null;
+  price: number;
+  selectedOptions: string | null;
+  createdAt: string;
+  updatedAt: string;
+  data?: {
+    id: string;
+    name: string;
+    description?: string;
+    images?: string[];
+    [key: string]: unknown;
+  };
+};
+
 export type Order = {
   id: string;
+  referenceNumber?: string;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -46,10 +71,20 @@ export type Order = {
   addOns?: OrderAddOn[];
   totalPrice: number;
 
+  // Order items (from API)
+  orderItems?: OrderItem[];
+  addons?: OrderItem[];
+  sweets?: OrderItem[];
+  featuredCakes?: OrderItem[];
+  predesignedCakes?: OrderItem[];
+  customCakes?: OrderItem[];
+
   // Delivery
   deliveryLocation: string;
   region: string;
   deliverDay: string; // ISO date string
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
 
   // Order tracking
   orderedAt: string; // ISO date string
@@ -64,6 +99,9 @@ export type Order = {
   // Cancellation
   cancellationReason?: string;
 
+  // Design File
+  designFile?: string; // URL or file path to the design image
+
   // Quality Control (populated by bakery staff)
   qualityChecks?: Record<string, boolean>; // { addons: true, printing: false, ... }
   finalImage?: string; // Base64 or URL of final product photo
@@ -71,6 +109,20 @@ export type Order = {
 
   // Additional notes
   specialRequests?: string;
+  deliveryNote?: string;
+  keepAnonymous?: boolean;
+
+  // Card details (greeting card)
+  cardMessage?: {
+    to: string;
+    from: string;
+    message: string;
+  };
+  recipientData?: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
 };
 
 export const ORDERS_DATA: Order[] = [
@@ -98,6 +150,8 @@ export const ORDERS_DATA: Order[] = [
     orderedAt: "2025-12-20T10:30:00Z",
     status: "pending",
     capacitySlots: 2,
+    designFile:
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
     specialRequests: "Please add extra chocolate drizzle",
   },
   {
@@ -142,6 +196,8 @@ export const ORDERS_DATA: Order[] = [
     orderedAt: "2025-11-15T09:00:00Z",
     status: "pending",
     capacitySlots: 3,
+    designFile:
+      "https://images.unsplash.com/photo-1535254973040-607b474cb50d?w=500&h=500&fit=crop",
     specialRequests:
       "Wedding cake - needs to be perfect! Fresh flowers on top.",
   },

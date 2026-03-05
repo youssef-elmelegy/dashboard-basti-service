@@ -62,11 +62,11 @@ export function SearchProductsDropdown({
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {cake.sizes.slice(0, 2).map((size) => (
                       <Badge
-                        key={size.name}
+                        key={size.size}
                         variant="secondary"
                         className="text-xs"
                       >
-                        {size.name}
+                        {size.size}
                       </Badge>
                     ))}
                   </div>
