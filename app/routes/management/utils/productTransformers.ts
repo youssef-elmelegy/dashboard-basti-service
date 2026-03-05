@@ -45,7 +45,10 @@ export function transformRegionalProductsToItems(
 
     // Extract image based on product type
     let productImage = "";
-    if (product.images?.[0]) {
+    if ((product as unknown as { thumbnailUrl?: string }).thumbnailUrl) {
+      productImage = (product as unknown as { thumbnailUrl: string })
+        .thumbnailUrl;
+    } else if (product.images?.[0]) {
       productImage = product.images[0];
     } else if ((product as unknown as { flavorUrl?: string }).flavorUrl) {
       productImage = (product as unknown as { flavorUrl: string }).flavorUrl;

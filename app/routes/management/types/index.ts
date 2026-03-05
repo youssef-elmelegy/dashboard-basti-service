@@ -17,6 +17,7 @@ export interface ProductData {
   shapeUrl?: string;
   flavorUrl?: string;
   decorationUrl?: string;
+  thumbnailUrl?: string;
   mainPrice?: number;
   price?: number | string;
   sizes?: Array<{ name: string; price: number }>;

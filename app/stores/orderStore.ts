@@ -62,12 +62,14 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
   ];
 
   // Get first featured cake image safely
-  const featuredCakesArray = Array.isArray(apiOrder.featuredCakes) ? apiOrder.featuredCakes : [];
-  const firstFeaturedImage = 
-    featuredCakesArray.length > 0 && 
-    featuredCakesArray[0]?.data?.images && 
+  const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
+    ? apiOrder.featuredCakes
+    : [];
+  const firstFeaturedImage =
+    featuredCakesArray.length > 0 &&
+    featuredCakesArray[0]?.data?.images &&
     Array.isArray(featuredCakesArray[0].data.images) &&
-    featuredCakesArray[0].data.images[0] 
+    featuredCakesArray[0].data.images[0]
       ? (featuredCakesArray[0].data.images[0] as string)
       : "";
 
@@ -103,30 +105,40 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
     predesignedCakes: apiOrder.predesignedCakes as any,
     customCakes: apiOrder.customCakes as any,
     // Card details - parse from JSON strings
-    cardMessage: apiOrder.cardMessage ? (() => {
-      try {
-        const parsed = typeof apiOrder.cardMessage === 'string' ? JSON.parse(apiOrder.cardMessage) : apiOrder.cardMessage;
-        return {
-          to: parsed.to,
-          from: parsed.from,
-          message: parsed.message,
-        };
-      } catch {
-        return undefined;
-      }
-    })() : undefined,
-    recipientData: apiOrder.recipientData ? (() => {
-      try {
-        const parsed = typeof apiOrder.recipientData === 'string' ? JSON.parse(apiOrder.recipientData) : apiOrder.recipientData;
-        return {
-          name: parsed.name,
-          email: parsed.email,
-          phoneNumber: parsed.phoneNumber,
-        };
-      } catch {
-        return undefined;
-      }
-    })() : undefined,
+    cardMessage: apiOrder.cardMessage
+      ? (() => {
+          try {
+            const parsed =
+              typeof apiOrder.cardMessage === "string"
+                ? JSON.parse(apiOrder.cardMessage)
+                : apiOrder.cardMessage;
+            return {
+              to: parsed.to,
+              from: parsed.from,
+              message: parsed.message,
+            };
+          } catch {
+            return undefined;
+          }
+        })()
+      : undefined,
+    recipientData: apiOrder.recipientData
+      ? (() => {
+          try {
+            const parsed =
+              typeof apiOrder.recipientData === "string"
+                ? JSON.parse(apiOrder.recipientData)
+                : apiOrder.recipientData;
+            return {
+              name: parsed.name,
+              email: parsed.email,
+              phoneNumber: parsed.phoneNumber,
+            };
+          } catch {
+            return undefined;
+          }
+        })()
+      : undefined,
   };
 }
 

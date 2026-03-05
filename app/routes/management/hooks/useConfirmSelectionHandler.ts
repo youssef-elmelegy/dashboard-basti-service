@@ -100,7 +100,10 @@ export function useConfirmSelectionHandler({
           setEditingProductId(null);
         } else {
           const storeType: "cake" | "sweet" =
-            selectedProduct.type === "featured-cake" ? "cake" : "sweet";
+            selectedProduct.type === "featured-cake" ||
+            selectedProduct.type === "predesigned-cake"
+              ? "cake"
+              : "sweet";
 
           addProduct(
             currentRegion.name,
@@ -110,6 +113,8 @@ export function useConfirmSelectionHandler({
             selectedProduct.type === "featured-cake"
               ? selectedProduct.selectedSizes
               : undefined,
+            regionPrice,
+            selectedProduct.type,
           );
 
           if (selectedProduct.type === "addon") {

@@ -59,6 +59,7 @@ export function ProductSelectionSheet({
   if (!selectedProduct) return null;
 
   const isCake = selectedProduct.type === "featured-cake";
+  const isPredesignedCake = selectedProduct.type === "predesigned-cake";
   const isSweet = selectedProduct.type === "sweet";
   const productName =
     selectedProduct.product.name || selectedProduct.product.title || "Product";
@@ -79,11 +80,12 @@ export function ProductSelectionSheet({
   );
 
   const handleConfirm = () => {
-    if (regionPrice <= 0) {
+    // Predesigned cakes don't require a price input
+    if (!isPredesignedCake && regionPrice <= 0) {
       alert("Please enter a valid price");
       return;
     }
-    onConfirm(regionPrice, showSizeSelection ? sizePrices : undefined);
+    onConfirm(regionPrice || 0, showSizeSelection ? sizePrices : undefined);
     setRegionPrice(0);
     setSizePrices({});
   };
@@ -122,28 +124,34 @@ export function ProductSelectionSheet({
             )}
           </div>
 
-          {/* Regional Price Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Price in this Region</label>
-            <div className="flex gap-2">
-              <span className="flex items-center text-muted-foreground">$</span>
-              <Input
-                type="number"
-                placeholder="Enter price"
-                value={regionPrice || ""}
-                onChange={(e) =>
-                  setRegionPrice(parseFloat(e.target.value) || 0)
-                }
-                min="0"
-                step="0.01"
-              />
+          {/* Regional Price Input - Hidden for Predesigned Cakes */}
+          {!isPredesignedCake && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Price in this Region
+              </label>
+              <div className="flex gap-2">
+                <span className="flex items-center text-muted-foreground">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  placeholder="Enter price"
+                  value={regionPrice || ""}
+                  onChange={(e) =>
+                    setRegionPrice(parseFloat(e.target.value) || 0)
+                  }
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              {productPrice && (
+                <p className="text-xs text-muted-foreground">
+                  Original price: ${productPrice}
+                </p>
+              )}
             </div>
-            {productPrice && (
-              <p className="text-xs text-muted-foreground">
-                Original price: ${productPrice}
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Size Price Inputs for Cakes and Sweets */}
           {showSizeSelection && (
@@ -177,7 +185,7 @@ export function ProductSelectionSheet({
           {/* Confirm Button */}
           <Button
             className="w-full"
-            disabled={regionPrice <= 0}
+            disabled={!isPredesignedCake && regionPrice <= 0}
             onClick={handleConfirm}
           >
             Add to Region

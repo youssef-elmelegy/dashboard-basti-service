@@ -13,7 +13,7 @@ type RegionalPricingBody =
       sweetId: string;
       sizesPrices?: Record<string, string>;
     }
-  | { regionId: string; price: string; predesignedCakeId: string };
+  | { regionId: string; predesignedCakeId: string };
 
 export function getPricingEndpointAndBody(
   productType: ProductType,
@@ -75,7 +75,7 @@ export function getPricingEndpointAndBody(
     case "predesigned-cake":
       return {
         endpoint: "/custom-cakes/predesigned-cakes/region-pricing",
-        body: { ...baseBody, predesignedCakeId: productId },
+        body: { regionId, predesignedCakeId: productId },
       };
   }
 }

@@ -56,11 +56,11 @@ export default function RegionDetailPage() {
     setIsSelectionOpen,
   });
 
-  const { handleDeleteProduct, isDeleting } = useDeleteRegionalProduct({
+  const { handleDeleteProduct } = useDeleteRegionalProduct({
     regionId: id || "",
     regionalProducts,
     onSuccess: (deletedProductId) => {
-      // Remove the deleted product from the regional products list
+      // Remove from regional products (from API)
       setRegionalProducts(
         regionalProducts.filter((p) => p.id !== deletedProductId),
       );
@@ -153,12 +153,28 @@ export default function RegionDetailPage() {
           Selected Products
         </h2>
         <SelectedProductsTable
-          isLoading={isLoadingRegionalProducts || isDeleting}
+          isLoading={isLoadingRegionalProducts}
           data={regionSelectedProducts}
           onRemoveProduct={(id) => {
             const item = regionSelectedProducts.find((p) => p.id === id);
             if (item) {
-              handleDeleteProduct(item);
+              // Check if it's a regional product (starts with "regional-")
+              if (item.id.startsWith("regional-")) {
+                // Optimistically remove from UI first
+                setRegionalProducts(
+                  regionalProducts.filter((p) => p.id !== item.productId),
+                );
+                // Then delete from API in background
+                handleDeleteProduct(item).catch(() => {
+                  // If delete fails, we could add it back (but for now just log)
+                  console.error("Failed to delete product");
+                });
+              } else {
+                // It's a product from the store, just remove it from store
+                const removeProduct =
+                  useRegionProductSelectionStore.getState().removeProduct;
+                removeProduct(id);
+              }
             }
           }}
           onEditProduct={handleEditProduct}

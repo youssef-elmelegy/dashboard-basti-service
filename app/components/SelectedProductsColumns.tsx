@@ -34,7 +34,7 @@ export const selectedProductsColumns = (
     size: 200,
     enableSorting: false,
     cell: ({ row }) => {
-      const productType = row.original.type;
+      const productType = row.original.productType || row.original.type;
       const typeLabels: Record<string, string> = {
         "featured-cake": "Featured Cake",
         addon: "Add-on",

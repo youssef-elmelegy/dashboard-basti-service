@@ -71,12 +71,14 @@ export function ProductSearchResults({
               className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0 transition-colors"
             >
               <div className="flex gap-3">
-                {(product.images?.[0] ||
+                {(product.thumbnailUrl ||
+                  product.images?.[0] ||
                   product.shapeUrl ||
                   product.flavorUrl ||
                   product.decorationUrl) && (
                   <img
                     src={
+                      product.thumbnailUrl ||
                       product.images?.[0] ||
                       product.shapeUrl ||
                       product.flavorUrl ||
