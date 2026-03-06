@@ -22,12 +22,6 @@ import { cn } from "@/lib/utils";
 import { useRegionStore } from "@/stores/regionStore";
 import type { BakeryType } from "@/lib/services/bakery.service";
 
-const bakeryTypes: { label: string; value: BakeryType }[] = [
-  { label: "Small Cakes", value: "small_cakes" },
-  { label: "Large Cakes", value: "large_cakes" },
-  { label: "Others", value: "others" },
-];
-
 const formSchema = z.object({
   name: z
     .string()
@@ -48,7 +42,7 @@ const formSchema = z.object({
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(z.enum(["small_cakes", "large_cakes", "others"]))
+    .array(z.enum(["small_cakes", "large_cakes", "others", "basket_cakes", "midume", "custom"]))
     .min(1, { message: "Select at least one bakery type!" }),
 });
 
@@ -67,6 +61,9 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
       small_cakes: "smallCakes",
       large_cakes: "largeCakes",
       others: "othersType",
+      basket_cakes: "basketCakes",
+      midume: "midume",
+      custom: "customType",
     };
     return t(`bakeriesManagement.${typeMap[type]}`);
   };

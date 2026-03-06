@@ -12,7 +12,7 @@
  */
 
 import { create } from "zustand";
-import { bakeryApi, type Bakery } from "@/lib/services/bakery.service";
+import { bakeryApi, type Bakery, type BakeryType } from "@/lib/services/bakery.service";
 
 interface BakeryState {
   // Data
@@ -30,7 +30,7 @@ interface BakeryState {
     locationDescription: string;
     regionId: string;
     capacity: number;
-    bakeryTypes: string[];
+    bakeryTypes: BakeryType[];
   }) => Promise<void>;
   updateBakery: (
     id: string,
@@ -39,7 +39,7 @@ interface BakeryState {
       locationDescription?: string;
       regionId?: string;
       capacity?: number;
-      bakeryTypes?: string[];
+      bakeryTypes?: BakeryType[];
     },
   ) => Promise<void>;
   deleteBakery: (id: string) => Promise<void>;
@@ -141,13 +141,7 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         locationDescription: bakeryData.locationDescription,
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
-        bakeryTypes: bakeryData.bakeryTypes as (
-          | "basket_cakes"
-          | "midume"
-          | "small_cakes"
-          | "large_cakes"
-          | "custom"
-        )[],
+        bakeryTypes: bakeryData.bakeryTypes,
       });
 
       if (response.success && response.data) {
@@ -175,13 +169,7 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         locationDescription: bakeryData.locationDescription,
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
-        bakeryTypes: bakeryData.bakeryTypes as (
-          | "basket_cakes"
-          | "midume"
-          | "small_cakes"
-          | "large_cakes"
-          | "custom"
-        )[],
+        bakeryTypes: bakeryData.bakeryTypes,
       });
 
       if (response.success && response.data) {

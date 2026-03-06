@@ -26,7 +26,7 @@ import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useRegionStore } from "@/stores/regionStore";
 import { useState, useMemo, useEffect } from "react";
-import type { Bakery } from "@/lib/services/bakery.service";
+import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
 
 export default function BakeriesPage() {
   const { t } = useTranslation();
@@ -97,7 +97,7 @@ export default function BakeriesPage() {
     locationDescription: string;
     regionId: string;
     capacity: number;
-    bakeryTypes: string[];
+    bakeryTypes: BakeryType[];
   }) => {
     try {
       await addBakery(data);

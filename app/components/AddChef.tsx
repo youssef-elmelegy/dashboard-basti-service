@@ -1,6 +1,5 @@
 import {
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -81,8 +80,6 @@ const AddChef = ({ onSubmit }: AddChefProps) => {
       bakeryId: "",
     },
   });
-
-  const selectedBakeryId = form.watch("bakeryId");
 
   const handleBakerySelect = (bakeryId: string) => {
     form.setValue("bakeryId", bakeryId, { shouldValidate: true });

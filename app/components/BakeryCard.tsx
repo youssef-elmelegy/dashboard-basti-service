@@ -20,6 +20,9 @@ const BAKERY_TYPE_CONFIG: Record<
   small_cakes: { color: "outline" },
   large_cakes: { color: "destructive" },
   others: { color: "default" },
+  basket_cakes: { color: "secondary" },
+  midume: { color: "secondary" },
+  custom: { color: "outline" },
 };
 
 interface BakeryCardProps {
@@ -37,6 +40,9 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
       small_cakes: "smallCakes",
       large_cakes: "largeCakes",
       others: "othersType",
+      basket_cakes: "basketCakes",
+      midume: "midume",
+      custom: "customType",
     };
     return t(`bakeriesManagement.${typeMap[type]}`);
   };

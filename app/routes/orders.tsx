@@ -520,7 +520,7 @@ const Orders = () => {
       const bakeryTypeMap: Record<string, BakeryType[]> = {
         big_cakes: ["large_cakes"],
         small_cakes: ["small_cakes"],
-        others: ["basket_cakes", "midume"], // Featured, sweets, addons
+        others: ["others"],
       };
 
       const requiredTypes = bakeryTypeMap[orderCartType];
