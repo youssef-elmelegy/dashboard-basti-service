@@ -83,7 +83,7 @@ export default function BakeriesPage() {
       // Filter by types
       if (selectedTypes.length > 0) {
         const hasMatchingType = bakery.types.some((type) =>
-          selectedTypes.includes(type)
+          selectedTypes.includes(type),
         );
         if (!hasMatchingType) return false;
       }
@@ -111,7 +111,7 @@ export default function BakeriesPage() {
     data: Omit<
       Bakery,
       "id" | "averageRating" | "totalReviews" | "createdAt" | "updatedAt"
-    >
+    >,
   ) => {
     if (selectedBakery) {
       try {
@@ -133,6 +133,13 @@ export default function BakeriesPage() {
   const handleDeleteBakery = (bakery: Bakery) => {
     openDeleteDialog(
       {
+        title: t("bakeriesManagement.deleteBakery"),
+        description: (
+          <>
+            {t("bakeriesManagement.deleteBakeryDescription")}{" "}
+            <strong>{bakery.name}</strong>? {t("common.cannotBeUndone")}
+          </>
+        ),
         recordName: bakery.name,
         recordType: t("bakeriesManagement.recordType"),
       },
@@ -142,13 +149,13 @@ export default function BakeriesPage() {
         } catch (error) {
           console.error("Failed to delete bakery:", error);
         }
-      }
+      },
     );
   };
 
   const handleTypeToggle = (type: string) => {
     setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   };
 

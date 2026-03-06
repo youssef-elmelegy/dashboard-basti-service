@@ -1,4 +1,5 @@
 import { MoreVertical } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FeaturedCake } from "@/lib/services/featured-cake.service";
@@ -23,6 +24,7 @@ export function FeaturedCakeCard({
   onDelete,
   onToggleActive,
 }: FeaturedCakeCardProps) {
+  const { t } = useTranslation();
   const images = Array.isArray(cake.images)
     ? cake.images
     : [(cake as unknown as { image: string }).image];
@@ -47,13 +49,13 @@ export function FeaturedCakeCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(cake)}>
-                Edit
+                {t("featuredCakes.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(cake)}
                 className="text-destructive focus:text-destructive"
               >
-                Delete
+                {t("featuredCakes.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -127,7 +129,9 @@ export function FeaturedCakeCard({
           variant={cake.isActive ? "default" : "outline"}
           onClick={() => onToggleActive(cake.id)}
         >
-          {cake.isActive ? "✓ Active" : "○ Inactive"}
+          {cake.isActive
+            ? `✓ ${t("featuredCakes.active")}`
+            : `○ ${t("featuredCakes.inactive")}`}
         </Button>
       </div>
     </div>

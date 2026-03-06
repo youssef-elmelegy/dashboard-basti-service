@@ -8,10 +8,12 @@ import { useState } from "react";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { forgotPassword, isLoading, error } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -20,15 +22,15 @@ export default function ForgotPasswordPage() {
     setLocalError(null);
 
     if (!email) {
-      setLocalError("Please enter your email address");
+      setLocalError(t("auth.forgotPassword.emptyEmail"));
       return;
     }
 
     try {
       await forgotPassword(email);
       navigate("/auth/otp-verify", { state: { email } });
-    } catch (err) {
-      setLocalError(error || "Failed to send reset code. Please try again.");
+    } catch {
+      setLocalError(error || t("auth.forgotPassword.sendFailed"));
     }
   };
 
@@ -50,10 +52,11 @@ export default function ForgotPasswordPage() {
             <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
               <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
-                  <h1 className="text-2xl font-bold">Reset your password</h1>
+                  <h1 className="text-2xl font-bold">
+                    {t("auth.forgotPassword.title")}
+                  </h1>
                   <p className="text-muted-foreground text-sm text-balance">
-                    Enter your email address and we'll send you a code to reset
-                    your password
+                    {t("auth.forgotPassword.description")}
                   </p>
                 </div>
 
@@ -64,7 +67,9 @@ export default function ForgotPasswordPage() {
                 )}
 
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="email">
+                    {t("auth.forgotPassword.emailLabel")}
+                  </FieldLabel>
                   <Input
                     id="email"
                     type="email"
@@ -77,7 +82,9 @@ export default function ForgotPasswordPage() {
                 </Field>
                 <Field>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Sending..." : "Send reset code"}
+                    {isLoading
+                      ? t("auth.forgotPassword.sending")
+                      : t("auth.forgotPassword.sendButton")}
                   </Button>
                 </Field>
                 <Field>
@@ -88,7 +95,7 @@ export default function ForgotPasswordPage() {
                     disabled={isLoading}
                   >
                     <ArrowLeft className="size-4" />
-                    Back to login
+                    {t("auth.forgotPassword.backToLogin")}
                   </button>
                 </Field>
               </FieldGroup>

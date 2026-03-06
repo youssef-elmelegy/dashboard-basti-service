@@ -22,9 +22,10 @@ interface RegionState {
   currentRegion: Region | null;
   isLoading: boolean;
   error: string | null;
+  isCached: boolean;
 
   // Actions
-  fetchRegions: () => Promise<void>;
+  fetchRegions: (forceRefresh?: boolean) => Promise<void>;
   fetchRegionById: (id: string) => Promise<Region>;
   addRegion: (regionData: {
     name: string;
@@ -41,15 +42,23 @@ interface RegionState {
   resetRegions: () => void;
 }
 
-export const useRegionStore = create<RegionState>((set) => ({
+export const useRegionStore = create<RegionState>((set, get) => ({
   // Initial state
   regions: [],
   currentRegion: null,
   isLoading: false,
   error: null,
+  isCached: false,
 
   // Fetch all regions from API
-  fetchRegions: async () => {
+  fetchRegions: async (forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.regions.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await regionApi.getAll();
@@ -58,6 +67,7 @@ export const useRegionStore = create<RegionState>((set) => ({
         set({
           regions: response.data,
           isLoading: false,
+          isCached: true,
         });
       } else {
         throw new Error(response.message || "Failed to fetch regions");

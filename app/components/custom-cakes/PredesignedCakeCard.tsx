@@ -26,14 +26,14 @@ export function PredesignedCakeCard({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden relative">
+    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden relative flex flex-col h-full">
       {/* Cake Thumbnail */}
-      <div className="relative h-48 w-full overflow-hidden rounded-t-lg bg-muted/30">
+      <div className="relative h-48 w-full bg-muted/30 rounded-t-lg flex items-center justify-center flex-shrink-0">
         {cake.thumbnailUrl ? (
           <img
             src={cake.thumbnailUrl}
             alt={cake.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/70">
@@ -68,10 +68,12 @@ export function PredesignedCakeCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col gap-3">
-        <div>
+      <div className="p-4 flex flex-col gap-3 flex-grow">
+        <div className="flex-grow">
           <h3 className="font-semibold text-card-foreground">{cake.name}</h3>
-          <p className="text-sm text-muted-foreground">{cake.description}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {cake.description}
+          </p>
         </div>
 
         {/* Tags and Info */}
@@ -82,8 +84,10 @@ export function PredesignedCakeCard({
             </Badge>
           )}
         </div>
+      </div>
 
-        {/* Toggle Active Button */}
+      {/* Toggle Active Button - Fixed at bottom */}
+      <div className="p-4 pt-0 flex-shrink-0">
         <Button
           className="w-full gap-2"
           size="sm"

@@ -198,7 +198,7 @@ export function AddOnForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-6 px-4"
+        className="space-y-6 mt-6 px-6"
       >
         {/* Name */}
         <FormField

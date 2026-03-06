@@ -18,11 +18,13 @@ import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 export default function OTPPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { verifyOtp, forgotPassword, isLoading, error } = useAuth();
+  const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const email = (location.state as { email: string } | null)?.email || "";
@@ -32,12 +34,12 @@ export default function OTPPage() {
     setLocalError(null);
 
     if (otp.length !== 6) {
-      setLocalError("Please enter a valid 6-digit code");
+      setLocalError(t("auth.otp.invalidCode"));
       return;
     }
 
     if (!email) {
-      setLocalError("Email is missing. Please try again.");
+      setLocalError(t("auth.otp.missingEmail"));
       return;
     }
 
@@ -46,8 +48,8 @@ export default function OTPPage() {
       // Store resetToken in localStorage as fallback
       localStorage.setItem("resetToken", resetToken);
       navigate("/auth/reset-password", { state: { email, resetToken } });
-    } catch (err) {
-      setLocalError(error || "Failed to verify code. Please try again.");
+    } catch {
+      setLocalError(error || t("auth.otp.verifyFailed"));
     }
   };
 
@@ -56,14 +58,14 @@ export default function OTPPage() {
     setOtp("");
 
     if (!email) {
-      setLocalError("Email is missing. Please go back and try again.");
+      setLocalError(t("auth.otp.resendEmailMissing"));
       return;
     }
 
     try {
       await forgotPassword(email);
-    } catch (err) {
-      setLocalError(error || "Failed to resend code. Please try again.");
+    } catch {
+      setLocalError(error || t("auth.otp.resendFailed"));
     }
   };
 
@@ -87,10 +89,10 @@ export default function OTPPage() {
                 <FieldGroup>
                   <div className="flex flex-col items-center gap-1 text-center">
                     <h1 className="text-2xl font-bold">
-                      Enter verification code
+                      {t("auth.otp.title")}
                     </h1>
                     <p className="text-muted-foreground text-sm text-balance">
-                      We sent a 6-digit code to your email.
+                      {t("auth.otp.description")}
                     </p>
                   </div>
 
@@ -102,7 +104,7 @@ export default function OTPPage() {
 
                   <Field>
                     <FieldLabel htmlFor="otp" className="sr-only">
-                      Verification code
+                      {t("auth.otp.codeLabel")}
                     </FieldLabel>
                     <InputOTP
                       maxLength={6}
@@ -128,24 +130,26 @@ export default function OTPPage() {
                       </InputOTPGroup>
                     </InputOTP>
                     <FieldDescription className="text-center">
-                      Enter the 6-digit code sent to your email.
+                      {t("auth.otp.codeDescription")}
                     </FieldDescription>
                   </Field>
                   <Button
                     type="submit"
                     disabled={otp.length !== 6 || isLoading}
                   >
-                    {isLoading ? "Verifying..." : "Verify"}
+                    {isLoading
+                      ? t("auth.otp.verifying")
+                      : t("auth.otp.verifyButton")}
                   </Button>
                   <FieldDescription className="text-center">
-                    Didn&apos;t receive the code?{" "}
+                    {t("auth.otp.resendQuestion")}{" "}
                     <button
                       type="button"
                       onClick={handleResend}
                       className="underline hover:text-foreground disabled:opacity-50"
                       disabled={isLoading}
                     >
-                      Resend
+                      {t("auth.otp.resendButton")}
                     </button>
                   </FieldDescription>
                 </FieldGroup>

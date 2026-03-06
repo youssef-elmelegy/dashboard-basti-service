@@ -206,7 +206,7 @@ export default function SweetsPage() {
 
       {/* Add/Edit Sheet */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>
               {editingSweet ? t("sweets.editSweet") : t("sweets.addNewSweet")}

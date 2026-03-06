@@ -37,6 +37,13 @@ export default function RegionsPage() {
   const handleDeleteRegion = (region: Region) => {
     openDeleteDialog(
       {
+        title: t("regions.deleteTitle"),
+        description: (
+          <>
+            {t("regions.deleteDescription")} <strong>{region.name}</strong>?{" "}
+            {t("common.cannotBeUndone")}
+          </>
+        ),
         recordName: region.name,
         recordType: t("regions.recordType"),
       },

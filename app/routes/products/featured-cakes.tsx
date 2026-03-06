@@ -99,7 +99,7 @@ export default function FeaturedCakesPage() {
         recordName: cake.name,
         recordType: t("featuredCakes.recordType"),
         title: t("featuredCakes.deleteCake"),
-        description: `${t("messages.confirmDelete")}`,
+        description: `${t("featuredCakes.deleteMessage")} ${cake.name}? ${t("common.cannotBeUndone")}`,
       },
       async () => {
         try {
@@ -174,21 +174,21 @@ export default function FeaturedCakesPage() {
               size="sm"
               onClick={() => setActiveFilter("all")}
             >
-              All
+              {t("common.all")}
             </Button>
             <Button
               variant={activeFilter === "active" ? "default" : "outline"}
               size="sm"
               onClick={() => setActiveFilter("active")}
             >
-              Active
+              {t("featuredCakes.active")}
             </Button>
             <Button
               variant={activeFilter === "inactive" ? "default" : "outline"}
               size="sm"
               onClick={() => setActiveFilter("inactive")}
             >
-              Inactive
+              {t("featuredCakes.inactive")}
             </Button>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function FeaturedCakesPage() {
 
       {/* Add Featured Cake Sheet */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>{t("featuredCakes.addNewCake")}</SheetTitle>
           </SheetHeader>
@@ -243,7 +243,7 @@ export default function FeaturedCakesPage() {
       {/* Edit Featured Cake Sheet */}
       {editingCake && (
         <Sheet open={!!editingCake} onOpenChange={() => setEditingCake(null)}>
-          <SheetContent className="overflow-y-auto max-w-2xl">
+          <SheetContent className="overflow-y-auto max-w-2xl py-6">
             <SheetHeader>
               <SheetTitle>{t("featuredCakes.editCake")}</SheetTitle>
             </SheetHeader>

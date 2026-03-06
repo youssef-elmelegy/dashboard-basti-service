@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormField,
@@ -40,6 +41,7 @@ export function RegionForm({
   isLoading = false,
   mode = "add",
 }: RegionFormProps) {
+  const { t } = useTranslation();
   const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
@@ -136,7 +138,7 @@ export function RegionForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Region Name</FormLabel>
+              <FormLabel>{t("regions.regionName")}</FormLabel>
               <Input placeholder="e.g., Cairo, Alexandria" {...field} />
               <FormMessage />
             </FormItem>
@@ -150,7 +152,7 @@ export function RegionForm({
             <MultiImageUploader
               images={uploadedImageUrl ? [uploadedImageUrl] : []}
               onImagesChange={handleImageChange}
-              label="Region Image"
+              label={t("regions.regionImage")}
               maxImages={1}
               error={form.formState.errors.image?.message}
             />
@@ -168,7 +170,7 @@ export function RegionForm({
                 id="isAvailable"
               />
               <FormLabel htmlFor="isAvailable" className="cursor-pointer mb-0">
-                Available for Orders
+                {t("regions.availableForOrders")}
               </FormLabel>
             </FormItem>
           )}
@@ -180,10 +182,10 @@ export function RegionForm({
           disabled={isLoading || uploadingImage}
         >
           {uploadingImage || isLoading
-            ? "Loading..."
+            ? t("regions.loading")
             : mode === "edit"
-              ? "Update Region"
-              : "Add Region"}
+              ? t("regions.updateButton")
+              : t("regions.addButton")}
         </Button>
       </form>
     </Form>

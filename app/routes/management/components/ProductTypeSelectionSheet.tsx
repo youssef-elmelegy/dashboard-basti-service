@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -27,6 +28,7 @@ export function ProductTypeSelectionSheet({
   onOpenChange,
   onSelectProduct,
 }: ProductTypeSelectionSheetProps) {
+  const { t } = useTranslation();
   const [selectedProductType, setSelectedProductType] = useState<
     ProductType | ""
   >("featured-cake");
@@ -55,9 +57,9 @@ export function ProductTypeSelectionSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:w-135 max-w-135 overflow-y-auto">
+      <SheetContent className="w-full sm:w-135 max-w-135 overflow-y-auto pt-6">
         <SheetHeader>
-          <SheetTitle>Select Product Type</SheetTitle>
+          <SheetTitle>{t("regions.selectProductType")}</SheetTitle>
         </SheetHeader>
         <div className="space-y-4 mt-6 px-2">
           <Select
@@ -67,16 +69,22 @@ export function ProductTypeSelectionSheet({
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Choose a product type..." />
+              <SelectValue placeholder={t("regions.chooseProductType")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="featured-cake">Featured Cake</SelectItem>
-              <SelectItem value="addon">Add-on</SelectItem>
-              <SelectItem value="flavor">Flavor</SelectItem>
-              <SelectItem value="shape">Shape</SelectItem>
-              <SelectItem value="decoration">Decoration</SelectItem>
-              <SelectItem value="sweet">Sweet</SelectItem>
-              <SelectItem value="predesigned-cake">Predesigned Cake</SelectItem>
+              <SelectItem value="featured-cake">
+                {t("regions.featuredCake")}
+              </SelectItem>
+              <SelectItem value="addon">{t("regions.addon")}</SelectItem>
+              <SelectItem value="flavor">{t("regions.flavor")}</SelectItem>
+              <SelectItem value="shape">{t("regions.shape")}</SelectItem>
+              <SelectItem value="decoration">
+                {t("regions.decoration")}
+              </SelectItem>
+              <SelectItem value="sweet">{t("regions.sweet")}</SelectItem>
+              <SelectItem value="predesigned-cake">
+                {t("regions.predesignedCake")}
+              </SelectItem>
             </SelectContent>
           </Select>
 

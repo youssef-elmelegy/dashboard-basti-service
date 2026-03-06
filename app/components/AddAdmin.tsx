@@ -81,7 +81,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
   };
 
   return (
-    <SheetContent className="overflow-y-auto">
+    <SheetContent className="overflow-y-auto py-6">
       <SheetHeader>
         <SheetTitle>{t("admins.addAdmin")}</SheetTitle>
       </SheetHeader>
@@ -118,28 +118,30 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="super_admin">Super Admin</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="super_admin">
+                {t("adminTable.superAdmin")}
+              </SelectItem>
+              <SelectItem value="admin">{t("adminTable.admin")}</SelectItem>
+              <SelectItem value="manager">{t("adminTable.manager")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {t("admins.bakery")} (Optional)
+            {t("admins.bakery")} ({t("adminTable.optional")})
           </label>
           <Select
             value={formData.bakeryId || ""}
             onValueChange={handleBakeryChange}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a bakery (optional)" />
+              <SelectValue placeholder={t("adminTable.selectBakery")} />
             </SelectTrigger>
             <SelectContent>
               {bakeries.length === 0 ? (
                 <div className="p-2 text-sm text-gray-500">
-                  No bakeries available
+                  {t("adminTable.noBakeries")}
                 </div>
               ) : (
                 bakeries.map((bakery) => (
@@ -154,7 +156,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {t("admins.profileImage")} (Optional)
+            {t("admins.profileImage")} ({t("adminTable.optional")})
           </label>
           <Input
             type="url"
@@ -167,7 +169,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
 
         <div className="flex gap-2 pt-4">
           <Button type="submit" disabled={isLoading} className="flex-1">
-            {isLoading ? "Creating..." : t("admins.create")}
+            {isLoading ? t("adminTable.creating") : t("admins.create")}
           </Button>
         </div>
       </form>

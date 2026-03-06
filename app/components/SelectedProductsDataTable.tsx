@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import {
   useReactTable,
@@ -48,6 +49,7 @@ export function SelectedProductsDataTable({
   searchQuery = "",
   onSearchChange,
 }: SelectedProductsDataTableProps) {
+  const { t } = useTranslation();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
 
@@ -113,7 +115,7 @@ export function SelectedProductsDataTable({
                       <span className="flex items-center gap-1">
                         {flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                         {isSortable && (
                           <SortIcon
@@ -140,7 +142,7 @@ export function SelectedProductsDataTable({
                           <TableCell key={cell.id}>
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
                         ))}
@@ -162,7 +164,7 @@ export function SelectedProductsDataTable({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No products selected
+                  {t("regions.noProductsSelected")}
                 </TableCell>
               </TableRow>
             )}

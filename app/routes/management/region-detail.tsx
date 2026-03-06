@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useRegionStore } from "@/stores/regionStore";
 import { useRegionProductSelectionStore } from "@/stores/regionProductSelectionStore";
+import { useDeleteDialog } from "@/components/useDeleteDialog";
 import React from "react";
 import { RegionHeader } from "@/components/RegionHeader";
 import { ProductSelectionSheet } from "@/components/ProductSelectionSheet";
@@ -20,7 +22,9 @@ import type { SelectedProductItem } from "./types";
 export default function RegionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isTypeDialogOpen, setIsTypeDialogOpen] = React.useState(false);
+  const { openDeleteDialog } = useDeleteDialog();
 
   // Region hooks
   const currentRegion = useRegionStore((state) => state.currentRegion);
@@ -110,7 +114,7 @@ export default function RegionDetailPage() {
   if (isLoading && !region) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-2xl font-bold mb-2">Loading...</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("common.loading")}</h1>
       </div>
     );
   }
@@ -118,9 +122,11 @@ export default function RegionDetailPage() {
   if (!region) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-2xl font-bold mb-2">Region Not Found</h1>
+        <h1 className="text-2xl font-bold mb-2">
+          {t("regions.regionNotFound")}
+        </h1>
         <Button onClick={() => navigate("/management/regions")}>
-          Back to Regions
+          {t("regions.backToRegions")}
         </Button>
       </div>
     );
@@ -133,10 +139,12 @@ export default function RegionDetailPage() {
 
       {/* Add Products Button Section */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Products</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          {t("regions.products")}
+        </h2>
         <Button onClick={() => setIsTypeDialogOpen(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Add Product
+          {t("regions.addProduct")}
         </Button>
       </div>
 
@@ -150,7 +158,7 @@ export default function RegionDetailPage() {
       {/* Selected Products Table */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight mb-4">
-          Selected Products
+          {t("regions.selectedProducts")}
         </h2>
         <SelectedProductsTable
           isLoading={isLoadingRegionalProducts}
@@ -158,23 +166,39 @@ export default function RegionDetailPage() {
           onRemoveProduct={(id) => {
             const item = regionSelectedProducts.find((p) => p.id === id);
             if (item) {
-              // Check if it's a regional product (starts with "regional-")
-              if (item.id.startsWith("regional-")) {
-                // Optimistically remove from UI first
-                setRegionalProducts(
-                  regionalProducts.filter((p) => p.id !== item.productId),
-                );
-                // Then delete from API in background
-                handleDeleteProduct(item).catch(() => {
-                  // If delete fails, we could add it back (but for now just log)
-                  console.error("Failed to delete product");
-                });
-              } else {
-                // It's a product from the store, just remove it from store
-                const removeProduct =
-                  useRegionProductSelectionStore.getState().removeProduct;
-                removeProduct(id);
-              }
+              openDeleteDialog(
+                {
+                  title: t("regions.deleteProduct"),
+                  description: (
+                    <>
+                      {t("regions.deleteProductDescription")}{" "}
+                      <strong>{item.productName}</strong>?{" "}
+                      {t("common.cannotBeUndone")}
+                    </>
+                  ),
+                  recordName: item.productName,
+                  recordType: t("common.product"),
+                },
+                async () => {
+                  // Check if it's a regional product (starts with "regional-")
+                  if (item.id.startsWith("regional-")) {
+                    // Optimistically remove from UI first
+                    setRegionalProducts(
+                      regionalProducts.filter((p) => p.id !== item.productId),
+                    );
+                    // Then delete from API in background
+                    handleDeleteProduct(item).catch(() => {
+                      // If delete fails, we could add it back (but for now just log)
+                      console.error("Failed to delete product");
+                    });
+                  } else {
+                    // It's a product from the store, just remove it from store
+                    const removeProduct =
+                      useRegionProductSelectionStore.getState().removeProduct;
+                    removeProduct(id);
+                  }
+                },
+              );
             }
           }}
           onEditProduct={handleEditProduct}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ import type {
   UpdateFlavorFormValues,
   CreateFlavorWithVariantImagesFormValues,
 } from "@/schemas/custom-cakes.schema";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { FlavorForm } from "@/components/custom-cakes/FlavorForm";
 import { FlavorCard } from "@/components/custom-cakes/FlavorCard";
 
@@ -28,11 +28,16 @@ export default function FlavorsPage() {
   const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingFlavor, setEditingFlavor] = useState<Flavor | null>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(false);
 
   const flavors = useFlavorStore((state) => state.flavors);
   const isLoading = useFlavorStore((state) => state.isLoading);
+  const isLoadingMore = useFlavorStore((state) => state.isLoadingMore);
   const error = useFlavorStore((state) => state.error);
+  const pagination = useFlavorStore((state) => state.pagination);
   const fetchFlavors = useFlavorStore((state) => state.fetchFlavors);
+  const loadMoreFlavors = useFlavorStore((state) => state.loadMoreFlavors);
   const addFlavorWithVariantImages = useFlavorStore(
     (state) => state.addFlavorWithVariantImages,
   );
@@ -43,6 +48,41 @@ export default function FlavorsPage() {
   useEffect(() => {
     fetchFlavors();
   }, [fetchFlavors]);
+
+  // Handle infinite scroll
+  useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMore &&
+          pagination.page < pagination.totalPages
+        ) {
+          isLoadingRef.current = true;
+          loadMoreFlavors().finally(() => {
+            isLoadingRef.current = false;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [isLoadingMore, pagination.page, pagination.totalPages, loadMoreFlavors]);
 
   const handleAddFlavor = async (
     values: CreateFlavorWithVariantImagesFormValues,
@@ -137,20 +177,36 @@ export default function FlavorsPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {flavors.map((flavor) => (
-            <FlavorCard
-              key={flavor.id}
-              flavor={flavor}
-              onEdit={() => setEditingFlavor(flavor)}
-              onDelete={() => handleDeleteFlavor(flavor)}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {flavors.map((flavor) => (
+              <FlavorCard
+                key={flavor.id}
+                flavor={flavor}
+                onEdit={() => setEditingFlavor(flavor)}
+                onDelete={() => handleDeleteFlavor(flavor)}
+              />
+            ))}
+          </div>
+
+          {/* Infinite scroll trigger element */}
+          <div ref={observerTarget} className="flex justify-center py-8">
+            {isLoadingMore && (
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            )}
+            {!isLoadingMore &&
+              pagination.page >= pagination.totalPages &&
+              flavors.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.endOfList") || "No more items to load"}
+                </p>
+              )}
+          </div>
         </div>
       )}
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>{t("customCakes.addNewFlavor")}</SheetTitle>
           </SheetHeader>
@@ -165,7 +221,7 @@ export default function FlavorsPage() {
           open={!!editingFlavor}
           onOpenChange={() => setEditingFlavor(null)}
         >
-          <SheetContent className="overflow-y-auto max-w-2xl">
+          <SheetContent className="overflow-y-auto max-w-2xl py-6">
             <SheetHeader>
               <SheetTitle>{t("customCakes.editFlavor")}</SheetTitle>
             </SheetHeader>

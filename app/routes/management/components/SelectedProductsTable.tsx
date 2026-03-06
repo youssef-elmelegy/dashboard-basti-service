@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { SelectedProductsDataTable } from "@/components/SelectedProductsDataTable";
 import { selectedProductsColumns } from "@/components/SelectedProductsColumns";
 
@@ -27,6 +28,8 @@ export function SelectedProductsTable({
   onRemoveProduct,
   onEditProduct,
 }: SelectedProductsTableProps) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center gap-2 py-12 border rounded-lg bg-muted/50">
@@ -40,7 +43,7 @@ export function SelectedProductsTable({
           style={{ animationDelay: "0.2s" }}
         ></div>
         <span className="text-sm text-muted-foreground ml-2">
-          Loading products...
+          {t("regions.tableLoading")}
         </span>
       </div>
     );
@@ -48,7 +51,7 @@ export function SelectedProductsTable({
 
   return (
     <SelectedProductsDataTable
-      columns={selectedProductsColumns(onRemoveProduct, onEditProduct)}
+      columns={selectedProductsColumns(onRemoveProduct, onEditProduct, t)}
       data={data}
     />
   );

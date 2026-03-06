@@ -102,9 +102,9 @@ export default function SliderImagesPage() {
     openDeleteDialog(
       {
         recordName: image.title,
-        recordType: t("sliderImages.sliderImage"),
-        title: t("sliderImages.deleteSliderImage"),
-        description: `${t("messages.confirmDelete")}`,
+        recordType: t("sliderImages.recordType"),
+        title: t("sliderImages.deleteConfirm"),
+        description: `${t("sliderImages.deleteMessage")} ${image.title}? ${t("common.cannotBeUndone")}`,
       },
       async () => {
         try {
@@ -153,7 +153,7 @@ export default function SliderImagesPage() {
                 {t("sliderImages.addSliderImage")}
               </Button>
             </SheetTrigger>
-            <SheetContent className="overflow-y-auto">
+            <SheetContent className="overflow-y-auto py-6">
               <SheetHeader>
                 <SheetTitle>{t("sliderImages.addNewSliderImage")}</SheetTitle>
               </SheetHeader>
@@ -210,7 +210,7 @@ export default function SliderImagesPage() {
                 onDelete={() => handleDeleteSliderImage(image)}
               />
               {selectedImage && (
-                <SheetContent className="overflow-y-auto">
+                <SheetContent className="overflow-y-auto py-6">
                   <SheetHeader>
                     <SheetTitle>{t("sliderImages.editSliderImage")}</SheetTitle>
                   </SheetHeader>
@@ -245,7 +245,7 @@ export default function SliderImagesPage() {
                   {t("sliderImages.createSliderImage")}
                 </Button>
               </SheetTrigger>
-              <SheetContent className="overflow-y-auto">
+              <SheetContent className="overflow-y-auto py-6">
                 <SheetHeader>
                   <SheetTitle>{t("sliderImages.addNewSliderImage")}</SheetTitle>
                 </SheetHeader>

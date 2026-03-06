@@ -8,40 +8,46 @@ import { useState } from "react";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { resetPassword, isLoading, error } = useAuth();
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const locationState = location.state as { email: string; resetToken: string } | null;
-  
+  const locationState = location.state as {
+    email: string;
+    resetToken: string;
+  } | null;
+
   // Get resetToken from navigation state or localStorage as fallback
-  const resetToken = locationState?.resetToken || localStorage.getItem("resetToken") || "";
+  const resetToken =
+    locationState?.resetToken || localStorage.getItem("resetToken") || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
 
     if (!password || !confirmPassword) {
-      setLocalError("Please fill in all fields");
+      setLocalError(t("auth.resetPassword.fillAllFields"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setLocalError("Passwords do not match");
+      setLocalError(t("auth.resetPassword.passwordMismatch"));
       return;
     }
 
     if (password.length < 8) {
-      setLocalError("Password must be at least 8 characters long");
+      setLocalError(t("auth.resetPassword.passwordTooShort"));
       return;
     }
 
     if (!resetToken) {
-      setLocalError("Session expired. Please restart the password reset process from the beginning.");
+      setLocalError(t("auth.resetPassword.sessionExpired"));
       // Redirect to forgot password page
       setTimeout(() => {
         navigate("/auth/forgot-password");
@@ -54,8 +60,8 @@ export default function ResetPasswordPage() {
       // Clear resetToken after successful reset
       localStorage.removeItem("resetToken");
       navigate("/auth/login");
-    } catch (err) {
-      setLocalError(error || "Failed to reset password. Please try again.");
+    } catch {
+      setLocalError(error || t("auth.resetPassword.resetFailed"));
     }
   };
 
@@ -83,9 +89,11 @@ export default function ResetPasswordPage() {
             <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
               <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
-                  <h1 className="text-2xl font-bold">Create new password</h1>
+                  <h1 className="text-2xl font-bold">
+                    {t("auth.resetPassword.title")}
+                  </h1>
                   <p className="text-muted-foreground text-sm text-balance">
-                    Enter your new password below
+                    {t("auth.resetPassword.description")}
                   </p>
                 </div>
 
@@ -96,7 +104,9 @@ export default function ResetPasswordPage() {
                 )}
 
                 <Field>
-                  <FieldLabel htmlFor="password">New Password</FieldLabel>
+                  <FieldLabel htmlFor="password">
+                    {t("auth.resetPassword.passwordLabel")}
+                  </FieldLabel>
                   <Input
                     id="password"
                     type="password"
@@ -109,7 +119,7 @@ export default function ResetPasswordPage() {
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm-password">
-                    Confirm Password
+                    {t("auth.resetPassword.confirmLabel")}
                   </FieldLabel>
                   <Input
                     id="confirm-password"
@@ -125,17 +135,19 @@ export default function ResetPasswordPage() {
                   confirmPassword &&
                   password !== confirmPassword && (
                     <p className="text-sm text-red-500 text-center">
-                      Passwords do not match
+                      {t("auth.resetPassword.passwordMismatch")}
                     </p>
                   )}
                 {password && password.length > 0 && password.length < 8 && (
                   <p className="text-sm text-amber-600 text-center">
-                    Password must be at least 8 characters
+                    {t("auth.resetPassword.passwordTooShort")}
                   </p>
                 )}
                 <Field>
                   <Button type="submit" disabled={!isFormValid || isLoading}>
-                    {isLoading ? "Resetting..." : "Reset password"}
+                    {isLoading
+                      ? t("auth.resetPassword.resetting")
+                      : t("auth.resetPassword.resetButton")}
                   </Button>
                 </Field>
                 <Field>
@@ -146,7 +158,7 @@ export default function ResetPasswordPage() {
                     disabled={isLoading}
                   >
                     <ArrowLeft className="size-4" />
-                    Back to login
+                    {t("auth.forgotPassword.backToLogin")}
                   </button>
                 </Field>
               </FieldGroup>

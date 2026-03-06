@@ -7,6 +7,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
@@ -20,14 +21,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BakeryType, Bakery } from "@/lib/services/bakery.service";
 import { useRegionStore } from "@/stores/regionStore";
-
-const bakeryTypes: { label: string; value: BakeryType }[] = [
-  { label: "Basket Cakes", value: "basket_cakes" },
-  { label: "Midume", value: "midume" },
-  { label: "Small Cakes", value: "small_cakes" },
-  { label: "Large Cakes", value: "large_cakes" },
-  { label: "Custom", value: "custom" },
-];
 
 // Zod schema for form validation
 const formSchema = z.object({
@@ -47,15 +40,7 @@ const formSchema = z.object({
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(
-      z.enum([
-        "basket_cakes",
-        "midume",
-        "small_cakes",
-        "large_cakes",
-        "custom",
-      ]),
-    )
+    .array(z.enum(["small_cakes", "large_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
 });
 
@@ -72,7 +57,17 @@ interface EditBakeryProps {
 }
 
 export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
+  const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
+
+  const getBakeryTypeLabel = (type: BakeryType): string => {
+    const typeMap: Record<BakeryType, string> = {
+      small_cakes: "smallCakes",
+      large_cakes: "largeCakes",
+      others: "othersType",
+    };
+    return t(`bakeriesManagement.${typeMap[type]}`);
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -111,9 +106,11 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
   };
 
   return (
-    <SheetContent>
+    <SheetContent className="py-6">
       <SheetHeader>
-        <SheetTitle className="mb-4">Edit Bakery</SheetTitle>
+        <SheetTitle className="mb-4">
+          {t("bakeriesManagement.editBakery")}
+        </SheetTitle>
         <SheetDescription asChild>
           <Form {...form}>
             <form
@@ -125,9 +122,12 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bakery Name</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.bakeryName")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter bakery name" {...field} />
+                      <Input
+                        placeholder={t("bakeriesManagement.enterBakeryName")}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -139,10 +139,14 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 name="locationDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location Description</FormLabel>
+                    <FormLabel>
+                      {t("bakeriesManagement.locationDescription")}
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter location description"
+                        placeholder={t(
+                          "bakeriesManagement.enterLocationDescription",
+                        )}
                         {...field}
                       />
                     </FormControl>
@@ -156,7 +160,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.capacity")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -177,10 +181,10 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 name="regionId"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Region</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.region")}</FormLabel>
                     {regions.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        No regions available. Create regions first.
+                        {t("bakeriesManagement.noRegionsAvailable")}
                       </p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -211,21 +215,27 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 name="bakeryTypes"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Bakery Types</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.bakeryTypes")}</FormLabel>
                     <div className="flex flex-wrap gap-2">
-                      {bakeryTypes.map((type) => (
+                      {(
+                        Object.keys({
+                          small_cakes: true,
+                          large_cakes: true,
+                          others: true,
+                        }) as BakeryType[]
+                      ).map((value) => (
                         <button
-                          key={type.value}
+                          key={value}
                           type="button"
-                          onClick={() => handleTypeToggle(type.value)}
+                          onClick={() => handleTypeToggle(value)}
                           className={cn(
                             "px-3 py-1 rounded-full text-sm border transition-colors",
-                            selectedTypes.includes(type.value)
+                            selectedTypes.includes(value)
                               ? "bg-primary text-primary-foreground border-primary"
                               : "border-border hover:bg-muted",
                           )}
                         >
-                          {type.label}
+                          {getBakeryTypeLabel(value)}
                         </button>
                       ))}
                     </div>
@@ -235,7 +245,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
               />
 
               <Button type="submit" className="w-full">
-                Update Bakery
+                {t("bakeriesManagement.updateBakery")}
               </Button>
             </form>
           </Form>

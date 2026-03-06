@@ -57,7 +57,10 @@ export function SweetForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6 mt-6 px-6"
+      >
         {/* Name */}
         <FormField
           control={form.control}

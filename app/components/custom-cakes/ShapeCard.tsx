@@ -1,4 +1,5 @@
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ interface ShapeCardProps {
 }
 
 export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
       <div className="flex gap-4">
@@ -50,14 +52,14 @@ export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(shape)}>
               <Pencil className="h-4 w-4 mr-2" />
-              Edit
+              {t("customCakes.edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(shape)}
               className="text-destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {t("customCakes.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

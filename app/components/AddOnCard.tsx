@@ -76,13 +76,13 @@ export function AddOnCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(addOn)}>
-                {t("common.edit")}
+                {t("addOns.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(addOn)}
                 className="text-destructive focus:text-destructive"
               >
-                {t("common.delete")}
+                {t("addOns.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -41,7 +41,8 @@ import {
 import { Edit2, Lock, LockOpen } from "lucide-react";
 
 export default function AdminsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === "ar";
   const admins = useAdminStore((state) => state.admins);
   const isLoading = useAdminStore((state) => state.isLoading);
   const error = useAdminStore((state) => state.error);
@@ -83,10 +84,12 @@ export default function AdminsPage() {
         recordType: admin.isBlocked
           ? t("admins.unblockConfirm")
           : t("admins.blockConfirm"),
-        title: isBlocking ? "Block Admin?" : "Unblock Admin?",
+        title: isBlocking
+          ? t("admins.blockConfirm")
+          : t("admins.unblockConfirm"),
         description: isBlocking
-          ? `Are you sure you want to block ${admin.email}? This action cannot be undone.`
-          : `Are you sure you want to unblock ${admin.email}? This action cannot be undone.`,
+          ? `${t("admins.blockMessage")} ${admin.email}? ${t("common.cannotBeUndone")}`
+          : `${t("admins.unblockMessage")} ${admin.email}? ${t("common.cannotBeUndone")}`,
         actionType: isBlocking ? "block" : "unblock",
       },
       async () => {
@@ -205,11 +208,28 @@ export default function AdminsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Bakery</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {isRTL && (
+                    <TableHead className="text-right">
+                      {t("adminTable.actions")}
+                    </TableHead>
+                  )}
+                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                    {t("adminTable.email")}
+                  </TableHead>
+                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                    {t("adminTable.role")}
+                  </TableHead>
+                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                    {t("adminTable.bakery")}
+                  </TableHead>
+                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                    {t("adminTable.status")}
+                  </TableHead>
+                  {!isRTL && (
+                    <TableHead className="text-right">
+                      {t("adminTable.actions")}
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,40 +237,72 @@ export default function AdminsPage() {
                   const bakery = bakeries.find((b) => b.id === admin.bakeryId);
                   return (
                     <TableRow key={admin.id}>
+                      {isRTL && (
+                        <TableCell className="text-left">
+                          <div className="flex justify-start gap-2">
+                            <button
+                              onClick={() => handleEditAdmin(admin)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleBlockAdmin(admin)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                admin.isBlocked
+                                  ? "hover:bg-green-100"
+                                  : "hover:bg-orange-100"
+                              }`}
+                              title={admin.isBlocked ? "Unblock" : "Block"}
+                            >
+                              {admin.isBlocked ? (
+                                <LockOpen className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Lock className="w-4 h-4 text-orange-600" />
+                              )}
+                            </button>
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">
                         {admin.email}
                       </TableCell>
                       <TableCell>{admin.role}</TableCell>
                       <TableCell>{bakery?.name || "—"}</TableCell>
                       <TableCell>
-                        {admin.isBlocked ? "Blocked" : "Active"}
+                        {admin.isBlocked
+                          ? t("adminTable.blocked")
+                          : t("adminTable.active")}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleEditAdmin(admin)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleBlockAdmin(admin)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              admin.isBlocked
-                                ? "hover:bg-green-100"
-                                : "hover:bg-orange-100"
-                            }`}
-                            title={admin.isBlocked ? "Unblock" : "Block"}
-                          >
-                            {admin.isBlocked ? (
-                              <LockOpen className="w-4 h-4 text-green-600" />
-                            ) : (
-                              <Lock className="w-4 h-4 text-orange-600" />
-                            )}
-                          </button>
-                        </div>
-                      </TableCell>
+                      {!isRTL && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleEditAdmin(admin)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleBlockAdmin(admin)}
+                              className={`p-2 rounded-lg transition-colors ${
+                                admin.isBlocked
+                                  ? "hover:bg-green-100"
+                                  : "hover:bg-orange-100"
+                              }`}
+                              title={admin.isBlocked ? "Unblock" : "Block"}
+                            >
+                              {admin.isBlocked ? (
+                                <LockOpen className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Lock className="w-4 h-4 text-orange-600" />
+                              )}
+                            </button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

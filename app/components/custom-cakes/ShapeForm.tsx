@@ -115,16 +115,19 @@ export function ShapeForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-4 p-4"
+        className="space-y-6 mt-6 px-6"
       >
         <FormField
           control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.title")}</FormLabel>
+              <FormLabel>{t("customCakes.shapeTitle")}</FormLabel>
               <FormControl>
-                <Input placeholder="Enter shape title" {...field} />
+                <Input
+                  placeholder={t("customCakes.enterShapeTitle")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -136,10 +139,10 @@ export function ShapeForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.description")}</FormLabel>
+              <FormLabel>{t("customCakes.shapeDescription")}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter shape description"
+                  placeholder={t("customCakes.enterShapeDescription")}
                   className="resize-none"
                   {...field}
                 />
@@ -167,17 +170,23 @@ export function ShapeForm({
           name="size"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("customCakes.size") || "Size"}</FormLabel>
+              <FormLabel>{t("customCakes.size")}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a size" />
+                    <SelectValue placeholder={t("customCakes.selectSize")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="small">Small</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="large">Large</SelectItem>
+                  <SelectItem value="small">
+                    {t("customCakes.small")}
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    {t("customCakes.medium")}
+                  </SelectItem>
+                  <SelectItem value="large">
+                    {t("customCakes.large")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -190,14 +199,12 @@ export function ShapeForm({
           name="capacity"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t("customCakes.capacity") || "Capacity (servings)"}
-              </FormLabel>
+              <FormLabel>{t("customCakes.capacity")}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   min="1"
-                  placeholder="Enter capacity in servings"
+                  placeholder={t("customCakes.enterCapacity")}
                   {...field}
                   onChange={(e) =>
                     field.onChange(parseInt(e.target.value, 10) || 0)

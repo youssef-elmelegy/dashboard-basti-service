@@ -74,7 +74,7 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
   };
 
   return (
-    <SheetContent className="overflow-y-auto">
+    <SheetContent className="overflow-y-auto py-6">
       <SheetHeader>
         <SheetTitle>{t("admins.editAdmin")}</SheetTitle>
       </SheetHeader>
@@ -100,16 +100,18 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="super_admin">Super Admin</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="super_admin">
+                {t("adminTable.superAdmin")}
+              </SelectItem>
+              <SelectItem value="admin">{t("adminTable.admin")}</SelectItem>
+              <SelectItem value="manager">{t("adminTable.manager")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {t("admins.bakery")} (Optional)
+            {t("admins.bakery")} ({t("adminTable.optional")})
           </label>
           {formData.bakeryId && (
             <button
@@ -117,7 +119,7 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
               onClick={() => handleBakeryChange("")}
               className="text-xs text-blue-600 hover:text-blue-800 mb-2"
             >
-              Clear selection
+              {t("adminTable.clearSelection")}
             </button>
           )}
           <Select
@@ -125,12 +127,12 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
             onValueChange={handleBakeryChange}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select a bakery (optional)" />
+              <SelectValue placeholder={t("adminTable.selectBakery")} />
             </SelectTrigger>
             <SelectContent>
               {bakeries.length === 0 ? (
                 <div className="p-2 text-sm text-gray-500">
-                  No bakeries available
+                  {t("adminTable.noBakeries")}
                 </div>
               ) : (
                 bakeries.map((bakery) => (
@@ -145,7 +147,7 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            {t("admins.profileImage")} (Optional)
+            {t("admins.profileImage")} ({t("adminTable.optional")})
           </label>
           <Input
             type="url"
@@ -159,13 +161,17 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
         <div className="space-y-2">
           <label className="text-sm font-medium">{t("admins.status")}</label>
           <div className="px-3 py-2 border">
-            <p className="text-sm">{admin.isBlocked ? "Blocked" : "Active"}</p>
+            <p className="text-sm">
+              {admin.isBlocked
+                ? t("adminTable.blocked")
+                : t("adminTable.active")}
+            </p>
           </div>
         </div>
 
         <div className="flex gap-2 pt-4">
           <Button type="submit" disabled={isLoading} className="flex-1">
-            {isLoading ? "Updating..." : t("admins.update")}
+            {isLoading ? t("adminTable.updating") : t("admins.update")}
           </Button>
         </div>
       </form>

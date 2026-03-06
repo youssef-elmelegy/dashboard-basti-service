@@ -1,5 +1,6 @@
 import { MapPin, Package, Star, MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
 import {
@@ -13,15 +14,12 @@ import { Button } from "@/components/ui/button";
 const BAKERY_TYPE_CONFIG: Record<
   BakeryType,
   {
-    label: string;
     color: "default" | "secondary" | "destructive" | "outline";
   }
 > = {
-  basket_cakes: { label: "Basket Cakes", color: "default" },
-  midume: { label: "Midume", color: "secondary" },
-  small_cakes: { label: "Small Cakes", color: "outline" },
-  large_cakes: { label: "Large Cakes", color: "destructive" },
-  custom: { label: "Custom", color: "default" },
+  small_cakes: { color: "outline" },
+  large_cakes: { color: "destructive" },
+  others: { color: "default" },
 };
 
 interface BakeryCardProps {
@@ -32,6 +30,16 @@ interface BakeryCardProps {
 
 export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const getBakeryTypeLabel = (type: BakeryType): string => {
+    const typeMap: Record<BakeryType, string> = {
+      small_cakes: "smallCakes",
+      large_cakes: "largeCakes",
+      others: "othersType",
+    };
+    return t(`bakeriesManagement.${typeMap[type]}`);
+  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on the dropdown menu
@@ -55,14 +63,22 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(bakery)}>
-              Edit
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(bakery);
+              }}
+            >
+              {t("bakeriesManagement.edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => onDelete(bakery)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(bakery);
+              }}
               className="text-destructive focus:text-destructive"
             >
-              Delete
+              {t("bakeriesManagement.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -85,7 +101,7 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
           <Package className="w-4 h-4 text-primary mt-0.5 shrink-0" />
           <div>
             <p className="text-xs text-muted-foreground font-medium">
-              Capacity
+              {t("bakeriesManagement.capacity")}
             </p>
             <p className="text-lg font-semibold text-card-foreground">
               {bakery.capacity}
@@ -97,7 +113,7 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
             <Star className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0 fill-yellow-500" />
             <div>
               <p className="text-xs text-muted-foreground font-medium">
-                Rating
+                {t("bakeriesManagement.rating")}
               </p>
               <p className="text-lg font-semibold text-card-foreground">
                 {bakery.averageRating.toFixed(1)} ({bakery.totalReviews})
@@ -109,20 +125,18 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
 
       {/* Types */}
       <div>
-        <p className="text-xs text-muted-foreground font-medium mb-2">Types</p>
+        <p className="text-xs text-muted-foreground font-medium mb-2">
+          {t("bakeriesManagement.types")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {bakery.types && bakery.types.length > 0 ? (
             bakery.types.map((type: BakeryType) => (
               <Badge
                 key={type}
                 variant={BAKERY_TYPE_CONFIG[type]?.color || "outline"}
-                className={`text-xs ${
-                  type === "custom"
-                    ? "bg-[oklch(87.79%_0.23094_129.081)] text-white dark:bg-[oklch(87.79%_0.23094_129.081/0.672)] dark:text-white"
-                    : ""
-                }`}
+                className="text-xs"
               >
-                {BAKERY_TYPE_CONFIG[type]?.label || type}
+                {getBakeryTypeLabel(type)}
               </Badge>
             ))
           ) : (

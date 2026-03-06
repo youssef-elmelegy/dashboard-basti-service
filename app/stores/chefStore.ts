@@ -16,8 +16,13 @@ interface ChefStore {
   chefs: Chef[];
   isLoading: boolean;
   error: string | null;
+  isCached: boolean;
 
-  fetchChefs: (page?: number, limit?: number) => Promise<void>;
+  fetchChefs: (
+    page?: number,
+    limit?: number,
+    forceRefresh?: boolean,
+  ) => Promise<void>;
   addChef: (data: CreateChefRequest) => Promise<void>;
   updateChef: (id: string, data: UpdateChefRequest) => Promise<void>;
   deleteChef: (id: string) => Promise<void>;
@@ -27,17 +32,25 @@ interface ChefStore {
   resetChefs: () => void;
 }
 
-export const useChefStore = create<ChefStore>((set) => ({
+export const useChefStore = create<ChefStore>((set, get) => ({
   chefs: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
-  fetchChefs: async (page = 1, limit = 10) => {
+  fetchChefs: async (page = 1, limit = 10, forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.chefs.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await chefApi.getAll(page, limit);
       if (response.success && response.data) {
-        set({ chefs: response.data.items, isLoading: false });
+        set({ chefs: response.data.items, isLoading: false, isCached: true });
       }
     } catch (error) {
       const errorMessage =

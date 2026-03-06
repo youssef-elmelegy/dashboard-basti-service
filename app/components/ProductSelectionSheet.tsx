@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
 type ProductType =
@@ -53,6 +54,7 @@ export function ProductSelectionSheet({
   onOpenChange,
   onConfirm,
 }: ProductSelectionSheetProps) {
+  const { t } = useTranslation();
   const [regionPrice, setRegionPrice] = useState<number>(0);
   const [sizePrices, setSizePrices] = useState<Record<string, number>>({});
 
@@ -82,7 +84,7 @@ export function ProductSelectionSheet({
   const handleConfirm = () => {
     // Predesigned cakes don't require a price input
     if (!isPredesignedCake && regionPrice <= 0) {
-      alert("Please enter a valid price");
+      alert(t("regions.pleaseEnterValidPrice"));
       return;
     }
     onConfirm(regionPrice || 0, showSizeSelection ? sizePrices : undefined);
@@ -92,9 +94,9 @@ export function ProductSelectionSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto">
+      <SheetContent className="overflow-y-auto py-6">
         <SheetHeader>
-          <SheetTitle>Product Details</SheetTitle>
+          <SheetTitle>{t("regions.productDetails")}</SheetTitle>
         </SheetHeader>
 
         <div className="mt-6 space-y-6 px-4 pb-6">
@@ -128,7 +130,7 @@ export function ProductSelectionSheet({
           {!isPredesignedCake && (
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Price in this Region
+                {t("regions.priceInRegion")}
               </label>
               <div className="flex gap-2">
                 <span className="flex items-center text-muted-foreground">
@@ -136,7 +138,7 @@ export function ProductSelectionSheet({
                 </span>
                 <Input
                   type="number"
-                  placeholder="Enter price"
+                  placeholder={t("regions.enterPrice")}
                   value={regionPrice || ""}
                   onChange={(e) =>
                     setRegionPrice(parseFloat(e.target.value) || 0)
@@ -147,7 +149,7 @@ export function ProductSelectionSheet({
               </div>
               {productPrice && (
                 <p className="text-xs text-muted-foreground">
-                  Original price: ${productPrice}
+                  {t("regions.originalPrice")} ${productPrice}
                 </p>
               )}
             </div>
@@ -188,7 +190,7 @@ export function ProductSelectionSheet({
             disabled={!isPredesignedCake && regionPrice <= 0}
             onClick={handleConfirm}
           >
-            Add to Region
+            {t("regions.addToRegion")}
           </Button>
         </div>
       </SheetContent>

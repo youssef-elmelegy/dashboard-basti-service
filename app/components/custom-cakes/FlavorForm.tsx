@@ -123,16 +123,19 @@ export function FlavorForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-4 p-4"
+        className="space-y-6 mt-6 px-6"
       >
         <FormField
           control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.title")}</FormLabel>
+              <FormLabel>{t("customCakes.flavorTitle")}</FormLabel>
               <FormControl>
-                <Input placeholder={t("common.titlePlaceholder")} {...field} />
+                <Input
+                  placeholder={t("customCakes.enterFlavorTitle")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -144,10 +147,10 @@ export function FlavorForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.description")}</FormLabel>
+              <FormLabel>{t("customCakes.flavorDescription")}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder={t("common.descriptionPlaceholder")}
+                  placeholder={t("customCakes.enterFlavorDescription")}
                   className="resize-none"
                   {...field}
                 />

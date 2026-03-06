@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import type {
   UpdateDecorationFormValues,
   CreateDecorationWithVariantImagesFormValues,
 } from "@/schemas/custom-cakes.schema";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { DecorationForm } from "@/components/custom-cakes/DecorationForm";
 import { DecorationCard } from "@/components/custom-cakes/DecorationCard";
 
@@ -31,12 +31,19 @@ export default function DecorationsPage() {
   const [editingDecoration, setEditingDecoration] = useState<Decoration | null>(
     null,
   );
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(false);
 
   const decorations = useDecorationStore((state) => state.decorations);
   const isLoading = useDecorationStore((state) => state.isLoading);
+  const isLoadingMore = useDecorationStore((state) => state.isLoadingMore);
   const error = useDecorationStore((state) => state.error);
+  const pagination = useDecorationStore((state) => state.pagination);
   const fetchDecorations = useDecorationStore(
     (state) => state.fetchDecorations,
+  );
+  const loadMoreDecorations = useDecorationStore(
+    (state) => state.loadMoreDecorations,
   );
   const addDecoration = useDecorationStore((state) => state.addDecoration);
   const addDecorationWithVariantImages = useDecorationStore(
@@ -53,6 +60,46 @@ export default function DecorationsPage() {
   useEffect(() => {
     fetchDecorations();
   }, [fetchDecorations]);
+
+  // Handle infinite scroll
+  useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMore &&
+          pagination.page < pagination.totalPages
+        ) {
+          isLoadingRef.current = true;
+          loadMoreDecorations().finally(() => {
+            isLoadingRef.current = false;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [
+    isLoadingMore,
+    pagination.page,
+    pagination.totalPages,
+    loadMoreDecorations,
+  ]);
 
   const handleAddDecoration = async (
     values:
@@ -166,20 +213,36 @@ export default function DecorationsPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {decorations.map((decoration) => (
-            <DecorationCard
-              key={decoration.id}
-              decoration={decoration}
-              onEdit={() => setEditingDecoration(decoration)}
-              onDelete={() => handleDeleteDecoration(decoration)}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {decorations.map((decoration) => (
+              <DecorationCard
+                key={decoration.id}
+                decoration={decoration}
+                onEdit={() => setEditingDecoration(decoration)}
+                onDelete={() => handleDeleteDecoration(decoration)}
+              />
+            ))}
+          </div>
+
+          {/* Infinite scroll trigger element */}
+          <div ref={observerTarget} className="flex justify-center py-8">
+            {isLoadingMore && (
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            )}
+            {!isLoadingMore &&
+              pagination.page >= pagination.totalPages &&
+              decorations.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.endOfList") || "No more items to load"}
+                </p>
+              )}
+          </div>
         </div>
       )}
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>{t("customCakes.addNewDecoration")}</SheetTitle>
           </SheetHeader>
@@ -198,7 +261,7 @@ export default function DecorationsPage() {
           open={!!editingDecoration}
           onOpenChange={() => setEditingDecoration(null)}
         >
-          <SheetContent className="overflow-y-auto max-w-2xl">
+          <SheetContent className="overflow-y-auto max-w-2xl py-6">
             <SheetHeader>
               <SheetTitle>{t("customCakes.editDecoration")}</SheetTitle>
             </SheetHeader>

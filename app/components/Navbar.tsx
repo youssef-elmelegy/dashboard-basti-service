@@ -1,6 +1,7 @@
 import { AvatarImage, Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, Settings, User, Bell } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,7 @@ import { useState } from "react";
 const Navbar = () => {
   const navigate = useNavigate();
   const { admin, logout } = useAuth();
+  const { t } = useTranslation();
   const [hasNotifications] = useState(false); // TODO: Connect to real notifications
 
   const handleLogout = async () => {
@@ -34,8 +36,6 @@ const Navbar = () => {
     <nav className="p-4 flex items-center justify-between">
       <SidebarTrigger />
       <div className="flex items-center gap-4">
-        <Link to="/">Dashboard</Link>
-
         {/* Notification Button */}
         <Button
           variant="ghost"
@@ -67,17 +67,20 @@ const Navbar = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={10}>
             <DropdownMenuLabel>
-              {admin?.email || "My Account"}
+              {admin?.email || t("common.myAccount")}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <User className="h-[1.2rem] w-[1.2rem] mr-2" /> Profile
+              <User className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              {t("common.profile")}
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Settings className="h-[1.2rem] w-[1.2rem] mr-2" /> Settings
+              <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              {t("common.settings")}
             </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-              <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" /> Logout
+              <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              {t("common.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

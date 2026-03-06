@@ -23,12 +23,22 @@ interface AddDecorationWithVariantImagesData {
 interface DecorationState {
   decorations: Decoration[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
+  isCached: boolean;
+  pagination: {
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  };
   fetchDecorations: (
     page?: number,
     limit?: number,
     search?: string,
+    forceRefresh?: boolean,
   ) => Promise<void>;
+  loadMoreDecorations: (search?: string) => Promise<void>;
   addDecoration: (
     data: Omit<Decoration, "id" | "createdAt" | "updatedAt">,
   ) => Promise<Decoration>;
@@ -43,22 +53,83 @@ interface DecorationState {
   clearError: () => void;
 }
 
-export const useDecorationStore = create<DecorationState>((set) => ({
+export const useDecorationStore = create<DecorationState>((set, get) => ({
   decorations: [],
   isLoading: false,
+  isLoadingMore: false,
   error: null,
+  isCached: false,
+  pagination: {
+    total: 0,
+    totalPages: 0,
+    page: 1,
+    limit: 10,
+  },
 
-  fetchDecorations: async (page = 1, limit = 10, search?: string) => {
+  fetchDecorations: async (
+    page = 1,
+    limit = 10,
+    search?: string,
+    forceRefresh = false,
+  ) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.decorations.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await decorationApi.getAll(page, limit, search);
       if (response.success && response.data) {
-        set({ decorations: response.data.items, isLoading: false });
+        set({
+          decorations: response.data.items,
+          pagination: response.data.pagination,
+          isLoading: false,
+          isCached: true,
+        });
       }
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : "Failed to fetch decorations";
       set({ error: errorMsg, isLoading: false });
+    }
+  },
+
+  loadMoreDecorations: async (search?: string) => {
+    const state = get();
+    const nextPage = state.pagination.page + 1;
+
+    // Don't load more if we're already at the last page
+    if (nextPage > state.pagination.totalPages) {
+      return;
+    }
+
+    set({ isLoadingMore: true, error: null });
+    try {
+      const response = await decorationApi.getAll(
+        nextPage,
+        state.pagination.limit,
+        search,
+      );
+      if (response.success && response.data) {
+        set({
+          decorations: [...state.decorations, ...response.data.items],
+          pagination: response.data.pagination,
+          isLoadingMore: false,
+        });
+      } else {
+        set({
+          error: "Failed to load more decorations",
+          isLoadingMore: false,
+        });
+      }
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "An error occurred",
+        isLoadingMore: false,
+      });
     }
   },
 

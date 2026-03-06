@@ -29,7 +29,7 @@ export default function ShapesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingShape, setEditingShape] = useState<Shape | null>(null);
 
-  const shapes = useShapeStore((state) => state.shapes);
+  const shapes = useShapeStore((state) => state.shapes) || [];
   const isLoading = useShapeStore((state) => state.isLoading);
   const error = useShapeStore((state) => state.error);
   const fetchShapes = useShapeStore((state) => state.fetchShapes);
@@ -150,7 +150,7 @@ export default function ShapesPage() {
       )}
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>{t("customCakes.addNewShape")}</SheetTitle>
           </SheetHeader>
@@ -162,7 +162,7 @@ export default function ShapesPage() {
 
       {editingShape && (
         <Sheet open={!!editingShape} onOpenChange={() => setEditingShape(null)}>
-          <SheetContent className="overflow-y-auto max-w-2xl">
+          <SheetContent className="overflow-y-auto max-w-2xl py-6">
             <SheetHeader>
               <SheetTitle>{t("customCakes.editShape")}</SheetTitle>
             </SheetHeader>

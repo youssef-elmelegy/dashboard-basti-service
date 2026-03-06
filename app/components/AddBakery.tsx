@@ -7,6 +7,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
@@ -22,11 +23,9 @@ import { useRegionStore } from "@/stores/regionStore";
 import type { BakeryType } from "@/lib/services/bakery.service";
 
 const bakeryTypes: { label: string; value: BakeryType }[] = [
-  { label: "Basket Cakes", value: "basket_cakes" },
-  { label: "Midume", value: "midume" },
   { label: "Small Cakes", value: "small_cakes" },
   { label: "Large Cakes", value: "large_cakes" },
-  { label: "Custom", value: "custom" },
+  { label: "Others", value: "others" },
 ];
 
 const formSchema = z.object({
@@ -49,15 +48,7 @@ const formSchema = z.object({
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(
-      z.enum([
-        "basket_cakes",
-        "midume",
-        "small_cakes",
-        "large_cakes",
-        "custom",
-      ]),
-    )
+    .array(z.enum(["small_cakes", "large_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
 });
 
@@ -68,7 +59,17 @@ interface AddBakeryProps {
 }
 
 export function AddBakery({ onSubmit }: AddBakeryProps) {
+  const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
+
+  const getBakeryTypeLabel = (type: BakeryType): string => {
+    const typeMap: Record<BakeryType, string> = {
+      small_cakes: "smallCakes",
+      large_cakes: "largeCakes",
+      others: "othersType",
+    };
+    return t(`bakeriesManagement.${typeMap[type]}`);
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -97,9 +98,11 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
   };
 
   return (
-    <SheetContent>
+    <SheetContent className="py-6">
       <SheetHeader>
-        <SheetTitle className="mb-4">Add Bakery</SheetTitle>
+        <SheetTitle className="mb-4">
+          {t("bakeriesManagement.addBakery")}
+        </SheetTitle>
         <SheetDescription asChild>
           <Form {...form}>
             <form
@@ -111,9 +114,12 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bakery Name</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.bakeryName")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter bakery name" {...field} />
+                      <Input
+                        placeholder={t("bakeriesManagement.enterBakeryName")}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -125,10 +131,14 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 name="locationDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location Description</FormLabel>
+                    <FormLabel>
+                      {t("bakeriesManagement.locationDescription")}
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter location (min 5 characters)"
+                        placeholder={t(
+                          "bakeriesManagement.enterLocationDescription",
+                        )}
                         {...field}
                       />
                     </FormControl>
@@ -142,10 +152,10 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 name="regionId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Region</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.region")}</FormLabel>
                     {regions.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        No regions available. Create regions first.
+                        {t("bakeriesManagement.noRegionsAvailable")}
                       </p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -178,7 +188,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.capacity")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -197,21 +207,27 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 name="bakeryTypes"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Bakery Types</FormLabel>
+                    <FormLabel>{t("bakeriesManagement.bakeryTypes")}</FormLabel>
                     <div className="flex flex-wrap gap-2">
-                      {bakeryTypes.map((type) => (
+                      {(
+                        Object.keys({
+                          small_cakes: true,
+                          large_cakes: true,
+                          others: true,
+                        }) as BakeryType[]
+                      ).map((value) => (
                         <button
-                          key={type.value}
+                          key={value}
                           type="button"
-                          onClick={() => handleTypeToggle(type.value)}
+                          onClick={() => handleTypeToggle(value)}
                           className={cn(
                             "px-3 py-1 rounded-full text-sm border transition-colors",
-                            selectedTypes.includes(type.value)
+                            selectedTypes.includes(value)
                               ? "bg-primary text-primary-foreground border-primary"
                               : "border-border hover:bg-muted",
                           )}
                         >
-                          {type.label}
+                          {getBakeryTypeLabel(value)}
                         </button>
                       ))}
                     </div>
@@ -221,7 +237,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
               />
 
               <Button type="submit" className="w-full">
-                Add Bakery
+                {t("bakeriesManagement.addBakery")}
               </Button>
             </form>
           </Form>

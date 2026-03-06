@@ -5,28 +5,37 @@ interface TagsState {
   tags: Tag[];
   isLoading: boolean;
   error: string | null;
+  isCached: boolean;
 
   // Actions
-  fetchTags: () => Promise<void>;
+  fetchTags: (forceRefresh?: boolean) => Promise<void>;
   addTag: (tag: Tag) => void;
   removeTag: (tagId: string) => void;
   setTags: (tags: Tag[]) => void;
   clearError: () => void;
 }
 
-export const useTagsStore = create<TagsState>((set) => ({
+export const useTagsStore = create<TagsState>((set, get) => ({
   tags: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
   // Fetch all tags from API
-  fetchTags: async () => {
+  fetchTags: async (forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.tags.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await tagsApi.getAll();
 
       if (response.success && response.data) {
-        set({ tags: response.data, isLoading: false });
+        set({ tags: response.data, isLoading: false, isCached: true });
       } else {
         const error = response.message || "Failed to fetch tags";
         set({ error, isLoading: false });

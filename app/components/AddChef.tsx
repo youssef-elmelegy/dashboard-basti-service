@@ -166,129 +166,133 @@ const AddChef = ({ onSubmit }: AddChefProps) => {
   };
 
   return (
-    <SheetContent>
+    <SheetContent className="overflow-y-auto py-6">
       <SheetHeader>
-        <SheetTitle className="mb-4">Add Chef</SheetTitle>
-        <SheetDescription asChild>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-6"
-            >
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Chef Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter chef name" {...field} />
-                    </FormControl>
-                    <FormDescription>The chef's full name.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="specialization"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Specialization</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g., Pastry Chef, Head Chef"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Chef's area of expertise.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bio (Optional)</FormLabel>
-                    <FormControl>
-                      <textarea
-                        placeholder="Enter chef biography (10-1000 characters)"
-                        rows={4}
-                        {...field}
-                        value={field.value ?? ""}
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Chef's biography or experience.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="images"
-                render={({ field }) => (
-                  <MultiImageUploader
-                    images={field.value}
-                    onImagesChange={handleImagesChange}
-                    label={t("products.images")}
-                    maxImages={1}
-                  />
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="bakeryId"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Bakery</FormLabel>
-                    {bakeries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No bakeries available. Create bakeries first.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {bakeries.map((bakery) => (
-                          <button
-                            key={bakery.id}
-                            type="button"
-                            onClick={() => handleBakerySelect(bakery.id)}
-                            className={cn(
-                              "px-3 py-1 rounded-full text-sm border transition-colors",
-                              selectedBakeryId === bakery.id
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border hover:bg-muted",
-                            )}
-                          >
-                            {bakery.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={bakeries.length === 0 || uploadingImage}
-              >
-                {uploadingImage ? "Uploading image..." : "Add Chef"}
-              </Button>
-            </form>
-          </Form>
-        </SheetDescription>
+        <SheetTitle className="mb-4">{t("chefs.addChef")}</SheetTitle>
       </SheetHeader>
+
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-6 mt-6 px-6"
+        >
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("chefs.chefName")}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t("chefs.chefNamePlaceholder")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t("chefs.chefNameDescription")}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="specialization"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("chefs.specialization")}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t("chefs.specializationPlaceholder")}
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t("chefs.specializationDescription")}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="bio"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("chefs.bioOptional")}</FormLabel>
+                <FormControl>
+                  <textarea
+                    placeholder={t("chefs.bioPlaceholder")}
+                    rows={4}
+                    {...field}
+                    value={field.value ?? ""}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </FormControl>
+                <FormDescription>{t("chefs.bioDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="images"
+            render={({ field }) => (
+              <MultiImageUploader
+                images={field.value}
+                onImagesChange={handleImagesChange}
+                label={t("products.images")}
+                maxImages={1}
+              />
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="bakeryId"
+            render={() => (
+              <FormItem>
+                <FormLabel>{t("chefs.selectBakery")}</FormLabel>
+                {bakeries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("chefs.noBakeries")}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {bakeries.map((bakery) => (
+                      <button
+                        key={bakery.id}
+                        type="button"
+                        onClick={() => handleBakerySelect(bakery.id)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-sm border transition-colors",
+                          form.watch("bakeryId") === bakery.id
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        {bakery.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={bakeries.length === 0 || uploadingImage}
+          >
+            {uploadingImage ? t("chefs.uploadingImage") : t("chefs.create")}
+          </Button>
+        </form>
+      </Form>
     </SheetContent>
   );
 };

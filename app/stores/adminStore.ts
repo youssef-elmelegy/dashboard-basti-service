@@ -11,7 +11,8 @@ interface AdminStore {
   admins: Admin[];
   isLoading: boolean;
   error: string | null;
-  fetchAdmins: () => Promise<void>;
+  isCached: boolean;
+  fetchAdmins: (forceRefresh?: boolean) => Promise<void>;
   addAdmin: (payload: CreateAdminPayload) => Promise<void>;
   updateAdmin: (id: string, payload: UpdateAdminPayload) => Promise<void>;
   blockAdmin: (id: string, payload: BlockAdminPayload) => Promise<void>;
@@ -19,16 +20,24 @@ interface AdminStore {
   clearError: () => void;
 }
 
-export const useAdminStore = create<AdminStore>((set) => ({
+export const useAdminStore = create<AdminStore>((set, get) => ({
   admins: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
-  fetchAdmins: async () => {
+  fetchAdmins: async (forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.admins.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const admins = await adminService.getAll();
-      set({ admins, isLoading: false });
+      set({ admins, isLoading: false, isCached: true });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to fetch admins";

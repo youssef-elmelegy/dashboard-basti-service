@@ -24,22 +24,6 @@ import { cn } from "@/lib/utils";
 import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
 import { RestockDialog } from "@/components/RestockDialog";
 
-const bakeryTypeLabels: Record<string, string> = {
-  basket_cakes: "Basket Cakes",
-  midume: "Midume",
-  small_cakes: "Small Cakes",
-  large_cakes: "Large Cakes",
-  custom: "Custom",
-};
-
-const bakeryTypeLabelsAr: Record<string, string> = {
-  basket_cakes: "كعك سلة",
-  midume: "ميدومة",
-  small_cakes: "كعك صغير",
-  large_cakes: "كعك كبير",
-  custom: "مخصص",
-};
-
 function RatingStars({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
@@ -50,7 +34,7 @@ function RatingStars({ rating }: { rating: number }) {
             "w-4 h-4",
             star <= Math.round(rating)
               ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground"
+              : "text-muted-foreground",
           )}
         />
       ))}
@@ -105,7 +89,7 @@ export default function BakeryDetailPage() {
   const isRTL = i18n.language === "ar";
   const bakeries = useBakeryStore((state) => state.bakeries);
   const getReviewsByBakeryId = useReviewStore(
-    (state) => state.getReviewsByBakeryId
+    (state) => state.getReviewsByBakeryId,
   );
   const getAverageRating = useReviewStore((state) => state.getAverageRating);
 
@@ -117,7 +101,7 @@ export default function BakeryDetailPage() {
   // Get all stocks for this bakery
   const allStocks = useMemo(
     () => (bakery ? useStockStore.getState().getStocksByBakery(bakery.id) : []),
-    [bakery]
+    [bakery],
   );
 
   // Filter stocks to only show add-ons for this bakery's region
@@ -130,12 +114,12 @@ export default function BakeryDetailPage() {
 
   const reviews = useMemo(
     () => (bakery ? getReviewsByBakeryId(bakery.id) : []),
-    [bakery, getReviewsByBakeryId]
+    [bakery, getReviewsByBakeryId],
   );
 
   const averageRating = useMemo(
     () => (bakery ? getAverageRating(bakery.id) : 0),
-    [bakery, getAverageRating]
+    [bakery, getAverageRating],
   );
 
   const handleEditStock = (stock: AddOnStock) => {
@@ -157,7 +141,14 @@ export default function BakeryDetailPage() {
     );
   }
 
-  const typeLabels = isRTL ? bakeryTypeLabelsAr : bakeryTypeLabels;
+  const getBakeryTypeLabel = (type: string): string => {
+    const typeMap: Record<string, string> = {
+      small_cakes: "smallCakes",
+      large_cakes: "largeCakes",
+      others: "othersType",
+    };
+    return t(`bakeriesManagement.${typeMap[type] || type}`);
+  };
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -203,7 +194,7 @@ export default function BakeryDetailPage() {
         <div
           className={cn(
             "lg:col-span-2 space-y-6 overflow-y-auto pr-4",
-            isRTL && "pl-4 pr-0"
+            isRTL && "pl-4 pr-0",
           )}
         >
           {/* Header Card */}
@@ -213,7 +204,7 @@ export default function BakeryDetailPage() {
               <div className="flex flex-wrap gap-2 mt-3">
                 {bakery.types.map((type) => (
                   <Badge key={type} variant="secondary">
-                    {typeLabels[type] || type}
+                    {getBakeryTypeLabel(type)}
                   </Badge>
                 ))}
               </div>
@@ -238,7 +229,7 @@ export default function BakeryDetailPage() {
                     {t("bakeriesManagement.capacity")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {bakery.capacity} units
+                    {bakery.capacity} {t("bakeriesManagement.units")}
                   </p>
                 </div>
               </div>
@@ -253,7 +244,7 @@ export default function BakeryDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  {t("bakeriesManagement.stock") || "Add-On Stock"}
+                  {t("bakeriesManagement.stock")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -268,7 +259,7 @@ export default function BakeryDetailPage() {
           className={cn(
             "overflow-y-auto space-y-4",
             isRTL && "pl-4",
-            !isRTL && "pr-4"
+            !isRTL && "pr-4",
           )}
         >
           {/* Rating Summary Card */}

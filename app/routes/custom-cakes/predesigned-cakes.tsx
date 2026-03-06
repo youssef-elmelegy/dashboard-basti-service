@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +22,11 @@ export default function PredesignedCakesPage() {
   const {
     predesignedCakes,
     isLoading,
+    isLoadingMore,
     error,
+    pagination,
     fetchPredesignedCakes,
+    loadMorePredesignedCakes,
     updatePredesignedCake,
     deletePredesignedCake,
     togglePredesignedCakeActive,
@@ -34,10 +37,53 @@ export default function PredesignedCakesPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingCake, setEditingCake] = useState<PredesignedCake | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(false);
 
+  // Fetch initial data (use cached data if available)
   useEffect(() => {
     fetchPredesignedCakes();
   }, [fetchPredesignedCakes]);
+
+  // Handle infinite scroll
+  useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingRef.current || isLoadingMore) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMore &&
+          pagination.page < pagination.totalPages
+        ) {
+          isLoadingRef.current = true;
+          loadMorePredesignedCakes().finally(() => {
+            isLoadingRef.current = false;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [
+    isLoadingMore,
+    pagination.page,
+    pagination.totalPages,
+    loadMorePredesignedCakes,
+  ]);
 
   const handleEditSubmit = async (data: UpdatePredesignedCakeFormValues) => {
     if (!editingCake) return;
@@ -125,15 +171,31 @@ export default function PredesignedCakesPage() {
         </div>
       ) : (
         // Grid of Cakes
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {predesignedCakes.map((cake) => (
-            <PredesignedCakeCard
-              key={cake.id}
-              cake={cake}
-              onDelete={handleDelete}
-              onToggleActive={handleToggleActive}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {predesignedCakes.map((cake) => (
+              <PredesignedCakeCard
+                key={cake.id}
+                cake={cake}
+                onDelete={handleDelete}
+                onToggleActive={handleToggleActive}
+              />
+            ))}
+          </div>
+
+          {/* Infinite scroll trigger element */}
+          <div ref={observerTarget} className="flex justify-center py-8">
+            {isLoadingMore && (
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            )}
+            {!isLoadingMore &&
+              pagination.page >= pagination.totalPages &&
+              predesignedCakes.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.endOfList") || "No more items to load"}
+                </p>
+              )}
+          </div>
         </div>
       )}
 

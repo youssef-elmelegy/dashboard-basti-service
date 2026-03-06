@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
@@ -98,17 +99,23 @@ export function SliderImageForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-4 p-4"
+        className="space-y-6 mt-6 px-6"
       >
         <FormField
           control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.title")}</FormLabel>
+              <FormLabel>{t("sliderImages.sliderTitle")}</FormLabel>
               <FormControl>
-                <Input placeholder="Enter slider title" {...field} />
+                <Input
+                  placeholder={t("sliderImages.sliderTitlePlaceholder")}
+                  {...field}
+                />
               </FormControl>
+              <FormDescription>
+                {t("sliderImages.sliderTitleDescription")}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -121,7 +128,7 @@ export function SliderImageForm({
             <MultiImageUploader
               images={uploadedImageUrl ? [uploadedImageUrl] : []}
               onImagesChange={handleImagesChange}
-              label={t("common.image")}
+              label={t("sliderImages.sliderImage")}
               maxImages={1}
             />
           )}
@@ -133,7 +140,7 @@ export function SliderImageForm({
           className="w-full"
         >
           {uploadingImage || isLoading
-            ? "..."
+            ? t("sliderImages.uploadingImage")
             : isEditMode
               ? t("common.update")
               : t("common.add")}

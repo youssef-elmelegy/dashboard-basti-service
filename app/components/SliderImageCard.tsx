@@ -1,4 +1,5 @@
 import { Trash2, Pencil } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ export function SliderImageCard({
   onEdit,
   onDelete,
 }: SliderImageCardProps) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full">
       {/* Image Container - Large and prominent */}
@@ -44,14 +46,14 @@ export function SliderImageCard({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(image)}>
                 <Pencil className="h-4 w-4 mr-2" />
-                Edit
+                {t("sliderImages.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(image)}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t("sliderImages.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

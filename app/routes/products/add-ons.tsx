@@ -99,7 +99,7 @@ export default function AddOnsPage() {
     openDeleteDialog(
       {
         title: t("addOns.deleteAddOn"),
-        description: `${t("messages.confirmDelete")}`,
+        description: `${t("addOns.deleteMessage")} ${addOn.name}? ${t("common.cannotBeUndone")}`,
         recordType: t("addOns.recordType"),
         recordName: addOn.name,
       },
@@ -209,7 +209,7 @@ export default function AddOnsPage() {
 
       {/* Add/Edit Sheet */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <SheetContent className="overflow-y-auto max-w-2xl">
+        <SheetContent className="overflow-y-auto max-w-2xl py-6">
           <SheetHeader>
             <SheetTitle>
               {editingAddOn ? t("addOns.editAddOn") : t("addOns.addNewAddOn")}

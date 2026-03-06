@@ -1,6 +1,7 @@
 import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Region } from "@/data/regions";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ interface RegionCardProps {
 
 export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleCardClick = () => {
     navigate(`/management/regions/${region.id}`);
@@ -40,13 +42,13 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(region)}>
-              Edit
+              {t("regions.edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(region)}
               className="text-destructive focus:text-destructive"
             >
-              Delete
+              {t("regions.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -78,7 +80,9 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
               : "bg-[color:var(--color-destructive)]"
           }`}
         >
-          {region.isAvailable ? "Available" : "Unavailable"}
+          {region.isAvailable
+            ? t("regions.available")
+            : t("regions.unavailable")}
         </div>
       </div>
     </div>

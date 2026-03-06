@@ -1,10 +1,11 @@
+import { ReactNode } from "react";
 import { create } from "zustand";
 
 export interface DeleteConfig {
   recordName: string;
   recordType: string;
   title?: string;
-  description?: string;
+  description?: ReactNode;
   actionType?: "delete" | "block" | "unblock";
 }
 

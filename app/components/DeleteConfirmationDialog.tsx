@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useDeleteDialogStore } from "@/stores/deleteDialogStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 
 export function DeleteDialogProvider({ children }: { children: ReactNode }) {
+  const { t, i18n } = useTranslation();
   const { open, config, isLoading, closeDeleteDialog, confirmDelete } =
     useDeleteDialogStore();
 
@@ -18,7 +20,24 @@ export function DeleteDialogProvider({ children }: { children: ReactNode }) {
     <>
       {children}
       <Sheet open={open} onOpenChange={closeDeleteDialog}>
-        <SheetContent side="bottom" className="w-full sm:max-w-md mx-auto">
+        <SheetContent
+          side="bottom"
+          dir={i18n.language === "ar" ? "rtl" : "ltr"}
+          className="w-full sm:max-w-md mx-auto pt-6"
+          style={
+            i18n.language === "ar"
+              ? ({ direction: "rtl" } as React.CSSProperties)
+              : {}
+          }
+        >
+          {i18n.language === "ar" && (
+            <style>{`
+              [dir="rtl"] .sheet-close {
+                left: 1rem !important;
+                right: auto !important;
+              }
+            `}</style>
+          )}
           <SheetHeader>
             <SheetTitle>
               {config?.title || `Delete ${config?.recordType}?`}
@@ -39,7 +58,7 @@ export function DeleteDialogProvider({ children }: { children: ReactNode }) {
               onClick={closeDeleteDialog}
               disabled={isLoading}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -48,15 +67,15 @@ export function DeleteDialogProvider({ children }: { children: ReactNode }) {
             >
               {isLoading
                 ? config?.actionType === "block"
-                  ? "Blocking..."
+                  ? t("common.blocking")
                   : config?.actionType === "unblock"
-                    ? "Unblocking..."
-                    : "Deleting..."
+                    ? t("common.unblocking")
+                    : t("common.deleting")
                 : config?.actionType === "block"
-                  ? "Block"
+                  ? t("common.block")
                   : config?.actionType === "unblock"
-                    ? "Unblock"
-                    : "Delete"}
+                    ? t("common.unblock")
+                    : t("common.delete")}
             </Button>
           </SheetFooter>
         </SheetContent>

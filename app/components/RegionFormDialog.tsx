@@ -5,11 +5,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useTranslation } from "react-i18next";
 import { RegionForm, type RegionFormValues } from "@/components/RegionForm";
 import { useAddRegionStore } from "@/stores/addRegionStore";
 import { useRegionStore } from "@/stores/regionStore";
 
 export function RegionFormDialog() {
+  const { t, i18n } = useTranslation();
   const isOpen = useAddRegionStore((state) => state.isOpen);
   const config = useAddRegionStore((state) => state.config);
   const closeDialog = useAddRegionStore((state) => state.closeDialog);
@@ -36,17 +38,33 @@ export function RegionFormDialog() {
   return (
     <Sheet open={isOpen} onOpenChange={closeDialog}>
       <SheetContent
-        side="bottom"
-        className="w-full sm:max-w-lg mx-auto max-h-[90vh] overflow-y-auto"
+        side={i18n.language === "ar" ? "bottom" : "bottom"}
+        dir={i18n.language === "ar" ? "rtl" : "ltr"}
+        className="w-full sm:max-w-lg mx-auto max-h-[90vh] overflow-y-auto pt-6"
+        style={
+          i18n.language === "ar"
+            ? ({ direction: "rtl" } as React.CSSProperties)
+            : {}
+        }
       >
+        {i18n.language === "ar" && (
+          <style>{`
+            [dir="rtl"] .sheet-close {
+              left: 1rem !important;
+              right: auto !important;
+            }
+          `}</style>
+        )}
         <SheetHeader>
           <SheetTitle>
-            {config?.mode === "edit" ? "Edit Region" : "Add Region"}
+            {config?.mode === "edit"
+              ? t("regions.editTitle")
+              : t("regions.addTitle")}
           </SheetTitle>
           <SheetDescription>
             {config?.mode === "edit"
-              ? "Update region details and image"
-              : "Add a new region with image and availability status"}
+              ? t("regions.editDescription")
+              : t("regions.addDescription")}
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,6 +17,7 @@ interface RegionHeaderProps {
 
 export function RegionHeader({ regionName }: RegionHeaderProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="flex items-start justify-between gap-4">
@@ -27,7 +29,7 @@ export function RegionHeader({ regionName }: RegionHeaderProps) {
                 href="/management/regions"
                 className="cursor-pointer"
               >
-                Regions
+                {t("regions.title")}
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -40,7 +42,7 @@ export function RegionHeader({ regionName }: RegionHeaderProps) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{regionName}</h1>
           <p className="text-muted-foreground mt-2">
-            View and select products available in this region
+            {t("regions.viewSelectProducts")}
           </p>
         </div>
       </div>
@@ -51,7 +53,7 @@ export function RegionHeader({ regionName }: RegionHeaderProps) {
         className="gap-2"
       >
         <ChevronLeft className="w-4 h-4" />
-        Back
+        {t("regions.backToRegions")}
       </Button>
     </div>
   );

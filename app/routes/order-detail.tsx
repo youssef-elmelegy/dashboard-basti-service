@@ -127,7 +127,7 @@ function downloadCardAsImage(cardMessage: {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const orders = useOrderStore((state) => state.orders);
 
   const order = orders.find((o) => o.id === id);
@@ -242,7 +242,7 @@ export default function OrderDetailPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <h4 className="text-sm font-semibold">
-                                {item.data?.name || "Item"}
+                                {item.data?.name || t("orderDetail.item")}
                               </h4>
                               <Badge
                                 variant="outline"
@@ -252,7 +252,7 @@ export default function OrderDetailPage() {
                               </Badge>
                             </div>
                             <span className="text-lg font-bold text-primary">
-                              {item.price} EGP
+                              {item.price} {t("orderDetail.egp")}
                             </span>
                           </div>
 
@@ -264,25 +264,27 @@ export default function OrderDetailPage() {
 
                           <div className="flex items-center gap-4 pt-2 text-sm">
                             <span className="font-medium">
-                              Quantity:{" "}
+                              {t("orderDetail.quantity")}:{" "}
                               <span className="font-bold text-primary">
                                 {item.quantity}
                               </span>
                             </span>
                             <span className="text-muted-foreground">
-                              Total: {item.quantity * item.price} EGP
+                              {t("orderDetail.total")}:{" "}
+                              {item.quantity * item.price}{" "}
+                              {t("orderDetail.egp")}
                             </span>
                           </div>
 
                           {item.size && (
                             <div className="text-xs text-muted-foreground">
-                              Size: {item.size}
+                              {t("orderDetail.size")}: {item.size}
                             </div>
                           )}
 
                           {item.flavor && (
                             <div className="text-xs text-muted-foreground">
-                              Flavor: {item.flavor}
+                              {t("orderDetail.flavor")}: {item.flavor}
                             </div>
                           )}
                         </div>
@@ -296,7 +298,7 @@ export default function OrderDetailPage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No items in this order
+                {t("orderDetail.noItemsInOrder")}
               </p>
             )}
           </CardContent>
@@ -494,20 +496,22 @@ export default function OrderDetailPage() {
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Package className="w-5 h-5" />
-                General Order Details
+                {t("orderDetail.generalOrderDetails")}
               </CardTitle>
               <Badge variant={order.keepAnonymous ? "default" : "secondary"}>
-                {order.keepAnonymous ? "Anonymous Order" : "Not Anonymous"}
+                {order.keepAnonymous
+                  ? t("orderDetail.anonymousOrder")
+                  : t("orderDetail.notAnonymous")}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <span className="text-xs text-muted-foreground">
-                Delivery Note
+                {t("orderDetail.deliveryNote")}
               </span>
               <p className="text-sm bg-muted p-3 rounded-lg mt-1">
-                {order.deliveryNote || "No delivery note provided"}
+                {order.deliveryNote || t("orderDetail.noDeliveryNote")}
               </p>
             </div>
           </CardContent>
@@ -652,7 +656,7 @@ export default function OrderDetailPage() {
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
-                  Greeting Card
+                  {t("orderDetail.greetingCard")}
                 </CardTitle>
                 <Button
                   variant="outline"
@@ -661,7 +665,7 @@ export default function OrderDetailPage() {
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  Download Card
+                  {t("orderDetail.downloadCard")}
                 </Button>
               </div>
             </CardHeader>
@@ -669,18 +673,34 @@ export default function OrderDetailPage() {
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* Card Preview */}
                 <div className="flex-1">
-                  <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
+                  <div
+                    className={`relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden ${i18n.language === "ar" ? "rtl" : "ltr"}`}
+                  >
                     {/* Decorative elements */}
                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
 
                     {/* Top - To field */}
-                    <div className="relative z-10">
+                    <div
+                      className={`relative z-10 ${i18n.language === "ar" ? "text-right" : "text-left"}`}
+                    >
                       <p className="text-sm text-amber-700/70 font-medium">
-                        To:{" "}
-                        <span className="font-semibold">
-                          {order.cardMessage.to}
-                        </span>
+                        {i18n.language === "ar" ? (
+                          <>
+                            {t("orderDetail.cardTo")}
+                            {": "}
+                            <span className="font-semibold">
+                              {order.cardMessage.to}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {t("orderDetail.cardTo")}:
+                            <span className="font-semibold">
+                              {order.cardMessage.to}
+                            </span>
+                          </>
+                        )}
                       </p>
                     </div>
 
@@ -692,9 +712,11 @@ export default function OrderDetailPage() {
                     </div>
 
                     {/* Bottom - Signature */}
-                    <div className="relative z-10 text-right">
+                    <div
+                      className={`relative z-10 ${i18n.language === "ar" ? "text-left" : "text-right"}`}
+                    >
                       <p className="text-sm text-amber-700/70">
-                        With warm wishes,
+                        {t("orderDetail.cardWithWarmWishes")}
                       </p>
                       <p className="text-lg font-serif text-amber-900">
                         {order.cardMessage.from}
@@ -707,7 +729,7 @@ export default function OrderDetailPage() {
                 <div className="lg:w-64 space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase">
-                      From
+                      {t("orderDetail.cardFrom")}
                     </label>
                     <p className="text-sm font-medium">
                       {order.cardMessage.from}
@@ -718,7 +740,7 @@ export default function OrderDetailPage() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase">
-                      To
+                      {t("orderDetail.cardTo")}
                     </label>
                     <p className="text-sm font-medium">
                       {order.cardMessage.to}
@@ -731,7 +753,7 @@ export default function OrderDetailPage() {
                     <>
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">
-                          Recipient Name
+                          {t("orderDetail.recipientName")}
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
@@ -743,7 +765,7 @@ export default function OrderDetailPage() {
 
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">
-                          Email
+                          {t("orderDetail.email")}
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <Mail className="w-4 h-4 text-muted-foreground" />
@@ -755,7 +777,7 @@ export default function OrderDetailPage() {
 
                       <div className="space-y-2">
                         <label className="text-xs font-semibold text-muted-foreground uppercase">
-                          Phone
+                          {t("orderDetail.phone")}
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <Phone className="w-4 h-4 text-muted-foreground" />

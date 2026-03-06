@@ -188,16 +188,19 @@ export function DecorationForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
-        className="space-y-4 p-4"
+        className="space-y-6 mt-6 px-6"
       >
         <FormField
           control={form.control}
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.title")}</FormLabel>
+              <FormLabel>{t("customCakes.decorationTitle")}</FormLabel>
               <FormControl>
-                <Input placeholder="Enter decoration title" {...field} />
+                <Input
+                  placeholder={t("customCakes.enterDecorationTitle")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -209,10 +212,10 @@ export function DecorationForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.description")}</FormLabel>
+              <FormLabel>{t("customCakes.decorationDescription")}</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Enter decoration description"
+                  placeholder={t("customCakes.enterDecorationDescription")}
                   className="resize-none"
                   {...field}
                 />
@@ -240,11 +243,11 @@ export function DecorationForm({
           name="tagId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.tag")}</FormLabel>
+              <FormLabel>{t("customCakes.tag")}</FormLabel>
               <Select value={field.value || ""} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a tag (optional)" />
+                    <SelectValue placeholder={t("customCakes.selectTag")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

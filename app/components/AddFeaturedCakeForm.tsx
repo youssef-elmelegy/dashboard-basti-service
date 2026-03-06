@@ -170,7 +170,7 @@ export function AddFeaturedCakeForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={handleFormSubmit} className="space-y-6 p-4">
+      <form onSubmit={handleFormSubmit} className="space-y-6 mt-6 px-6">
         {/* Basic Information */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">
@@ -277,7 +277,7 @@ export function AddFeaturedCakeForm({
             className="gap-2"
           >
             <Plus className="w-4 h-4" />
-            Add Flavor
+            {t("featuredCakes.addFlavor")}
           </Button>
           <FormMessage>{form.formState.errors.flavorList?.message}</FormMessage>
         </div>
@@ -324,7 +324,7 @@ export function AddFeaturedCakeForm({
             className="gap-2"
           >
             <Plus className="w-4 h-4" />
-            Add Piping Palette
+            {t("featuredCakes.addPalette")}
           </Button>
           <FormMessage>
             {form.formState.errors.pipingPaletteList?.message}

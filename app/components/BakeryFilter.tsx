@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 interface Region {
@@ -32,6 +33,7 @@ export function BakeryFilter({
   onRegionChange,
   onTypeToggle,
 }: BakeryFilterProps) {
+  const { t } = useTranslation();
   const hasActiveFilters = selectedRegion !== "all" || selectedTypes.length > 0;
 
   const handleClearFilters = () => {
@@ -44,7 +46,7 @@ export function BakeryFilter({
       {/* Region Selection */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-muted-foreground">
-          Region:
+          {t("bakeriesManagement.region")}
         </span>
         <div className="flex flex-wrap gap-2">
           <Badge
@@ -52,7 +54,7 @@ export function BakeryFilter({
             className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => onRegionChange("all")}
           >
-            All Regions
+            {t("bakeriesManagement.allRegions")}
           </Badge>
           {availableRegions.map((region) => (
             <Badge
@@ -70,7 +72,7 @@ export function BakeryFilter({
       {/* Bakery Types */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-muted-foreground">
-          Types:
+          {t("bakeriesManagement.type")}
         </span>
         <div className="flex flex-wrap gap-2">
           {availableTypes.map((type) => (
@@ -96,7 +98,7 @@ export function BakeryFilter({
             className="h-8 px-2 text-xs"
           >
             <X className="w-3 h-3 mr-1" />
-            Clear all filters
+            {t("bakeriesManagement.clearAllFilters")}
           </Button>
         </div>
       )}

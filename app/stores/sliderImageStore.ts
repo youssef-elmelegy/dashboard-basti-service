@@ -17,22 +17,31 @@ interface SliderImageState {
   sliderImages: SliderImage[];
   isLoading: boolean;
   error: string | null;
+  isCached: boolean;
 
   // Actions
-  fetchSliderImages: () => Promise<void>;
+  fetchSliderImages: (forceRefresh?: boolean) => Promise<void>;
   updateSliderImages: (items: SliderImageItem[]) => Promise<void>;
   deleteSliderImage: (id: string) => Promise<void>;
   clearError: () => void;
 }
 
-export const useSliderImageStore = create<SliderImageState>((set) => ({
+export const useSliderImageStore = create<SliderImageState>((set, get) => ({
   // Initial state
   sliderImages: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
   // Fetch all slider images from API
-  fetchSliderImages: async () => {
+  fetchSliderImages: async (forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.sliderImages.length > 0 && !forceRefresh) {
+      return;
+    }
+
     console.log("SliderImageStore: Fetching slider images...");
     set({ isLoading: true, error: null });
     try {
@@ -45,6 +54,7 @@ export const useSliderImageStore = create<SliderImageState>((set) => ({
         set({
           sliderImages: images,
           isLoading: false,
+          isCached: true,
         });
       } else {
         const error = response.message || "Failed to fetch slider images";

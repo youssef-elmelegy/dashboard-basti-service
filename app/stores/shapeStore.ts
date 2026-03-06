@@ -6,10 +6,12 @@ interface ShapeState {
   shapes: Shape[];
   isLoading: boolean;
   error: string | null;
+  isCached: boolean;
   fetchShapes: (
     page?: number,
     limit?: number,
     search?: string,
+    forceRefresh?: boolean,
   ) => Promise<void>;
   addShape: (
     data: Omit<Shape, "id" | "createdAt" | "updatedAt">,
@@ -23,24 +25,41 @@ interface ShapeState {
   clearError: () => void;
 }
 
-export const useShapeStore = create<ShapeState>((set) => ({
+export const useShapeStore = create<ShapeState>((set, get) => ({
   shapes: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
-  fetchShapes: async (_page?: number, _limit?: number, search?: string) => {
+  fetchShapes: async (
+    _page?: number,
+    _limit?: number,
+    search?: string,
+    forceRefresh = false,
+  ) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.shapes.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await shapeApi.getAll(search);
       if (response.success && response.data) {
-        // response.data is PaginatedResponse<Shape>
-        const shapes = response.data.items;
-        set({ shapes, isLoading: false });
+        // response.data can be either an array or a PaginatedResponse
+        const shapesArray = Array.isArray(response.data)
+          ? response.data
+          : response.data.items || [];
+        set({ shapes: shapesArray, isLoading: false, isCached: true });
+      } else {
+        set({ shapes: [], isLoading: false });
       }
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : "Failed to fetch shapes";
-      set({ error: errorMsg, isLoading: false });
+      set({ error: errorMsg, shapes: [], isLoading: false });
     }
   },
 

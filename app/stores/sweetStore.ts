@@ -15,7 +15,8 @@ interface SweetStore {
   sweets: Sweet[];
   isLoading: boolean;
   error: string | null;
-  fetchSweets: () => Promise<void>;
+  isCached: boolean;
+  fetchSweets: (forceRefresh?: boolean) => Promise<void>;
   addSweet: (sweet: SweetInput) => Promise<void>;
   updateSweet: (id: string, sweet: SweetInput) => Promise<void>;
   deleteSweet: (id: string) => Promise<void>;
@@ -26,13 +27,21 @@ export const useSweetStore = create<SweetStore>((set, get) => ({
   sweets: [],
   isLoading: false,
   error: null,
+  isCached: false,
 
-  fetchSweets: async () => {
+  fetchSweets: async (forceRefresh = false) => {
+    const state = get();
+
+    // Return cached data if available and not forcing refresh
+    if (state.isCached && state.sweets.length > 0 && !forceRefresh) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const response = await sweetService.getAll();
       if (response.success && response.data) {
-        set({ sweets: response.data.items });
+        set({ sweets: response.data.items, isCached: true });
       } else {
         set({ error: "Failed to fetch sweets" });
       }
