@@ -57,9 +57,9 @@ export function AddOnCard({
     : [(addOn as Record<string, unknown>).image as string];
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image Carousel */}
-      <div className="p-3 bg-muted/30 relative">
+      <div className="p-3 bg-muted/30 relative flex-shrink-0">
         <ProductImageCarousel images={images} name={addOn.name} />
 
         {/* Action Menu */}
@@ -90,7 +90,7 @@ export function AddOnCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col gap-3">
+      <div className="p-4 flex flex-col gap-3 flex-grow">
         <div>
           <h3 className="text-lg font-semibold text-card-foreground mb-1">
             {addOn.name}
@@ -127,23 +127,10 @@ export function AddOnCard({
             </Badge>
           </div>
         </div>
+      </div>
 
-        {/* Price */}
-        {addOn.price !== undefined ? (
-          <div className="py-3 border-t border-b border-border text-center">
-            <p className="text-xs text-muted-foreground font-medium mb-1">
-              Price
-            </p>
-            <p className="text-2xl font-semibold text-card-foreground">
-              $
-              {typeof addOn.price === "string"
-                ? parseFloat(addOn.price).toFixed(2)
-                : addOn.price.toFixed(2)}
-            </p>
-          </div>
-        ) : null}
-
-        {/* Toggle Active Button */}
+      {/* Toggle Active Button - Fixed at bottom */}
+      <div className="p-4 pt-0 flex-shrink-0">
         <Button
           className="w-full gap-2"
           size="sm"

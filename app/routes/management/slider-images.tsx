@@ -29,8 +29,16 @@ import { SliderImageCard } from "@/components/SliderImageCard";
 import { SliderImageForm } from "@/components/SliderImageForm";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useSliderImageStore } from "@/stores/sliderImageStore";
+import { tagsApi } from "@/lib/services/tags.service";
 import type { SliderImage } from "@/lib/services/slider-image.service";
 import type { SliderImageItem } from "@/lib/services/slider-image.service";
+import type { Tag } from "@/lib/services/tags.service";
+
+type SliderImageFormValues = {
+  title: string;
+  imageUrl: string;
+  tagId?: string;
+};
 
 export default function SliderImagesPage() {
   const { t } = useTranslation();
@@ -53,21 +61,46 @@ export default function SliderImagesPage() {
   const [selectedImage, setSelectedImage] = useState<SliderImage | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
 
-  // Fetch slider images on mount
+  // Fetch tags on mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        setTagsLoading(true);
+        const response = await tagsApi.getAll();
+        if (response.data) {
+          setTags(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tags:", error);
+      } finally {
+        setTagsLoading(false);
+      }
+    };
+    fetchTags();
+  }, []);
   useEffect(() => {
     fetchSliderImages();
   }, [fetchSliderImages]);
 
-  const handleAddSliderImage = async (values: SliderImageItem) => {
+  const handleAddSliderImage = async (values: SliderImageFormValues) => {
     try {
       // Create new array with existing images + new image
+      // Auto-assign displayOrder based on existing images count
+      const displayOrder = sliderImages.length + 1;
       const newImages: SliderImageItem[] = [
         ...sliderImages.map((img) => ({
           title: img.title,
           imageUrl: img.imageUrl,
+          displayOrder: img.displayOrder,
+          tagId: img.tagId,
         })),
-        values,
+        {
+          ...values,
+          displayOrder,
+        },
       ];
       await updateSliderImages(newImages);
       setIsAddOpen(false);
@@ -78,14 +111,31 @@ export default function SliderImagesPage() {
     }
   };
 
-  const handleUpdateSliderImage = async (values: SliderImageItem) => {
+  const handleUpdateSliderImage = async (values: SliderImageFormValues) => {
     if (selectedImage) {
       try {
+        // Get displayOrder from selected tag, or keep existing displayOrder
+        let displayOrder = selectedImage.displayOrder;
+        if (values.tagId) {
+          const selectedTag = tags.find((tag) => tag.id === values.tagId);
+          if (selectedTag) {
+            displayOrder = selectedTag.displayOrder;
+          }
+        }
+
         // Create new array with updated image
         const newImages: SliderImageItem[] = sliderImages.map((img) =>
           img.id === selectedImage.id
-            ? values
-            : { title: img.title, imageUrl: img.imageUrl },
+            ? {
+                ...values,
+                displayOrder,
+              }
+            : {
+                title: img.title,
+                imageUrl: img.imageUrl,
+                displayOrder: img.displayOrder,
+                tagId: img.tagId,
+              },
         );
         await updateSliderImages(newImages);
         setSelectedImage(null);
@@ -118,6 +168,13 @@ export default function SliderImagesPage() {
         }
       },
     );
+  };
+
+  // Get list of tagIds that are already used in other images
+  const getUsedTagIds = (excludeImageId?: string) => {
+    return sliderImages
+      .filter((img) => img.id !== excludeImageId && img.tagId)
+      .map((img) => img.tagId!);
   };
 
   return (
@@ -160,7 +217,9 @@ export default function SliderImagesPage() {
               <div className="mt-6">
                 <SliderImageForm
                   onSubmit={handleAddSliderImage}
-                  isLoading={isLoading}
+                  isLoading={isLoading || tagsLoading}
+                  tags={tags}
+                  usedTagIds={getUsedTagIds()}
                 />
               </div>
             </SheetContent>
@@ -218,7 +277,9 @@ export default function SliderImagesPage() {
                     <SliderImageForm
                       image={selectedImage}
                       onSubmit={handleUpdateSliderImage}
-                      isLoading={isLoading}
+                      isLoading={isLoading || tagsLoading}
+                      tags={tags}
+                      usedTagIds={getUsedTagIds(selectedImage?.id)}
                     />
                   </div>
                 </SheetContent>
@@ -252,7 +313,9 @@ export default function SliderImagesPage() {
                 <div className="mt-6">
                   <SliderImageForm
                     onSubmit={handleAddSliderImage}
-                    isLoading={isLoading}
+                    isLoading={isLoading || tagsLoading}
+                    tags={tags}
+                    usedTagIds={getUsedTagIds()}
                   />
                 </div>
               </SheetContent>

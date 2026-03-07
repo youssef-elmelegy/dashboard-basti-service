@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
-import { useCakeStore } from "@/stores/imageStore";
+import { useRegionStore } from "@/stores/regionStore";
 import type { CreateFlavorWithVariantImagesFormValues } from "@/schemas/custom-cakes.schema";
 import { createFlavorWithVariantImagesSchema } from "@/schemas/custom-cakes.schema";
 import type { Flavor } from "@/lib/services/flavor.service";
@@ -42,7 +42,7 @@ export function FlavorForm({
 }: FlavorFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!flavor;
-  const uploadCakeImage = useCakeStore((state) => state.uploadCakeImage);
+  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
     flavor?.flavorUrl || "",
@@ -70,10 +70,9 @@ export function FlavorForm({
 
     const imageToUpload = images[0];
 
-    // Check if it's already a URL (not a data URL)
     if (
-      !imageToUpload.startsWith("data:") &&
-      !imageToUpload.startsWith("blob:")
+      imageToUpload.startsWith("http://") ||
+      imageToUpload.startsWith("https://")
     ) {
       setUploadedImageUrl(imageToUpload);
       form.setValue("flavorUrl", imageToUpload, { shouldValidate: true });
@@ -86,7 +85,7 @@ export function FlavorForm({
       const blob = await response.blob();
       const file = new File([blob], "flavor-image.jpg", { type: "image/jpeg" });
 
-      const result = await uploadCakeImage(file);
+      const result = await uploadRegionImage(file);
       setUploadedImageUrl(result.secure_url);
       form.setValue("flavorUrl", result.secure_url, { shouldValidate: true });
     } catch (error) {

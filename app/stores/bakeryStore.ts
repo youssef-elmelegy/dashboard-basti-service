@@ -12,7 +12,11 @@
  */
 
 import { create } from "zustand";
-import { bakeryApi, type Bakery, type BakeryType } from "@/lib/services/bakery.service";
+import {
+  bakeryApi,
+  type Bakery,
+  type BakeryType,
+} from "@/lib/services/bakery.service";
 
 interface BakeryState {
   // Data

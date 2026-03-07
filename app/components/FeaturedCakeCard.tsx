@@ -30,7 +30,7 @@ export function FeaturedCakeCard({
     : [(cake as unknown as { image: string }).image];
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image Carousel */}
       <div className="w-full h-48 bg-muted/30 relative overflow-hidden flex-shrink-0">
         <ProductImageCarousel images={images} name={cake.name} />
@@ -121,8 +121,10 @@ export function FeaturedCakeCard({
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Toggle Status Button */}
+      {/* Toggle Status Button - Fixed at bottom */}
+      <div className="p-4 pt-0 flex-shrink-0">
         <Button
           className="w-full gap-2"
           size="sm"

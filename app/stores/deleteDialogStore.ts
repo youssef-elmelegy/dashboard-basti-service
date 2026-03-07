@@ -13,8 +13,11 @@ interface DeleteDialogStore {
   open: boolean;
   config: DeleteConfig | null;
   isLoading: boolean;
-  onConfirmCallback: (() => void) | null;
-  openDeleteDialog: (config: DeleteConfig, onConfirm: () => void) => void;
+  onConfirmCallback: (() => void | Promise<void>) | null;
+  openDeleteDialog: (
+    config: DeleteConfig,
+    onConfirm: () => void | Promise<void>,
+  ) => void;
   closeDeleteDialog: () => void;
   setLoading: (loading: boolean) => void;
   confirmDelete: () => void;
@@ -40,12 +43,16 @@ export const useDeleteDialogStore = create<DeleteDialogStore>((set, get) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   confirmDelete: async () => {
-    set({ isLoading: true });
-    try {
-      const cb = get().onConfirmCallback;
-      if (cb) cb();
-    } finally {
-      set({ isLoading: false, open: false });
+    const cb = get().onConfirmCallback;
+    if (cb) {
+      set({ isLoading: true });
+      try {
+        await cb();
+      } finally {
+        set({ isLoading: false, open: false });
+      }
+    } else {
+      set({ open: false });
     }
   },
 }));

@@ -26,9 +26,9 @@ export function SweetCard({
   const { t } = useTranslation();
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
-      <div className="relative h-48 bg-muted overflow-hidden">
+      <div className="relative h-48 bg-muted overflow-hidden flex-shrink-0">
         {sweet.images && sweet.images.length > 0 ? (
           <img
             src={sweet.images[0]}
@@ -69,7 +69,7 @@ export function SweetCard({
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col gap-3">
+      <div className="p-4 flex flex-col gap-3 flex-grow">
         {/* Title and Tag */}
         <div>
           <h3 className="text-lg font-semibold text-card-foreground mb-1">
@@ -100,8 +100,10 @@ export function SweetCard({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Toggle Active Button */}
+      {/* Toggle Active Button - Fixed at bottom */}
+      <div className="p-4 pt-0 flex-shrink-0">
         <Button
           className="w-full gap-2"
           size="sm"

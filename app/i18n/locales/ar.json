@@ -732,7 +732,10 @@
     "sliderTitle": "عنوان السلايدر",
     "sliderTitlePlaceholder": "أدخل عنوان السلايدر",
     "sliderTitleDescription": "العنوان المعروض على صورة السلايدر",
-    "uploadingImage": "جاري تحميل الصورة..."
+    "uploadingImage": "جاري تحميل الصورة...",
+    "selectTag": "اختر العلامة",
+    "selectTagPlaceholder": "اختر علامة لصورة السلايدر هذه",
+    "selectTagDescription": "اختر علامة لربطها بصورة السلايدر هذه. يمكن لكل صورة سلايدر أن تحتوي على علامة فريدة واحدة."
   },
   "adminTable": {
     "email": "البريد الإلكتروني",

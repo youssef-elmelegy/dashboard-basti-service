@@ -42,7 +42,16 @@ const formSchema = z.object({
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(z.enum(["small_cakes", "large_cakes", "others", "basket_cakes", "midume", "custom"]))
+    .array(
+      z.enum([
+        "small_cakes",
+        "large_cakes",
+        "others",
+        "basket_cakes",
+        "midume",
+        "custom",
+      ]),
+    )
     .min(1, { message: "Select at least one bakery type!" }),
 });
 

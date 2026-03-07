@@ -12,15 +12,24 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
-import { useCakeStore } from "@/stores/imageStore";
+import { useRegionStore } from "@/stores/regionStore";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { SliderImage } from "@/lib/services/slider-image.service";
+import type { Tag } from "@/lib/services/tags.service";
 
 const sliderImageSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   imageUrl: z.string().url("Invalid image URL"),
+  tagId: z.string().optional(),
 });
 
 type SliderImageFormValues = z.infer<typeof sliderImageSchema>;
@@ -28,27 +37,37 @@ type SliderImageFormValues = z.infer<typeof sliderImageSchema>;
 interface SliderImageFormProps {
   image?: SliderImage;
   isLoading?: boolean;
+  tags?: Tag[];
+  usedTagIds?: string[];
   onSubmit: (data: SliderImageFormValues) => Promise<void> | void;
 }
 
 export function SliderImageForm({
   image,
   isLoading = false,
+  tags = [],
+  usedTagIds = [],
   onSubmit,
 }: SliderImageFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!image;
-  const uploadCakeImage = useCakeStore((state) => state.uploadCakeImage);
+  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
     image?.imageUrl || "",
   );
 
+  // Find tag with matching displayOrder when in edit mode
+  const matchingTag = image
+    ? tags.find((tag) => tag.displayOrder === image.displayOrder)
+    : undefined;
+
   const form = useForm<SliderImageFormValues>({
     resolver: zodResolver(sliderImageSchema),
-    defaultValues: image || {
-      title: "",
-      imageUrl: "",
+    defaultValues: {
+      title: image?.title || "",
+      imageUrl: image?.imageUrl || "",
+      tagId: matchingTag?.id,
     },
   });
 
@@ -61,10 +80,9 @@ export function SliderImageForm({
 
     const imageToUpload = images[0];
 
-    // Check if it's already a URL (not a data URL)
     if (
-      !imageToUpload.startsWith("data:") &&
-      !imageToUpload.startsWith("blob:")
+      imageToUpload.startsWith("http://") ||
+      imageToUpload.startsWith("https://")
     ) {
       setUploadedImageUrl(imageToUpload);
       form.setValue("imageUrl", imageToUpload, { shouldValidate: true });
@@ -77,7 +95,7 @@ export function SliderImageForm({
       const blob = await response.blob();
       const file = new File([blob], "slider-image.jpg", { type: "image/jpeg" });
 
-      const result = await uploadCakeImage(file);
+      const result = await uploadRegionImage(file);
       setUploadedImageUrl(result.secure_url);
       form.setValue("imageUrl", result.secure_url, { shouldValidate: true });
     } catch (error) {
@@ -131,6 +149,42 @@ export function SliderImageForm({
               label={t("sliderImages.sliderImage")}
               maxImages={1}
             />
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tagId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("sliderImages.selectTag")}</FormLabel>
+              <Select value={field.value || ""} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("sliderImages.selectTagPlaceholder")}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {tags.map((tag) => (
+                    <SelectItem
+                      key={tag.id}
+                      value={tag.id}
+                      disabled={
+                        usedTagIds.includes(tag.id) && tag.id !== field.value
+                      }
+                    >
+                      {tag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                {t("sliderImages.selectTagDescription")}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
         />
 

@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { TagSelector } from "@/components/TagSelector";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useAddOnStore } from "@/stores/addOnStore";
 import type { AddOn } from "@/data/products";
@@ -45,11 +44,6 @@ const addOnSchema = z.object({
     "sweets",
     "other",
   ]),
-  price: z
-    .number()
-    .min(0.01, "Price must be at least $0.01")
-    .max(10000, "Price must be less than $10000"),
-  tags: z.array(z.string()).min(0, "Tags are optional"),
   isActive: z.boolean(),
 });
 
@@ -96,8 +90,6 @@ export function AddOnForm({
           | "decoration"
           | "sweets"
           | "other") || "decoration",
-      price: initialAddOn?.price || 0,
-      tags: initialAddOn?.tags || [],
       isActive: initialAddOn?.isActive ?? true,
     },
   });
@@ -287,56 +279,7 @@ export function AddOnForm({
               </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("products.price")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-
-        <Separator />
-
-        {/* Tags */}
-        <FormField
-          control={form.control}
-          name="tags"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("products.tags")}</FormLabel>
-              <FormControl>
-                <TagSelector
-                  selectedTags={field.value}
-                  onTagToggle={(tagName) => {
-                    const current = field.value;
-                    if (current.includes(tagName)) {
-                      field.onChange(current.filter((t) => t !== tagName));
-                    } else {
-                      field.onChange([...current, tagName]);
-                    }
-                  }}
-                  label=""
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <Separator />
 

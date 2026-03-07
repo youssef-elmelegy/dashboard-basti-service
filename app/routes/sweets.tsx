@@ -25,7 +25,6 @@ export default function SweetsPage() {
   const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSweet, setEditingSweet] = useState<Sweet | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -45,21 +44,12 @@ export default function SweetsPage() {
     fetchSweets();
   }, [fetchSweets]);
 
-  // Get all unique tags from sweets
-  const allTags = Array.from(
-    new Set(sweets.map((s) => s.tagName).filter(Boolean) as string[]),
-  ).sort();
-
   // Filter sweets based on selected filters
   const filteredSweets = sweets.filter((sweet) => {
     // Filter by active status
     if (activeFilter === "active" && !sweet.isActive) return false;
     if (activeFilter === "inactive" && sweet.isActive) return false;
 
-    // Filter by tags
-    if (selectedTags.length > 0) {
-      return selectedTags.includes(sweet.tagName || "");
-    }
     return true;
   });
 
@@ -154,15 +144,6 @@ export default function SweetsPage() {
       {/* Filters */}
       <div className="bg-muted/50 p-4 rounded-lg border">
         <ProductFilter
-          availableTags={allTags}
-          selectedTags={selectedTags}
-          onTagToggle={(tag) => {
-            setSelectedTags((prev) =>
-              prev.includes(tag)
-                ? prev.filter((t) => t !== tag)
-                : [...prev, tag],
-            );
-          }}
           activeFilter={activeFilter}
           onActiveFilterChange={(filter) => setActiveFilter(filter)}
         />

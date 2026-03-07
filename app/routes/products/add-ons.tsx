@@ -25,7 +25,6 @@ export default function AddOnsPage() {
   const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState<AddOn | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -45,21 +44,12 @@ export default function AddOnsPage() {
     fetchAddOns();
   }, [fetchAddOns]);
 
-  // Get all unique tags from add-ons
-  const allTags = Array.from(
-    new Set(addOns.flatMap((a) => a.tags || [])),
-  ).sort();
-
   // Filter add-ons based on selected filters
   const filteredAddOns = addOns.filter((addOn) => {
     // Filter by active status
     if (activeFilter === "active" && !addOn.isActive) return false;
     if (activeFilter === "inactive" && addOn.isActive) return false;
 
-    // Filter by tags (if any selected, show products that have at least one matching tag)
-    if (selectedTags.length > 0) {
-      return selectedTags.some((tag) => (addOn.tags || []).includes(tag));
-    }
     return true;
   });
 
@@ -157,15 +147,6 @@ export default function AddOnsPage() {
       {/* Filters */}
       <div className="bg-muted/50 p-4 rounded-lg border">
         <ProductFilter
-          availableTags={allTags}
-          selectedTags={selectedTags}
-          onTagToggle={(tag) => {
-            setSelectedTags((prev) =>
-              prev.includes(tag)
-                ? prev.filter((t) => t !== tag)
-                : [...prev, tag],
-            );
-          }}
           activeFilter={activeFilter}
           onActiveFilterChange={(filter) => setActiveFilter(filter)}
         />

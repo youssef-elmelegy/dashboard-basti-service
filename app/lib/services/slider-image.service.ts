@@ -13,6 +13,8 @@ export interface SliderImage {
   id: string;
   title: string;
   imageUrl: string;
+  displayOrder: number;
+  tagId?: string;
   createdAt: string;
 }
 
@@ -22,6 +24,8 @@ export interface SliderImage {
 export interface SliderImageItem {
   title: string;
   imageUrl: string;
+  displayOrder: number;
+  tagId?: string;
 }
 
 /**

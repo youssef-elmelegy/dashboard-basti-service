@@ -21,8 +21,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
-import { useCakeStore } from "@/stores/imageStore";
 import { useTagsStore } from "@/stores/tagsStore";
+import { useRegionStore } from "@/stores/regionStore";
 import type {
   CreateDecorationFormValues,
   UpdateDecorationFormValues,
@@ -63,7 +63,7 @@ export function DecorationForm({
 }: DecorationFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!decoration;
-  const uploadCakeImage = useCakeStore((state) => state.uploadCakeImage);
+  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
   const tags = useTagsStore((state) => state.tags);
   const fetchTags = useTagsStore((state) => state.fetchTags);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -124,10 +124,9 @@ export function DecorationForm({
 
     const imageToUpload = images[0];
 
-    // Check if it's already a URL (not a data URL)
     if (
-      !imageToUpload.startsWith("data:") &&
-      !imageToUpload.startsWith("blob:")
+      imageToUpload.startsWith("http://") ||
+      imageToUpload.startsWith("https://")
     ) {
       setUploadedImageUrl(imageToUpload);
       form.setValue("decorationUrl", imageToUpload, { shouldValidate: true });
@@ -142,7 +141,7 @@ export function DecorationForm({
         type: "image/jpeg",
       });
 
-      const result = await uploadCakeImage(file);
+      const result = await uploadRegionImage(file);
       setUploadedImageUrl(result.secure_url);
       form.setValue("decorationUrl", result.secure_url, {
         shouldValidate: true,

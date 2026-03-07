@@ -732,7 +732,10 @@
     "sliderTitle": "Slider Title",
     "sliderTitlePlaceholder": "Enter slider title",
     "sliderTitleDescription": "The title displayed on the slider image",
-    "uploadingImage": "Uploading image..."
+    "uploadingImage": "Uploading image...",
+    "selectTag": "Select Tag",
+    "selectTagPlaceholder": "Choose a tag for this slider image",
+    "selectTagDescription": "Select a tag to associate with this slider image. Each slider image can have one unique tag."
   },
   "adminTable": {
     "email": "Email",
