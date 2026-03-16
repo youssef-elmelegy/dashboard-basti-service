@@ -13,6 +13,16 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useDecorationStore } from "@/stores/decorationStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import type { Decoration } from "@/lib/services/decoration.service";
@@ -55,6 +65,13 @@ export default function DecorationsPage() {
   const deleteDecoration = useDecorationStore(
     (state) => state.deleteDecoration,
   );
+  const decorationConflict = useDecorationStore(
+    (state) => state.decorationConflict,
+  );
+  const forceDeleteDecoration = useDecorationStore(
+    (state) => state.forceDeleteDecoration,
+  );
+  const clearConflict = useDecorationStore((state) => state.clearConflict);
   const { openDeleteDialog } = useDeleteDialog();
 
   useEffect(() => {
@@ -166,6 +183,15 @@ export default function DecorationsPage() {
     );
   };
 
+  const handleForceDelete = async () => {
+    if (!decorationConflict) return;
+    try {
+      await forceDeleteDecoration(decorationConflict.decorationId);
+    } catch (err) {
+      console.error("Failed to force-delete decoration:", err);
+    }
+  };
+
   if (error) {
     return (
       <div className="flex flex-col gap-6">
@@ -270,11 +296,62 @@ export default function DecorationsPage() {
                 decoration={editingDecoration}
                 onSubmit={handleUpdateDecoration}
                 isLoading={isLoading}
+                withVariantImages={true}
               />
             </div>
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Conflict dialog — shown when the decoration has linked predesigned cake configs */}
+      <AlertDialog
+        open={!!decorationConflict}
+        onOpenChange={(open) => !open && clearConflict()}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("customCakes.decorationInUseTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("customCakes.decorationInUseDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            {decorationConflict && (
+              <ul className="list-disc list-inside space-y-1">
+                <li>
+                  {decorationConflict.relatedConfigsCount}{" "}
+                  {t("customCakes.cakeConfigsAffected")}
+                </li>
+                <li>
+                  {decorationConflict.affectedPredesignedCakesCount}{" "}
+                  {t("customCakes.predesignedCakesAffected")}
+                </li>
+              </ul>
+            )}
+            <p className="font-medium text-destructive">
+              {t("customCakes.decorationForceDeleteWarning")}
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={clearConflict}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("customCakes.deleteDecorationAndRecords")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

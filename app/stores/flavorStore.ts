@@ -2,7 +2,10 @@ import { create } from "zustand";
 import {
   flavorApi,
   type Flavor,
+  type CreateFlavorRequest,
+  type UpdateFlavorRequest,
   type CreateFlavorWithVariantImagesRequest,
+  type FlavorConflictData,
 } from "@/lib/services/flavor.service";
 
 interface FlavorState {
@@ -11,6 +14,7 @@ interface FlavorState {
   isLoadingMore: boolean;
   error: string | null;
   isCached: boolean;
+  flavorConflict: (FlavorConflictData & { flavorId: string }) | null;
   pagination: {
     total: number;
     totalPages: number;
@@ -24,17 +28,15 @@ interface FlavorState {
     forceRefresh?: boolean,
   ) => Promise<void>;
   loadMoreFlavors: (search?: string) => Promise<void>;
-  addFlavor: (
-    data: Omit<Flavor, "id" | "createdAt" | "updatedAt">,
-  ) => Promise<Flavor>;
+  addFlavor: (data: CreateFlavorRequest) => Promise<Flavor>;
   addFlavorWithVariantImages: (
     data: CreateFlavorWithVariantImagesRequest,
   ) => Promise<Flavor>;
-  updateFlavor: (
-    id: string,
-    data: Partial<Omit<Flavor, "id" | "createdAt" | "updatedAt">>,
-  ) => Promise<Flavor>;
+  updateFlavor: (id: string, data: UpdateFlavorRequest) => Promise<Flavor>;
   deleteFlavor: (id: string) => Promise<void>;
+  forceDeleteFlavor: (id: string) => Promise<void>;
+  changeFlavorOrder: (id: string, newOrder: number) => Promise<void>;
+  clearConflict: () => void;
   clearError: () => void;
 }
 
@@ -44,6 +46,7 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
   isLoadingMore: false,
   error: null,
   isCached: false,
+  flavorConflict: null,
   pagination: {
     total: 0,
     totalPages: 0,
@@ -175,17 +178,19 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
         }));
         return response.data;
       }
-      throw new Error(response.message || "Failed to update flavor");
+      throw new Error(response.message || "customCakes.failedToUpdateFlavor");
     } catch (error) {
       const errorMsg =
-        error instanceof Error ? error.message : "Failed to update flavor";
+        error instanceof Error
+          ? error.message
+          : "customCakes.failedToUpdateFlavor";
       set({ error: errorMsg, isLoading: false });
       throw error;
     }
   },
 
   deleteFlavor: async (id) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, flavorConflict: null });
     try {
       const response = await flavorApi.delete(id);
       if (response.success) {
@@ -195,12 +200,75 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
         }));
       }
     } catch (error) {
+      // 409 Conflict — flavor has related predesigned cake configs
+      const apiErr = error as {
+        code?: number;
+        data?: {
+          relatedConfigsCount?: number;
+          affectedPredesignedCakesCount?: number;
+          affectedPredesignedCakeIds?: string[];
+        };
+        message?: string;
+      };
+      if (
+        apiErr.code === 409 &&
+        apiErr.data?.relatedConfigsCount !== undefined
+      ) {
+        set({
+          isLoading: false,
+          flavorConflict: {
+            flavorId: id,
+            relatedConfigsCount: apiErr.data.relatedConfigsCount ?? 0,
+            affectedPredesignedCakesCount:
+              apiErr.data.affectedPredesignedCakesCount ?? 0,
+            affectedPredesignedCakeIds:
+              apiErr.data.affectedPredesignedCakeIds ?? [],
+          },
+        });
+      } else {
+        const errorMsg = apiErr.message ?? "Failed to delete flavor";
+        set({ error: errorMsg, isLoading: false });
+        throw error;
+      }
+    }
+  },
+
+  forceDeleteFlavor: async (id) => {
+    set({ isLoading: true, error: null, flavorConflict: null });
+    try {
+      await flavorApi.forceDelete(id);
+      set((state) => ({
+        flavors: state.flavors.filter((f) => f.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
       const errorMsg =
-        error instanceof Error ? error.message : "Failed to delete flavor";
+        error instanceof Error
+          ? error.message
+          : "Failed to force-delete flavor";
       set({ error: errorMsg, isLoading: false });
       throw error;
     }
   },
+
+  changeFlavorOrder: async (id, newOrder) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await flavorApi.changeOrder(id, newOrder);
+      if (response.success && response.data) {
+        set({ flavors: response.data, isLoading: false });
+      }
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : "Failed to change flavor order";
+      set({ error: errorMsg, isLoading: false });
+      throw error;
+    }
+  },
+
+  clearConflict: () => set({ flavorConflict: null }),
 
   clearError: () => set({ error: null }),
 }));

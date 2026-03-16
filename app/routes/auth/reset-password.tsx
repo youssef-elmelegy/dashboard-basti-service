@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import logoSvg from "@/assets/logo.svg";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -15,9 +15,11 @@ export default function ResetPasswordPage() {
   const location = useLocation();
   const { resetPassword, isLoading, error } = useAuth();
   const { t } = useTranslation();
-  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const locationState = location.state as {
     email: string;
     resetToken: string;
@@ -31,17 +33,17 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setLocalError(null);
 
-    if (!password || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       setLocalError(t("auth.resetPassword.fillAllFields"));
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setLocalError(t("auth.resetPassword.passwordMismatch"));
       return;
     }
 
-    if (password.length < 8) {
+    if (newPassword.length < 8) {
       setLocalError(t("auth.resetPassword.passwordTooShort"));
       return;
     }
@@ -56,7 +58,8 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await resetPassword(resetToken, password);
+      // Only send newPassword and resetToken to API (not confirmPassword)
+      await resetPassword(resetToken, newPassword);
       // Clear resetToken after successful reset
       localStorage.removeItem("resetToken");
       navigate("/auth/login");
@@ -66,10 +69,10 @@ export default function ResetPasswordPage() {
   };
 
   const isFormValid =
-    password &&
+    newPassword &&
     confirmPassword &&
-    password === confirmPassword &&
-    password.length >= 8;
+    newPassword === confirmPassword &&
+    newPassword.length >= 8;
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -104,45 +107,83 @@ export default function ResetPasswordPage() {
                 )}
 
                 <Field>
-                  <FieldLabel htmlFor="password">
+                  <FieldLabel htmlFor="new-password">
                     {t("auth.resetPassword.passwordLabel")}
                   </FieldLabel>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter new password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+                      disabled={isLoading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="confirm-password">
                     {t("auth.resetPassword.confirmLabel")}
                   </FieldLabel>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="Confirm your password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+                      disabled={isLoading}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </Field>
-                {password &&
+                {newPassword &&
                   confirmPassword &&
-                  password !== confirmPassword && (
+                  newPassword !== confirmPassword && (
                     <p className="text-sm text-red-500 text-center">
                       {t("auth.resetPassword.passwordMismatch")}
                     </p>
                   )}
-                {password && password.length > 0 && password.length < 8 && (
-                  <p className="text-sm text-amber-600 text-center">
-                    {t("auth.resetPassword.passwordTooShort")}
-                  </p>
-                )}
+                {newPassword &&
+                  newPassword.length > 0 &&
+                  newPassword.length < 8 && (
+                    <p className="text-sm text-amber-600 text-center">
+                      {t("auth.resetPassword.passwordTooShort")}
+                    </p>
+                  )}
                 <Field>
                   <Button type="submit" disabled={!isFormValid || isLoading}>
                     {isLoading

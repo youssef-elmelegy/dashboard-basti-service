@@ -14,7 +14,9 @@ export interface ApiResponse<T> {
 export interface ApiError {
   code: number;
   message: string;
+  details?: string[] | string;
   error?: string;
+  data?: Record<string, unknown>;
 }
 
 class ApiClient {
@@ -107,13 +109,28 @@ class ApiClient {
           }
         }
 
+        // Normalize message: server may return array of validation messages
+        let messageField = data?.message as unknown;
+        let messageString = error.message || "API request failed";
+        let messageDetails: string[] | string | undefined = undefined;
+        if (Array.isArray(messageField)) {
+          messageDetails = messageField as string[];
+          messageString = (messageField as string[]).join("; ");
+        } else if (typeof messageField === "string") {
+          messageString = messageField;
+        }
+
+        let details: string | string[] | undefined = messageDetails;
+        if (!details && typeof data?.message === "string") {
+          details = data.message as string;
+        }
+
         const apiError: ApiError = {
           code: error.response?.status || 500,
-          message:
-            (data?.message as string | undefined) ||
-            error.message ||
-            "API request failed",
+          message: messageString,
+          details,
           error: data?.error as string | undefined,
+          data: data as Record<string, unknown> | undefined,
         };
         console.error(
           `[API Error] ${apiError.code} ${error.config?.url}:`,

@@ -44,6 +44,7 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "retry": "إعادة محاولة",
+    "tryAgain": "حاول مرة أخرى",
     "noImage": "لا توجد صورة",
     "name": "الاسم",
     "capacity": "السعة",
@@ -53,7 +54,8 @@
     "pipingPalettes": "لوحات الزينة",
     "tag": "العلامة",
     "selectTag": "اختر العلامة",
-    "status": "الحالة"
+    "status": "الحالة",
+    "endOfList": "نهاية القائمة"
   },
   "auth": {
     "login": {
@@ -414,6 +416,7 @@
     "review": "تقييم",
     "reviewPlural": "تقييمات",
     "noReviews": "لا توجد تقييمات بعد",
+    "loadingReviews": "جاري تحميل التقييمات...",
     "stock": "مخزون الإضافات",
     "edit": "تعديل",
     "delete": "حذف",
@@ -439,7 +442,20 @@
     "others": "أخرى",
     "smallCakes": "كعك صغير",
     "largeCakes": "كعك كبير",
-    "othersType": "أخرى"
+    "othersType": "أخرى",
+    "storedItems": "المنتجات المخزنة",
+    "noItems": "لا توجد عناصر متاحة",
+    "lowStock": "مخزون منخفض",
+    "editStock": "تعديل المخزون",
+    "currentStock": "المخزون الحالي",
+    "item": "العنصر",
+    "price": "السعر",
+    "type": "النوع",
+    "newStock": "المخزون الجديد",
+    "enterNewStockValue": "أدخل قيمة المخزون الجديدة",
+    "invalidStockValue": "يرجى إدخال قيمة مخزون صحيحة (0 أو أعلى)",
+    "stockUpdated": "تم تحديث المخزون بنجاح",
+    "updateStockError": "فشل تحديث المخزون"
   },
   "chefs": {
     "title": "الطهاة",
@@ -606,7 +622,9 @@
     "size": "الحجم",
     "flavor": "النكهة",
     "item": "منتج",
-    "noItemsInOrder": "لا توجد عناصر في هذا الطلب"
+    "noItemsInOrder": "لا توجد عناصر في هذا الطلب",
+    "designToPrint": "التصميم للطباعة",
+    "download": "تحميل"
   },
   "featuredCakes": {
     "title": "الكعكات المميزة",
@@ -676,6 +694,20 @@
     "addFirstShape": "أضف أول شكل لديك للبدء",
     "addFirstDecoration": "أضف أول زينة لديك للبدء",
     "addNewFlavor": "إضافة نكهة جديدة",
+    "flavorInUseTitle": "النكهة مستخدمة في كعكات مصممة مسبقاً",
+    "flavorInUseDescription": "هذه النكهة مرتبطة بتكوينات كعكات مصممة مسبقاً ولا يمكن حذفها دون إزالة تلك السجلات أولاً.",
+    "cakeConfigsAffected": "تكوين(ات) كعكة سيتم إزالتها",
+    "predesignedCakesAffected": "كعكة(ات) مصممة مسبقاً ستتأثر",
+    "flavorForceDeleteWarning": "لا يمكن التراجع عن هذا الإجراء. هل تريد حذف النكهة وجميع السجلات المرتبطة بها؟",
+    "deleteFlavorAndRecords": "حذف النكهة والسجلات المرتبطة",
+    "shapeInUseTitle": "الشكل مستخدم في كعكات مصممة مسبقاً",
+    "shapeInUseDescription": "هذا الشكل مرتبط بتكوينات كعكات مصممة مسبقاً ولا يمكن حذفه دون إزالة تلك السجلات أولاً.",
+    "shapeForceDeleteWarning": "لا يمكن التراجع عن هذا الإجراء. هل تريد حذف الشكل وجميع السجلات المرتبطة به؟",
+    "deleteShapeAndRecords": "حذف الشكل والسجلات المرتبطة",
+    "decorationInUseTitle": "الزينة مستخدمة في كعكات مصممة مسبقاً",
+    "decorationInUseDescription": "هذه الزينة مرتبطة بتكوينات كعكات مصممة مسبقاً ولا يمكن حذفها دون إزالة تلك السجلات أولاً.",
+    "decorationForceDeleteWarning": "لا يمكن التراجع عن هذا الإجراء. هل تريد حذف الزينة وجميع السجلات المرتبطة بها؟",
+    "deleteDecorationAndRecords": "حذف الزينة والسجلات المرتبطة",
     "addNewShape": "إضافة شكل جديد",
     "addNewDecoration": "إضافة زينة جديدة",
     "shapeVariants": "متغيرات الشكل",
@@ -694,6 +726,8 @@
     "shapeDescription": "وصف الشكل",
     "enterShapeDescription": "أدخل وصف الشكل",
     "enterCapacity": "أدخل السعة بعدد الحصص",
+    "failedToUpdateFlavor": "فشل تحديث النكهة",
+    "failedToUpdateDecoration": "فشل تحديث الزينة",
     "predesignedCakes": {
       "title": "الكعكات المصممة مسبقاً",
       "subtitle": "إنشء وإدارة مجموعات الكعكات المصممة مسبقاً مع عدة تكوينات",

@@ -54,11 +54,8 @@ export default function SweetsPage() {
   });
 
   const handleAddSweet = async (formData: SweetFormValues) => {
-    console.log("handleAddSweet called with formData:", formData);
     try {
-      console.log("Calling addSweet...");
       await addSweet(formData);
-      console.log("addSweet completed successfully");
       setIsAddOpen(false);
     } catch (err) {
       const errorMsg =

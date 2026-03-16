@@ -24,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useAddOnStore } from "@/stores/addOnStore";
+import { convertToWebP } from "@/lib/image-utils";
 import type { AddOn } from "@/data/products";
 
 const addOnSchema = z.object({
@@ -123,33 +124,12 @@ export function AddOnForm({
         const uploadedUrls: string[] = [];
 
         for (const imageUrl of urlsToUpload) {
-          console.log("Uploading image to Cloudinary...");
-          console.log("Image data URL length:", imageUrl.length);
-
-          // Convert data URL to File
-          const response = await fetch(imageUrl);
-          const blob = await response.blob();
-          console.log("Blob created - size:", blob.size, "type:", blob.type);
-
-          const file = new File([blob], "addon-image.jpg", {
-            type: "image/jpeg",
+          const webpBlob = await convertToWebP(imageUrl);
+          const file = new File([webpBlob], "addon-image.webp", {
+            type: "image/webp",
           });
-          console.log(
-            "File object created - size:",
-            file.size,
-            "type:",
-            file.type,
-            "name:",
-            file.name,
-          );
-
-          // Upload to Cloudinary using store
-          console.log("Calling uploadAddOnImage with file:", file);
           const result = await uploadAddOnImage(file);
-          console.log("Upload result:", result);
-
           uploadedUrls.push(result.secure_url);
-          console.log("Image uploaded successfully:", result.secure_url);
         }
 
         // Combine uploaded URLs with already uploaded ones

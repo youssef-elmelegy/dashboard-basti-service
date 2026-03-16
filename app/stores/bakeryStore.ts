@@ -17,6 +17,7 @@ import {
   type Bakery,
   type BakeryType,
 } from "@/lib/services/bakery.service";
+import type { Order } from "@/data/orders";
 
 interface BakeryState {
   // Data
@@ -25,6 +26,10 @@ interface BakeryState {
   isLoading: boolean;
   error: string | null;
   lastFetchTime: number | null;
+
+  // Bakery Orders Cache
+  bakeryOrders: Record<string, Order[]>; // Key: bakeryId, Value: orders array
+  bakeryOrdersFetchTime: Record<string, number>; // Key: bakeryId, Value: timestamp
 
   // Actions
   fetchBakeries: () => Promise<void>;
@@ -49,9 +54,15 @@ interface BakeryState {
   deleteBakery: (id: string) => Promise<void>;
   clearError: () => void;
   resetBakeries: () => void;
+
+  // Bakery Orders Actions
+  setBakeryOrders: (bakeryId: string, orders: Order[]) => void;
+  getBakeryOrders: (bakeryId: string) => Order[] | null;
+  clearBakeryOrdersCache: (bakeryId?: string) => void;
 }
 
 const BAKERY_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const BAKERY_ORDERS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const useBakeryStore = create<BakeryState>((set, get) => ({
   // Initial state
@@ -60,6 +71,8 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
   isLoading: false,
   error: null,
   lastFetchTime: null,
+  bakeryOrders: {},
+  bakeryOrdersFetchTime: {},
 
   // Fetch all bakeries from API with caching
   fetchBakeries: async () => {
@@ -228,5 +241,59 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
       isLoading: false,
       error: null,
     });
+  },
+
+  // Set bakery orders in cache
+  setBakeryOrders: (bakeryId: string, orders: Order[]) => {
+    set((state) => ({
+      bakeryOrders: {
+        ...state.bakeryOrders,
+        [bakeryId]: orders,
+      },
+      bakeryOrdersFetchTime: {
+        ...state.bakeryOrdersFetchTime,
+        [bakeryId]: Date.now(),
+      },
+    }));
+  },
+
+  // Get bakery orders from cache (returns null if expired)
+  getBakeryOrders: (bakeryId: string) => {
+    const state = get();
+    const orders = state.bakeryOrders[bakeryId];
+    const fetchTime = state.bakeryOrdersFetchTime[bakeryId];
+
+    if (!orders || !fetchTime) {
+      return null;
+    }
+
+    // Check if cache is still fresh
+    const now = Date.now();
+    if (now - fetchTime > BAKERY_ORDERS_CACHE_DURATION) {
+      return null;
+    }
+
+    return orders;
+  },
+
+  // Clear bakery orders cache
+  clearBakeryOrdersCache: (bakeryId?: string) => {
+    if (bakeryId) {
+      set((state) => ({
+        bakeryOrders: {
+          ...state.bakeryOrders,
+          [bakeryId]: [],
+        },
+        bakeryOrdersFetchTime: {
+          ...state.bakeryOrdersFetchTime,
+          [bakeryId]: 0,
+        },
+      }));
+    } else {
+      set({
+        bakeryOrders: {},
+        bakeryOrdersFetchTime: {},
+      });
+    }
   },
 }));

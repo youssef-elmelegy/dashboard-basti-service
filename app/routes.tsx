@@ -28,6 +28,7 @@ import ForgotPasswordPage from "@/routes/auth/forgot-password";
 import OTPVerifyPage from "@/routes/auth/otp-verify";
 import ResetPasswordPage from "@/routes/auth/reset-password";
 import OrderDetailPage from "@/routes/order-detail";
+import ItemDetailPage from "@/routes/item-detail";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
       {
         path: "orders/:id",
         element: <OrderDetailPage />,
+      },
+      {
+        path: "item-detail",
+        element: <ItemDetailPage />,
       },
       {
         path: "orders/bakery/:id",

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useRegionStore } from "@/stores/regionStore";
+import { convertToWebP } from "@/lib/image-utils";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import type { SliderImage } from "@/lib/services/slider-image.service";
@@ -91,9 +92,12 @@ export function SliderImageForm({
 
     try {
       setUploadingImage(true);
-      const response = await fetch(imageToUpload);
-      const blob = await response.blob();
-      const file = new File([blob], "slider-image.jpg", { type: "image/jpeg" });
+
+      // Convert to WebP and compress before uploading
+      const webpBlob = await convertToWebP(imageToUpload);
+      const file = new File([webpBlob], "slider-image.webp", {
+        type: "image/webp",
+      });
 
       const result = await uploadRegionImage(file);
       setUploadedImageUrl(result.secure_url);

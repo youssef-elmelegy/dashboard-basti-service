@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { Chef } from "@/lib/services/chef.service";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useChefStore } from "@/stores/chefStore";
+import { convertToWebP } from "@/lib/image-utils";
 
 const formSchema = z.object({
   name: z
@@ -113,31 +114,15 @@ const EditChef = ({ chef, onSubmit }: EditChefProps) => {
     if (imageUrl.startsWith("data:") || imageUrl.startsWith("blob:")) {
       try {
         setUploadingImage(true);
-        console.log("Uploading image to Cloudinary...");
-        console.log("Image data URL length:", imageUrl.length);
 
-        // Convert data URL to File
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        console.log("Blob created - size:", blob.size, "type:", blob.type);
+        // Convert to WebP and compress before uploading
+        const webpBlob = await convertToWebP(imageUrl);
+        const file = new File([webpBlob], "chef-image.webp", {
+          type: "image/webp",
+        });
 
-        const file = new File([blob], "chef-image.jpg", { type: "image/jpeg" });
-        console.log(
-          "File object created - size:",
-          file.size,
-          "type:",
-          file.type,
-          "name:",
-          file.name,
-        );
-
-        // Upload to Cloudinary using store
-        console.log("Calling uploadChefImage with file:", file);
         const result = await uploadChefImage(file);
-        console.log("Upload result:", result);
-
         setUploadedImageUrl(result.secure_url);
-        console.log("Image uploaded successfully:", result.secure_url);
       } catch (error) {
         console.error("Error uploading image:", error);
         // Keep the form state but show error

@@ -59,8 +59,24 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "Login failed");
           }
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Login failed";
+          let errorMessage = "Login failed";
+          if (error && typeof error === "object") {
+            // ApiClient throws ApiError objects with a `message` string and optional `details`
+            if (
+              "message" in error &&
+              typeof (error as any).message === "string"
+            ) {
+              errorMessage = (error as any).message;
+            } else if (
+              "details" in error &&
+              Array.isArray((error as any).details)
+            ) {
+              errorMessage = (error as any).details.join("; ");
+            }
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+
           set({
             error: errorMessage,
             isLoading: false,
@@ -93,8 +109,23 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Failed to send OTP";
+          let errorMessage = "Failed to send OTP";
+          if (error && typeof error === "object") {
+            if (
+              "message" in error &&
+              typeof (error as any).message === "string"
+            ) {
+              errorMessage = (error as any).message;
+            } else if (
+              "details" in error &&
+              Array.isArray((error as any).details)
+            ) {
+              errorMessage = (error as any).details.join("; ");
+            }
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+
           set({
             error: errorMessage,
             isLoading: false,
@@ -114,8 +145,23 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "OTP verification failed");
           }
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "OTP verification failed";
+          let errorMessage = "OTP verification failed";
+          if (error && typeof error === "object") {
+            if (
+              "message" in error &&
+              typeof (error as any).message === "string"
+            ) {
+              errorMessage = (error as any).message;
+            } else if (
+              "details" in error &&
+              Array.isArray((error as any).details)
+            ) {
+              errorMessage = (error as any).details.join("; ");
+            }
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+
           set({
             error: errorMessage,
             isLoading: false,
@@ -136,8 +182,23 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Password reset failed";
+          let errorMessage = "Password reset failed";
+          if (error && typeof error === "object") {
+            if (
+              "message" in error &&
+              typeof (error as any).message === "string"
+            ) {
+              errorMessage = (error as any).message;
+            } else if (
+              "details" in error &&
+              Array.isArray((error as any).details)
+            ) {
+              errorMessage = (error as any).details.join("; ");
+            }
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          }
+
           set({
             error: errorMessage,
             isLoading: false,

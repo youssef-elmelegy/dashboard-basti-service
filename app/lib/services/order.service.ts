@@ -69,6 +69,7 @@ export interface OrderResponse {
   deliveryNote: string;
   keepAnonymous: boolean;
   cartType: string;
+  assigningDate?: string;
   cardMessage: string | null;
   recipientData: string | null;
   wantedDeliveryDate: string | null;
@@ -197,6 +198,7 @@ export const orderApi = {
       | "confirmed"
       | "preparing"
       | "ready"
+      | "out_for_delivery"
       | "delivered"
       | "cancelled",
   ): Promise<ApiResponse<{ id: string; status: string }>> => {

@@ -36,6 +36,22 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface DecorationVariantImage {
+  id: string;
+  shapeId: string;
+  slicedViewUrl: string;
+  frontViewUrl: string;
+  topViewUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DecorationConflictData {
+  relatedConfigsCount: number;
+  affectedPredesignedCakesCount: number;
+  affectedPredesignedCakeIds: string[];
+}
+
 export const decorationApi = {
   /**
    * Get all decorations with pagination
@@ -90,6 +106,24 @@ export const decorationApi = {
   delete: (id: string): Promise<ApiResponse<{ message: string }>> => {
     return apiClient.delete<{ message: string }>(
       `/custom-cakes/decorations/${id}`,
+    );
+  },
+
+  /**
+   * Force-delete decoration and all related predesigned cake configs
+   */
+  forceDelete: (id: string): Promise<ApiResponse<null>> => {
+    return apiClient.delete<null>(`/custom-cakes/decorations/${id}/force`);
+  },
+
+  /**
+   * Get all shape variant images for a decoration
+   */
+  getVariantImages: (
+    id: string,
+  ): Promise<ApiResponse<DecorationVariantImage[]>> => {
+    return apiClient.get<DecorationVariantImage[]>(
+      `/custom-cakes/decorations/${id}/variant-images`,
     );
   },
 };

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { sweetService, type Sweet } from "@/lib/services/sweet.service";
+import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/addOn.api";
 
 type SweetInput = {
   name: string;
@@ -21,6 +22,7 @@ interface SweetStore {
   updateSweet: (id: string, sweet: SweetInput) => Promise<void>;
   deleteSweet: (id: string) => Promise<void>;
   toggleSweetStatus: (id: string) => Promise<void>;
+  uploadSweetImage: (file: File) => Promise<CloudinaryUploadResult>;
 }
 
 export const useSweetStore = create<SweetStore>((set, get) => ({
@@ -128,6 +130,24 @@ export const useSweetStore = create<SweetStore>((set, get) => ({
       throw error instanceof Error
         ? error
         : new Error("Failed to toggle sweet status");
+    }
+  },
+
+  uploadSweetImage: async (file: File) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await uploadImage(file, "basti/sweets");
+      if (response.success && response.data) {
+        set({ isLoading: false });
+        return response.data;
+      }
+      const errorMsg = response.message || "Image upload failed";
+      throw new Error(errorMsg);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to upload image";
+      set({ error: errorMessage, isLoading: false });
+      throw error;
     }
   },
 }));

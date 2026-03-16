@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useShapeStore } from "@/stores/shapeStore";
+import { convertToWebP } from "@/lib/image-utils";
 import type {
   CreateShapeFormValues,
   UpdateShapeFormValues,
@@ -85,9 +86,10 @@ export function ShapeForm({
 
     try {
       setUploadingImage(true);
-      const response = await fetch(imageToUpload);
-      const blob = await response.blob();
-      const file = new File([blob], "shape-image.jpg", { type: "image/jpeg" });
+      const webpBlob = await convertToWebP(imageToUpload);
+      const file = new File([webpBlob], "shape-image.webp", {
+        type: "image/webp",
+      });
 
       const uploadResult = await uploadShapeImage(file);
       if (uploadResult.url) {

@@ -12,17 +12,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useRegionStore } from "@/stores/regionStore";
+import { convertToWebP } from "@/lib/image-utils";
 import type { CreateFlavorWithVariantImagesFormValues } from "@/schemas/custom-cakes.schema";
 import { createFlavorWithVariantImagesSchema } from "@/schemas/custom-cakes.schema";
 import type { Flavor } from "@/lib/services/flavor.service";
+import { flavorApi } from "@/lib/services/flavor.service";
 import { VariantImagesInput } from "./VariantImagesInput";
 
 interface VariantImageData {
   shapeId: string;
-  sideViewUrl: string;
+  slicedViewUrl: string;
   frontViewUrl: string;
   topViewUrl: string;
 }
@@ -48,6 +50,27 @@ export function FlavorForm({
     flavor?.flavorUrl || "",
   );
   const [variantImages, setVariantImages] = useState<VariantImageData[]>([]);
+
+  // Fetch existing variant images when editing
+  useEffect(() => {
+    if (flavor?.id) {
+      flavorApi.getVariantImages(flavor.id).then((res) => {
+        if (res.success && res.data) {
+          const loaded: VariantImageData[] = res.data.map((v) => ({
+            shapeId: v.shapeId,
+            slicedViewUrl: v.slicedViewUrl,
+            frontViewUrl: v.frontViewUrl,
+            topViewUrl: v.topViewUrl,
+          }));
+          setVariantImages(loaded);
+          form.setValue("variantImages", loaded, { shouldValidate: false });
+        }
+      }).catch(() => {
+        // silently ignore — form is still usable without pre-loaded images
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flavor?.id]);
 
   const schema = createFlavorWithVariantImagesSchema;
 
@@ -81,9 +104,10 @@ export function FlavorForm({
 
     try {
       setUploadingImage(true);
-      const response = await fetch(imageToUpload);
-      const blob = await response.blob();
-      const file = new File([blob], "flavor-image.jpg", { type: "image/jpeg" });
+      const webpBlob = await convertToWebP(imageToUpload);
+      const file = new File([webpBlob], "flavor-image.webp", {
+        type: "image/webp",
+      });
 
       const result = await uploadRegionImage(file);
       setUploadedImageUrl(result.secure_url);
@@ -105,7 +129,7 @@ export function FlavorForm({
     data: CreateFlavorWithVariantImagesFormValues,
   ) => {
     const filteredVariants = variantImages.filter(
-      (v) => v.sideViewUrl && v.frontViewUrl && v.topViewUrl,
+      (v) => v.slicedViewUrl && v.frontViewUrl && v.topViewUrl,
     );
 
     const finalData: CreateFlavorWithVariantImagesFormValues = {

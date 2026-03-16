@@ -5,6 +5,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import logoSvg from "@/assets/logo.svg";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { authApi } from "@/lib/api/auth.api";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,10 +13,11 @@ import { useTranslation } from "react-i18next";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const { forgotPassword, isLoading, error } = useAuth();
+  const { /* forgotPassword, */ isLoading, error } = useAuth();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localLoading, setLocalLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +29,18 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      await forgotPassword(email);
-      navigate("/auth/otp-verify", { state: { email } });
-    } catch {
-      setLocalError(error || t("auth.forgotPassword.sendFailed"));
+      setLocalLoading(true);
+      const response = await authApi.forgotPassword({ email });
+      if (response.success) {
+        navigate("/auth/otp-verify", { state: { email } });
+      } else {
+        setLocalError(response.message || t("auth.forgotPassword.sendFailed"));
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : null;
+      setLocalError(errMsg || error || t("auth.forgotPassword.sendFailed"));
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -77,12 +87,12 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || localLoading}
                   />
                 </Field>
                 <Field>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading
+                  <Button type="submit" disabled={isLoading || localLoading}>
+                    {localLoading
                       ? t("auth.forgotPassword.sending")
                       : t("auth.forgotPassword.sendButton")}
                   </Button>
@@ -92,7 +102,7 @@ export default function ForgotPasswordPage() {
                     type="button"
                     onClick={() => navigate("/auth/login")}
                     className="flex items-center justify-center gap-2 text-sm hover:underline w-full"
-                    disabled={isLoading}
+                    disabled={isLoading || localLoading}
                   >
                     <ArrowLeft className="size-4" />
                     {t("auth.forgotPassword.backToLogin")}

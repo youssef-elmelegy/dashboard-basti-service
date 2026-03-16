@@ -37,6 +37,7 @@ interface RegionState {
     regionData: { name: string; image?: string; isAvailable?: boolean },
   ) => Promise<void>;
   deleteRegion: (id: string) => Promise<void>;
+  changeRegionOrder: (id: string, newOrder: number) => Promise<void>;
   uploadRegionImage: (file: File) => Promise<CloudinaryUploadResult>;
   clearError: () => void;
   resetRegions: () => void;
@@ -173,6 +174,31 @@ export const useRegionStore = create<RegionState>((set, get) => ({
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to delete region";
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Change region order
+  changeRegionOrder: async (id: string, newOrder: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await regionApi.changeOrder(id, newOrder);
+
+      if (response.success && response.data) {
+        // Response now returns the full regions array sorted by order
+        set({
+          regions: response.data as Region[],
+          isLoading: false,
+        });
+      } else {
+        throw new Error(response.message || "Failed to change region order");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to change region order";
       set({ error: errorMessage, isLoading: false });
       throw error;
     }

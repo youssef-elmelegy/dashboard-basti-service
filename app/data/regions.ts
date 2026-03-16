@@ -20,6 +20,7 @@ export type Region = {
   name: string;
   image: string;
   isAvailable: boolean;
+  order: number;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -31,6 +32,7 @@ export const REGIONS_DATA: Region[] = [
     image:
       "http://res.cloudinary.com/dzyxpwpcb/image/upload/v1771038898/basti/general/1771038895856-sirte.png",
     isAvailable: true,
+    order: 1,
   },
   {
     id: "5e94f2f4-d65e-45e4-99a9-ed3d4d10c2ff",
@@ -38,6 +40,7 @@ export const REGIONS_DATA: Region[] = [
     image:
       "http://res.cloudinary.com/dzyxpwpcb/image/upload/v1771038923/basti/general/1771038922064-tobruk.png",
     isAvailable: true,
+    order: 2,
   },
   {
     id: "868046c7-bffc-4927-b504-f5c5eb7c5a24",
@@ -45,6 +48,7 @@ export const REGIONS_DATA: Region[] = [
     image:
       "http://res.cloudinary.com/dzyxpwpcb/image/upload/v1771038949/basti/general/1771038947054-tripoli.png",
     isAvailable: true,
+    order: 3,
   },
   {
     id: "92c9f70c-8980-4d21-a517-0f14a8056bb8",
@@ -52,5 +56,6 @@ export const REGIONS_DATA: Region[] = [
     image:
       "http://res.cloudinary.com/dzyxpwpcb/image/upload/v1771038986/basti/general/1771038984241-zawiya.png",
     isAvailable: true,
+    order: 4,
   },
 ];

@@ -28,7 +28,7 @@ export type UpdateFlavorFormValues = z.infer<typeof updateFlavorSchema>;
 
 export const shapeVariantImageSchema = z.object({
   shapeId: z.string().uuid("Must be a valid UUID"),
-  sideViewUrl: z.string().url("Must be a valid URL"),
+  slicedViewUrl: z.string().url("Must be a valid URL"),
   frontViewUrl: z.string().url("Must be a valid URL"),
   topViewUrl: z.string().url("Must be a valid URL"),
 });
@@ -122,7 +122,7 @@ export type UpdateDecorationFormValues = z.infer<typeof updateDecorationSchema>;
 
 export const decorationVariantImageSchema = z.object({
   shapeId: z.string().uuid("Must be a valid UUID"),
-  sideViewUrl: z.string().url("Must be a valid URL"),
+  slicedViewUrl: z.string().url("Must be a valid URL"),
   frontViewUrl: z.string().url("Must be a valid URL"),
   topViewUrl: z.string().url("Must be a valid URL"),
 });

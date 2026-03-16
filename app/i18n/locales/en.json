@@ -44,6 +44,7 @@
     "active": "Active",
     "inactive": "Inactive",
     "retry": "Try Again",
+    "tryAgain": "Try Again",
     "noImage": "No image",
     "name": "Name",
     "capacity": "Capacity",
@@ -53,7 +54,8 @@
     "pipingPalettes": "Piping Palettes",
     "tag": "Tag",
     "selectTag": "Select Tag",
-    "status": "Status"
+    "status": "Status",
+    "endOfList": "End of list"
   },
   "auth": {
     "login": {
@@ -414,6 +416,7 @@
     "review": "review",
     "reviewPlural": "reviews",
     "noReviews": "No reviews yet",
+    "loadingReviews": "Loading reviews...",
     "stock": "Add-On Stock",
     "edit": "Edit",
     "delete": "Delete",
@@ -439,7 +442,20 @@
     "others": "Others",
     "smallCakes": "Small Cakes",
     "largeCakes": "Large Cakes",
-    "othersType": "Others"
+    "othersType": "Others",
+    "storedItems": "Stored Items",
+    "noItems": "No items available",
+    "lowStock": "Low Stock",
+    "editStock": "Edit Stock",
+    "currentStock": "Current Stock",
+    "item": "Item",
+    "price": "Price",
+    "type": "Type",
+    "newStock": "New Stock",
+    "enterNewStockValue": "Enter the new stock value",
+    "invalidStockValue": "Please enter a valid stock value (0 or higher)",
+    "stockUpdated": "Stock updated successfully",
+    "updateStockError": "Failed to update stock"
   },
   "chefs": {
     "title": "Chefs",
@@ -606,7 +622,9 @@
     "size": "Size",
     "flavor": "Flavor",
     "item": "Item",
-    "noItemsInOrder": "No items in this order"
+    "noItemsInOrder": "No items in this order",
+    "designToPrint": "Design to Print",
+    "download": "Download"
   },
   "featuredCakes": {
     "title": "Featured Cakes",
@@ -676,6 +694,20 @@
     "addFirstShape": "Add your first shape to get started",
     "addFirstDecoration": "Add your first decoration to get started",
     "addNewFlavor": "Add New Flavor",
+    "flavorInUseTitle": "Flavor is used in predesigned cakes",
+    "flavorInUseDescription": "This flavor is referenced by predesigned cake configurations and cannot be deleted without removing those records first.",
+    "cakeConfigsAffected": "cake configuration(s) will be removed",
+    "predesignedCakesAffected": "predesigned cake(s) will be affected",
+    "flavorForceDeleteWarning": "This action cannot be undone. Do you want to delete the flavor and all related records?",
+    "deleteFlavorAndRecords": "Delete flavor & related records",
+    "shapeInUseTitle": "Shape is used in predesigned cakes",
+    "shapeInUseDescription": "This shape is referenced by predesigned cake configurations and cannot be deleted without removing those records first.",
+    "shapeForceDeleteWarning": "This action cannot be undone. Do you want to delete the shape and all related records?",
+    "deleteShapeAndRecords": "Delete shape & related records",
+    "decorationInUseTitle": "Decoration is used in predesigned cakes",
+    "decorationInUseDescription": "This decoration is referenced by predesigned cake configurations and cannot be deleted without removing those records first.",
+    "decorationForceDeleteWarning": "This action cannot be undone. Do you want to delete the decoration and all related records?",
+    "deleteDecorationAndRecords": "Delete decoration & related records",
     "addNewShape": "Add New Shape",
     "addNewDecoration": "Add New Decoration",
     "shapeVariants": "Shape Variants",
@@ -694,6 +726,8 @@
     "shapeDescription": "Shape Description",
     "enterShapeDescription": "Enter shape description",
     "enterCapacity": "Enter capacity in servings",
+    "failedToUpdateFlavor": "Failed to update flavor",
+    "failedToUpdateDecoration": "Failed to update decoration",
     "predesignedCakes": {
       "title": "Predesigned Cakes",
       "subtitle": "Create and manage predesigned cake collections with multiple configurations",

@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, memo, useCallback, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/checkbox";
 import {
   Calendar,
   MapPin,
@@ -24,7 +24,6 @@ import {
   Check,
   X,
   ChevronLeft,
-  Upload,
   RotateCw,
   Download,
   FileText,
@@ -37,17 +36,10 @@ const statusColors = {
   confirmed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   preparing: "bg-purple-500/10 text-purple-500 border-purple-500/20",
   ready: "bg-green-500/10 text-green-500 border-green-500/20",
+  out_for_delivery: "bg-orange-500/10 text-orange-500 border-orange-500/20",
   delivered: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
-
-const qualityCheckItems = [
-  { id: "addons", label: "Add-ons Implementation" },
-  { id: "printing", label: "Print Verification" },
-  { id: "packaging", label: "Safe Packaging" },
-  { id: "decoration", label: "Decoration Quality" },
-  { id: "freshness", label: "Freshness Check" },
-];
 
 /**
  * Get the category type of an order item
@@ -134,87 +126,88 @@ function downloadCardAsImage(cardMessage: {
 }
 
 // Standalone Image Upload Component (without form context)
-function ImageUpload({
-  onImageChange,
-  initialImage = "",
-}: {
-  onImageChange: (base64: string) => void;
-  initialImage?: string;
-}) {
-  const [imagePreview, setImagePreview] = useState<string>(initialImage);
+// function ImageUpload({
+//   onImageChange,
+//   initialImage = "",
+// }: {
+//   onImageChange: (base64: string) => void;
+//   initialImage?: string;
+// }) {
+//   const [imagePreview, setImagePreview] = useState<string>(initialImage);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setImagePreview(base64String);
-        onImageChange(base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+//   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = e.target.files?.[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onloadend = () => {
+//         const base64String = reader.result as string;
+//         setImagePreview(base64String);
+//         onImageChange(base64String);
+//       };
+//       reader.readAsDataURL(file);
+//     }
+//   };
 
-  return (
-    <div className="flex flex-col gap-3">
-      {!imagePreview ? (
-        <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <p className="text-sm font-medium">
-              Click to upload or drag and drop
-            </p>
-            <p className="text-xs text-muted-foreground">
-              PNG, JPG, GIF up to 10MB
-            </p>
-          </div>
-          <input
-            type="file"
-            className="hidden"
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
-        </label>
-      ) : (
-        <label className="relative w-full h-48 rounded-lg overflow-hidden border border-border cursor-pointer group">
-          <img
-            src={imagePreview}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            <RotateCw className="w-4 h-4 text-white" />
-            <span className="text-white font-medium text-sm">
-              Replace Image
-            </span>
-          </div>
-          <input
-            type="file"
-            className="hidden"
-            accept="image/*"
-            onChange={handleImageUpload}
-          />
-        </label>
-      )}
-    </div>
-  );
-}
+//   return (
+//     <div className="flex flex-col gap-3">
+//       {!imagePreview ? (
+//         <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+//           <div className="flex flex-col items-center justify-center pt-5 pb-6">
+//             <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+//             <p className="text-sm font-medium">
+//               Click to upload or drag and drop
+//             </p>
+//             <p className="text-xs text-muted-foreground">
+//               PNG, JPG, GIF up to 10MB
+//             </p>
+//           </div>
+//           <input
+//             type="file"
+//             className="hidden"
+//             accept="image/*"
+//             onChange={handleImageUpload}
+//           />
+//         </label>
+//       ) : (
+//         <label className="relative w-full h-48 rounded-lg overflow-hidden border border-border cursor-pointer group">
+//           <img
+//             src={imagePreview}
+//             alt="Preview"
+//             className="w-full h-full object-cover"
+//           />
+//           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+//             <RotateCw className="w-4 h-4 text-white" />
+//             <span className="text-white font-medium text-sm">
+//               Replace Image
+//             </span>
+//           </div>
+//           <input
+//             type="file"
+//             className="hidden"
+//             accept="image/*"
+//             onChange={handleImageUpload}
+//           />
+//         </label>
+//       )}
+//     </div>
+//   );
+// }
 
 // Timer Component - Isolated with memo to prevent unnecessary re-renders
 const OrderTimer = memo(function OrderTimer({
-  assignedAt,
+  assigningDate,
   onExpire,
 }: {
-  assignedAt?: string;
+  assigningDate?: string;
   onExpire: () => void;
 }) {
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [hasExpired, setHasExpired] = useState(false);
 
   useEffect(() => {
-    if (!assignedAt) return;
+    if (!assigningDate) return;
 
-    const assignTime = new Date(assignedAt).getTime();
+    const assignTime = new Date(assigningDate).getTime();
     const expiryTime = assignTime + 60 * 60 * 1000; // 60 minutes from assignment
 
     const updateTimer = () => {
@@ -222,7 +215,8 @@ const OrderTimer = memo(function OrderTimer({
       const remaining = Math.max(0, expiryTime - now);
       setTimeLeft(remaining);
 
-      if (remaining === 0) {
+      if (remaining === 0 && !hasExpired) {
+        setHasExpired(true);
         onExpire();
       }
     };
@@ -231,7 +225,7 @@ const OrderTimer = memo(function OrderTimer({
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [assignedAt, onExpire]);
+  }, [assigningDate, onExpire, hasExpired]);
 
   const minutes = Math.floor(timeLeft / 60000);
   const seconds = Math.floor((timeLeft % 60000) / 1000);
@@ -251,6 +245,50 @@ const OrderTimer = memo(function OrderTimer({
       <span>
         {minutes}:{seconds.toString().padStart(2, "0")}
       </span>
+    </div>
+  );
+});
+
+// Isolated Pending Order Status Card Component - Only re-renders when order changes, not on timer tick
+const PendingOrderStatusCard = memo(function PendingOrderStatusCard({
+  assigningDate,
+  onConfirm,
+  onDecline,
+}: {
+  orderId: string;
+  assigningDate?: string;
+  onConfirm: () => void;
+  onDecline: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="flex items-center gap-3">
+          <Clock className="w-5 h-5 text-yellow-600" />
+          <div>
+            <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200">
+              Pending Confirmation
+            </p>
+            <p className="text-xs text-yellow-700/70 dark:text-yellow-300/70">
+              Auto-confirms in 1 hour from assignment
+            </p>
+          </div>
+        </div>
+        <OrderTimer assigningDate={assigningDate} onExpire={onConfirm} />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          className="flex-1 bg-green-600 hover:bg-green-700"
+          onClick={onConfirm}
+        >
+          <Check className="w-4 h-4 mr-2" />
+          Accept Order
+        </Button>
+        <Button variant="destructive" className="flex-1" onClick={onDecline}>
+          <X className="w-4 h-4 mr-2" />
+          Decline Order
+        </Button>
+      </div>
     </div>
   );
 });
@@ -329,7 +367,7 @@ function CancellationDialog({
   );
 }
 
-// Order Card in Sidebar
+// Order Card in Sidebar - Memoized to prevent re-renders from parent
 function OrderSidebarCard({
   order,
   isSelected,
@@ -410,7 +448,7 @@ function OrderSidebarCard({
                 <div className="flex items-center gap-2 pt-2">
                   <div className="flex-1">
                     <OrderTimer
-                      assignedAt={order.assignedAt}
+                      assigningDate={order.assigningDate}
                       onExpire={onConfirm}
                     />
                   </div>
@@ -454,21 +492,33 @@ function OrderSidebarCard({
   );
 }
 
+const MemoizedOrderSidebarCard = memo(OrderSidebarCard);
+
 export default function BakeryOrdersPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
   const currentBakery = useBakeryStore((state) => state.currentBakery);
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
+  const setBakeryOrders = useBakeryStore((state) => state.setBakeryOrders);
+  const getCachedBakeryOrders = useBakeryStore(
+    (state) => state.getBakeryOrders,
+  );
   const updateOrder = useOrderStore((state) => state.updateOrder);
 
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [qualityChecks, setQualityChecks] = useState<Record<string, boolean>>(
-    {},
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
+    location.state?.selectedOrderId || null,
   );
-  const [uploadedImage, setUploadedImage] = useState<string>("");
-  const [bakeryOrders, setBakeryOrders] = useState<Order[]>([]);
+  // const [qualityChecks, setQualityChecks] = useState<Record<string, boolean>>(
+  //   {},
+  // );
+  // const [uploadedImage, setUploadedImage] = useState<string>("");
+  const [bakeryOrders, setBakeryOrdersLocal] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const autoConfirmedOrders = useRef(new Set<string>());
 
   // Fetch bakery details on mount or when id changes
   useEffect(() => {
@@ -485,13 +535,23 @@ export default function BakeryOrdersPage() {
 
     const fetchBakeryOrders = async () => {
       try {
-        // Statuses to fetch (all except completed and cancelled)
+        // Check if orders are cached
+        const cachedOrders = getCachedBakeryOrders(id);
+        if (cachedOrders && cachedOrders.length > 0) {
+          console.log("Using cached bakery orders");
+          setBakeryOrdersLocal(cachedOrders);
+          setIsLoadingOrders(false);
+          return;
+        }
+
+        setIsLoadingOrders(true);
+        // Updated statuses to exclude 'cancelled' and 'delivered'
         const statuses = [
           "pending",
           "confirmed",
           "preparing",
           "ready",
-          "delivered",
+          "out_for_delivery",
         ];
 
         // Fetch orders for this specific bakery with status filter
@@ -558,6 +618,7 @@ export default function BakeryOrdersPage() {
                 keepAnonymous: apiOrder.keepAnonymous,
                 deliveryLatitude: apiOrder.locationData?.latitude,
                 deliveryLongitude: apiOrder.locationData?.longitude,
+                assigningDate: apiOrder.assigningDate,
                 orderItems,
                 addons: apiOrder.addons,
                 sweets: apiOrder.sweets,
@@ -603,15 +664,19 @@ export default function BakeryOrdersPage() {
           );
 
           // Server already filters by bakery, just set the orders
-          setBakeryOrders(bakeryOrdersList);
+          setBakeryOrdersLocal(bakeryOrdersList);
+          // Store in cache
+          setBakeryOrders(id, bakeryOrdersList);
         }
       } catch (error) {
         console.error("Failed to fetch bakery orders:", error);
+      } finally {
+        setIsLoadingOrders(false);
       }
     };
 
     fetchBakeryOrders();
-  }, [id]);
+  }, [id, getCachedBakeryOrders, setBakeryOrders]);
 
   const bakery = currentBakery;
   const selectedOrder = bakeryOrders.find((o) => o.id === selectedOrderId);
@@ -625,26 +690,40 @@ export default function BakeryOrdersPage() {
     ? (usedCapacity / bakery.capacity) * 100
     : 0;
 
-  const handleConfirm = async (orderId: string) => {
-    try {
-      // Call the status change endpoint to set status to confirmed
-      const response = await orderApi.changeOrderStatus(orderId, "confirmed");
+  const handleConfirm = useCallback(
+    async (orderId: string) => {
+      try {
+        console.log(`[Auto-Confirm] Confirming order: ${orderId}`);
+        // Call the status change endpoint to set status to confirmed
+        const response = await orderApi.changeOrderStatus(orderId, "confirmed");
 
-      if (response.success) {
-        // Update the local bakery orders list with the new status
-        setBakeryOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order.id === orderId ? { ...order, status: "confirmed" } : order,
-          ),
+        if (response.success) {
+          console.log(
+            `[Auto-Confirm] Order confirmed successfully: ${orderId}`,
+          );
+          // Update the local bakery orders list with the new status
+          const updatedOrders = bakeryOrders.map((order) =>
+            order.id === orderId
+              ? { ...order, status: "confirmed" as const }
+              : order,
+          ) as Order[];
+
+          // Update both local state and store
+          setBakeryOrdersLocal(updatedOrders);
+          if (id) setBakeryOrders(id, updatedOrders);
+
+          // Also update the global order store
+          updateOrder(orderId, { status: "confirmed" });
+        }
+      } catch (error) {
+        console.error(
+          `[Auto-Confirm] Failed to confirm order ${orderId}:`,
+          error,
         );
-
-        // Also update the global order store
-        updateOrder(orderId, { status: "confirmed" });
       }
-    } catch (error) {
-      console.error("Failed to confirm order:", error);
-    }
-  };
+    },
+    [bakeryOrders, id, setBakeryOrders, updateOrder],
+  );
 
   const handleDecline = async (orderId: string, reason: string) => {
     try {
@@ -653,9 +732,13 @@ export default function BakeryOrdersPage() {
 
       if (response.success) {
         // Remove the order from the bakery orders list
-        setBakeryOrders((prevOrders) =>
-          prevOrders.filter((order) => order.id !== orderId),
-        );
+        const updatedOrders = bakeryOrders.filter(
+          (order) => order.id !== orderId,
+        ) as Order[];
+
+        // Update both local state and store
+        setBakeryOrdersLocal(updatedOrders);
+        if (id) setBakeryOrders(id, updatedOrders);
 
         // Reset selected order if it's the one being removed
         if (selectedOrderId === orderId) {
@@ -667,17 +750,121 @@ export default function BakeryOrdersPage() {
     }
   };
 
-  const handleQualityCheck = (checkId: string, checked: boolean) => {
-    setQualityChecks((prev) => ({ ...prev, [checkId]: checked }));
-  };
+  // const handleQualityCheck = (checkId: string, checked: boolean) => {
+  //   setQualityChecks((prev) => ({ ...prev, [checkId]: checked }));
+  // };
 
-  const handleStatusChange = (
-    newStatus: "preparing" | "ready" | "delivered",
+  // Memoized callback for confirming pending order
+  const handleConfirmPending = useCallback(() => {
+    if (selectedOrder?.id) {
+      handleConfirm(selectedOrder.id);
+    }
+  }, [selectedOrder?.id, handleConfirm]);
+
+  // Memoized callback for declining pending order
+  const handleDeclinePending = useCallback(() => {
+    if (selectedOrder?.id) {
+      handleDecline(selectedOrder.id, "Declined by bakery");
+    }
+  }, [selectedOrder?.id, handleDecline]);
+
+  const handleStatusChange = async (
+    newStatus: "preparing" | "ready" | "out_for_delivery" | "delivered",
   ) => {
-    if (selectedOrderId) {
-      updateOrder(selectedOrderId, { status: newStatus });
+    if (!selectedOrderId) return;
+
+    try {
+      setIsChangingStatus(true);
+
+      // Call the API to update the order status
+      const response = await orderApi.changeOrderStatus(
+        selectedOrderId,
+        newStatus,
+      );
+
+      if (response.success) {
+        // Update the local bakery orders list with the new status
+        const updatedOrders = bakeryOrders.map((order) =>
+          order.id === selectedOrderId
+            ? { ...order, status: newStatus }
+            : order,
+        ) as Order[];
+
+        // Update both local state and store
+        setBakeryOrdersLocal(updatedOrders);
+        if (id) setBakeryOrders(id, updatedOrders);
+
+        // Also update the global order store
+        updateOrder(selectedOrderId, { status: newStatus });
+      }
+    } catch (error) {
+      console.error("Failed to change order status:", error);
+    } finally {
+      setIsChangingStatus(false);
     }
   };
+
+  // Auto-confirm order when timer expires if status is still pending
+  useEffect(() => {
+    if (
+      !selectedOrder ||
+      selectedOrder.status !== "pending" ||
+      !selectedOrder.assigningDate
+    ) {
+      return;
+    }
+
+    // Skip if already auto-confirmed
+    if (autoConfirmedOrders.current.has(selectedOrder.id)) {
+      console.log(
+        `[Auto-Confirm] Order already auto-confirmed: ${selectedOrder.id}`,
+      );
+      return;
+    }
+
+    const assignTime = new Date(selectedOrder.assigningDate).getTime();
+    const expiryTime = assignTime + 60 * 60 * 1000; // 60 minutes from assignment
+    const now = Date.now();
+    const timeUntilExpiry = expiryTime - now;
+
+    console.log(
+      `[Auto-Confirm] Order: ${selectedOrder.id}, Time until expiry: ${timeUntilExpiry}ms, Assigning Date: ${selectedOrder.assigningDate}`,
+    );
+
+    // If already expired, confirm immediately
+    if (timeUntilExpiry <= 0) {
+      console.log(
+        `[Auto-Confirm] Order expired, confirming immediately: ${selectedOrder.id}`,
+      );
+      autoConfirmedOrders.current.add(selectedOrder.id);
+      handleConfirm(selectedOrder.id);
+      return;
+    }
+
+    // Set a timeout to confirm when the timer expires
+    console.log(
+      `[Auto-Confirm] Setting timeout for ${timeUntilExpiry}ms for order: ${selectedOrder.id}`,
+    );
+    const timeoutId = setTimeout(() => {
+      console.log(
+        `[Auto-Confirm] Timer expired, confirming order: ${selectedOrder.id}`,
+      );
+      autoConfirmedOrders.current.add(selectedOrder.id);
+      handleConfirm(selectedOrder.id);
+    }, timeUntilExpiry);
+
+    return () => {
+      clearTimeout(timeoutId);
+      console.log(
+        `[Auto-Confirm] Cleanup timeout for order: ${selectedOrder.id}`,
+      );
+    };
+  }, [
+    selectedOrder?.id,
+    selectedOrder?.status,
+    selectedOrder?.assigningDate,
+    handleConfirm,
+  ]);
 
   if (!bakery) {
     return (
@@ -800,7 +987,16 @@ export default function BakeryOrdersPage() {
                           return (
                             <div
                               key={item.id}
-                              className="border rounded-lg p-4"
+                              className="border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => {
+                                navigate("/item-detail", {
+                                  state: {
+                                    item,
+                                    bakeryId: id,
+                                    selectedOrderId,
+                                  },
+                                });
+                              }}
                             >
                               <div className="flex gap-4">
                                 {/* Item Image */}
@@ -856,6 +1052,10 @@ export default function BakeryOrdersPage() {
                                       Flavor: {item.flavor}
                                     </div>
                                   )}
+
+                                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium pt-1">
+                                    Click to view details
+                                  </div>
                                 </div>
                               </div>
                               {index < selectedOrder.orderItems!.length - 1 && (
@@ -999,79 +1199,84 @@ export default function BakeryOrdersPage() {
                     </Card>
                   )}
 
-                {/* Quality Control */}
+                {/* Status Buttons */}
                 <Card className="md:col-span-2">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Check className="w-5 h-5" />
-                      Quality Control & Final Result
-                    </CardTitle>
+                    <CardTitle>Order Status</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Checklist */}
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm">Checklist</h4>
-                        {qualityCheckItems.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center space-x-2"
-                          >
-                            <Checkbox
-                              id={item.id}
-                              checked={qualityChecks[item.id] || false}
-                              onCheckedChange={(checked) =>
-                                handleQualityCheck(item.id, checked as boolean)
-                              }
-                            />
-                            <label
-                              htmlFor={item.id}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {item.label}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Image Upload */}
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm">
-                          Final Result Image
-                        </h4>
-                        <ImageUpload
-                          onImageChange={setUploadedImage}
-                          initialImage={uploadedImage}
-                        />
-                      </div>
-                    </div>
-
-                    <Separator className="my-6" />
-
-                    {/* Status Buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-3">
+                      {selectedOrder.status === "pending" &&
+                        selectedOrder.assigningDate && (
+                          <PendingOrderStatusCard
+                            orderId={selectedOrder.id}
+                            assigningDate={selectedOrder.assigningDate}
+                            onConfirm={handleConfirmPending}
+                            onDecline={handleDeclinePending}
+                          />
+                        )}
                       {selectedOrder.status === "confirmed" && (
                         <Button
                           className="flex-1"
+                          disabled={isChangingStatus}
                           onClick={() => handleStatusChange("preparing")}
                         >
-                          Start Preparing
+                          {isChangingStatus ? (
+                            <>
+                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Start Preparing"
+                          )}
                         </Button>
                       )}
                       {selectedOrder.status === "preparing" && (
                         <Button
                           className="flex-1"
+                          disabled={isChangingStatus}
                           onClick={() => handleStatusChange("ready")}
                         >
-                          Mark as Ready
+                          {isChangingStatus ? (
+                            <>
+                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Mark as Ready"
+                          )}
                         </Button>
                       )}
                       {selectedOrder.status === "ready" && (
                         <Button
                           className="flex-1"
+                          disabled={isChangingStatus}
+                          onClick={() => handleStatusChange("out_for_delivery")}
+                        >
+                          {isChangingStatus ? (
+                            <>
+                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Out for Delivery"
+                          )}
+                        </Button>
+                      )}
+                      {selectedOrder.status === "out_for_delivery" && (
+                        <Button
+                          className="flex-1"
+                          disabled={isChangingStatus}
                           onClick={() => handleStatusChange("delivered")}
                         >
-                          Mark as Delivered
+                          {isChangingStatus ? (
+                            <>
+                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Mark as Delivered"
+                          )}
                         </Button>
                       )}
                       {selectedOrder.status === "delivered" && (
@@ -1267,13 +1472,22 @@ export default function BakeryOrdersPage() {
         </div>
         <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-2 p-4">
-            {bakeryOrders.length === 0 ? (
+            {isLoadingOrders ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex flex-col items-center gap-2">
+                  <RotateCw className="w-5 h-5 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("common.loading")}
+                  </p>
+                </div>
+              </div>
+            ) : bakeryOrders.length === 0 ? (
               <div className="text-center py-8 text-sm text-muted-foreground">
                 {t("bakeryOrders.noOrdersAssigned")}
               </div>
             ) : (
               bakeryOrders.map((order) => (
-                <OrderSidebarCard
+                <MemoizedOrderSidebarCard
                   key={order.id}
                   order={order}
                   isSelected={selectedOrderId === order.id}
@@ -1287,6 +1501,9 @@ export default function BakeryOrdersPage() {
           <ScrollBar orientation="vertical" />
         </ScrollArea>
       </div>
+
+      {/* Item Detail Modal */}
+      {/* Modal removed - now using full page navigation */}
     </div>
   );
 }

@@ -56,6 +56,34 @@ export interface UpdateBakeryRequest {
 }
 
 /**
+ * Bakery item store data model
+ */
+export interface BakeryItemStore {
+  id: string;
+  bakeryId: string;
+  regionItemPriceId: string;
+  stock: number;
+  price: string;
+  sizesPrices?: Record<string, string> | null;
+  addonId?: string | null;
+  featuredCakeId?: string | null;
+  sweetId?: string | null;
+  decorationId?: string | null;
+  flavorId?: string | null;
+  shapeId?: string | null;
+  predesignedCakeId?: string | null;
+  product?: {
+    id: string;
+    name: string;
+    description: string;
+    images: string[];
+    type: "addon" | "sweet" | "featured_cake";
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
  * Bakery API service with CRUD methods
  */
 export const bakeryApi = {
@@ -102,5 +130,26 @@ export const bakeryApi = {
    */
   delete: (id: string): Promise<ApiResponse<void>> => {
     return apiClient.delete<void>(`/bakeries/${id}`);
+  },
+
+  /**
+   * Get all item stores for a bakery with product details
+   */
+  getItems: (bakeryId: string): Promise<ApiResponse<BakeryItemStore[]>> => {
+    return apiClient.get<BakeryItemStore[]>(`/bakeries/${bakeryId}/items`);
+  },
+
+  /**
+   * Update stock for a bakery item store
+   */
+  updateItemStock: (
+    bakeryId: string,
+    storeId: string,
+    stock: number,
+  ): Promise<ApiResponse<BakeryItemStore>> => {
+    return apiClient.patch<BakeryItemStore>(
+      `/bakeries/${bakeryId}/items/${storeId}/stock`,
+      { stock },
+    );
   },
 };

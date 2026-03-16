@@ -8,6 +8,7 @@ export interface Shape {
   shapeUrl: string;
   size: "small" | "medium" | "large";
   capacity: number;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,7 @@ export interface CreateShapeRequest {
   shapeUrl: string;
   size: "small" | "medium" | "large";
   capacity: number;
+  order?: number;
 }
 
 export interface UpdateShapeRequest {
@@ -26,6 +28,7 @@ export interface UpdateShapeRequest {
   shapeUrl?: string;
   size?: "small" | "medium" | "large";
   capacity?: number;
+  order?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -36,6 +39,12 @@ export interface PaginatedResponse<T> {
     page: number;
     limit: number;
   };
+}
+
+export interface ShapeConflictData {
+  relatedConfigsCount: number;
+  affectedPredesignedCakesCount: number;
+  affectedPredesignedCakeIds: string[];
 }
 
 export const shapeApi = {
@@ -89,5 +98,21 @@ export const shapeApi = {
    */
   delete: (id: string): Promise<ApiResponse<{ message: string }>> => {
     return apiClient.delete<{ message: string }>(`/custom-cakes/shapes/${id}`);
+  },
+
+  /**
+   * Force-delete shape and all related predesigned cake configs
+   */
+  forceDelete: (id: string): Promise<ApiResponse<null>> => {
+    return apiClient.delete<null>(`/custom-cakes/shapes/${id}/force`);
+  },
+
+  /**
+   * Change shape order
+   */
+  changeOrder: (id: string, order: number): Promise<ApiResponse<Shape[]>> => {
+    return apiClient.patch<Shape[]>(`/custom-cakes/shapes/${id}/order`, {
+      order,
+    });
   },
 };

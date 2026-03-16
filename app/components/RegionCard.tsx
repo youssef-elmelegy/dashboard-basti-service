@@ -29,6 +29,13 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
       className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col cursor-pointer relative"
       onClick={handleCardClick}
     >
+      {/* Order Badge - Top Left */}
+      <div className="absolute top-4 left-4 z-40">
+        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+          {region.order}
+        </div>
+      </div>
+
       {/* Action Menu */}
       <div
         className="absolute top-4 right-4 z-50"

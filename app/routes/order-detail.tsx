@@ -1,9 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 import { useOrderStore } from "@/stores/orderStore";
+import { env } from "@/config/env";
+import { httpRequest } from "@/lib/http-handler";
 import { LocationMap } from "@/components/location-map";
-import type { OrderItem } from "@/data/orders";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,25 +33,110 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+type OrderStatus = keyof typeof statusColors;
+
+interface CustomCakeData {
+  snapshotTop?: string;
+  shape?: { title: string };
+  flavor?: { title: string };
+  decoration?: { title: string };
+  color?: { name: string };
+  description?: string;
+  imageToPrint?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface CartItem {
+  id: string;
+  data?: CustomCakeData;
+  customCake?: CustomCakeData;
+  addonId?: string | null;
+  sweetId?: string | null;
+  featuredCakeId?: string | null;
+  predesignedCakeId?: string | null;
+  price: number;
+  quantity: number;
+  name?: string;
+}
+
+interface OrderData {
+  id: string;
+  orderStatus: OrderStatus;
+  customCakes?: CartItem[];
+  predesignedCakes?: CartItem[];
+  featuredCakes?: CartItem[];
+  addons?: CartItem[];
+  sweets?: CartItem[];
+  addOns?: CartItem[];
+  userData?: Record<string, unknown>;
+  deliveryData?: Record<string, unknown>;
+  qualityChecks?: Record<string, boolean>;
+  finalPrice?: number;
+  totalPrice?: number;
+  imageToPrint?: string;
+  cardMessage?: { to: string; from: string; message: string } | string;
+  assignedBakeryName?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  regionName?: string;
+  region?: string;
+  locationData?: Record<string, unknown>;
+  deliveryLocation?: string;
+  createdAt?: string;
+  willDeliverAt?: string;
+  deliverDay?: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
+  orderedAt?: string;
+  totalCapacity?: number;
+  capacitySlots?: number;
+  basePrice?: number;
+  discountAmount?: number;
+  referenceNumber?: string;
+  keepAnonymous?: boolean;
+  deliveryNote?: string;
+  wantedDeliveryTimeSlot?: { from: string; to: string };
+  finalImage?: string;
+  finalImageUploadedAt?: string;
+  recipientData?: Record<string, unknown>;
+}
+
 const statusColors = {
   pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   confirmed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   preparing: "bg-purple-500/10 text-purple-500 border-purple-500/20",
   ready: "bg-green-500/10 text-green-500 border-green-500/20",
+  out_for_delivery: "bg-orange-500/10 text-orange-600 border-orange-500/20",
   delivered: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
-};
+} as const;
 
-/**
- * Get the category type of an order item
- */
-function getItemCategory(item: OrderItem): string {
-  if (item.addonId) return "Add-on";
-  if (item.sweetId) return "Sweet";
-  if (item.featuredCakeId) return "Featured Cake";
-  if (item.predesignedCakeId) return "Predesigned Cake";
-  if (item.customCake) return "Custom Cake";
-  return "Item";
+// Function to download image properly
+async function downloadImage(imageUrl: string, fileName: string) {
+  try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName || "image.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error downloading image:", error);
+    // Fallback to simple download
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = fileName || "image.png";
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
 
 // Function to download greeting card as image
@@ -129,8 +216,88 @@ export default function OrderDetailPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const orders = useOrderStore((state) => state.orders);
+  const getDetailedOrder = useOrderStore((state) => state.getDetailedOrder);
+  const cacheDetailedOrder = useOrderStore((state) => state.cacheDetailedOrder);
+  const [fetchedOrder, setFetchedOrder] = useState<OrderData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const order = orders.find((o) => o.id === id);
+  // Fetch order from admin endpoint with caching
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!id) {
+        setError("Order ID not provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Check if we have cached detailed order
+        const cachedOrder = getDetailedOrder(id);
+        if (cachedOrder) {
+          setFetchedOrder(cachedOrder);
+          setIsLoading(false);
+          return;
+        }
+
+        // Fetch from API if not cached
+        const response = await httpRequest(`${env.API_BASE_URL}/orders/${id}`, {
+          method: "GET",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to fetch order details");
+        }
+
+        const data = await response.json();
+        if (data.data) {
+          setFetchedOrder(data.data);
+          // Cache the detailed order
+          cacheDetailedOrder(id, data.data);
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to fetch order";
+        setError(errorMessage);
+        console.error("Error fetching order:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id, getDetailedOrder, cacheDetailedOrder]);
+
+  // Use fetched order if available, fallback to store
+  const order = (fetchedOrder || orders.find((o) => o.id === id)) as OrderData;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+        <p className="text-muted-foreground">
+          {t("common.loading") || "Loading order..."}
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <h1 className="text-2xl font-bold text-red-500">Error</h1>
+        <p className="text-muted-foreground">{error}</p>
+        <Button onClick={() => navigate("/orders")}>
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          {t("orderDetail.backToOrders")}
+        </Button>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -172,12 +339,14 @@ export default function OrderDetailPage() {
             <h1 className="text-3xl font-bold tracking-tight">
               {t("orderDetail.orderDetails")}
             </h1>
-            <Badge
-              variant="outline"
-              className={`${statusColors[order.status]} capitalize`}
-            >
-              {order.status}
-            </Badge>
+            {order.orderStatus && order.orderStatus !== "pending" && (
+              <Badge
+                variant="outline"
+                className={`${statusColors[order.orderStatus as OrderStatus]} capitalize`}
+              >
+                {order.orderStatus.replace(/_/g, " ")}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -198,103 +367,286 @@ export default function OrderDetailPage() {
             <CardTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
               {t("orderDetail.orderItems") || "Order Items"}
-              {order.orderItems && order.orderItems.length > 0 && (
+              {order && (
                 <Badge variant="secondary" className="ml-auto">
-                  {order.orderItems.length}
+                  {(order.customCakes?.length || 0) +
+                    (order.predesignedCakes?.length || 0) +
+                    (order.featuredCakes?.length || 0) +
+                    (order.addons?.length || 0) +
+                    (order.sweets?.length || 0)}
                 </Badge>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {order.orderItems && order.orderItems.length > 0 ? (
+            {order &&
+            (order.customCakes?.length ||
+              order.predesignedCakes?.length ||
+              order.featuredCakes?.length ||
+              order.addons?.length ||
+              order.sweets?.length) ? (
               <div
                 className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
                 style={{ scrollbarWidth: "thin" }}
               >
-                {order.orderItems.map((item, index) => {
-                  // Get image from different sources based on item type
-                  const itemData = item.data as Record<string, unknown>;
-                  const imageUrl =
-                    (Array.isArray(itemData?.images) &&
-                      (itemData.images[0] as string)) ||
-                    (typeof itemData?.thumbnailUrl === "string" &&
-                      itemData.thumbnailUrl) ||
-                    (typeof itemData?.decorationTopView === "string" &&
-                      itemData.decorationTopView) ||
-                    "";
+                {/* Custom Cakes */}
+                {order.customCakes && order.customCakes.length > 0 && (
+                  <>
+                    {order.customCakes.map((item: CartItem, index: number) => {
+                      const imageUrl = item.data?.snapshotTop || "";
+                      const itemName =
+                        (item.data?.shape as { title?: string } | undefined)
+                          ?.title || "Custom Cake";
 
-                  return (
-                    <div key={item.id} className="border rounded-lg p-4">
-                      <div className="flex gap-4">
-                        {/* Item Image */}
-                        {imageUrl && (
-                          <div className="shrink-0">
-                            <img
-                              src={imageUrl}
-                              alt={item.data?.name}
-                              className="w-24 h-24 object-cover rounded-lg border"
-                            />
-                          </div>
-                        )}
+                      return (
+                        <div key={item.id} className="border rounded-lg p-4">
+                          <div className="flex gap-4">
+                            {/* Item Image */}
+                            {imageUrl && (
+                              <div className="shrink-0">
+                                <img
+                                  src={imageUrl}
+                                  alt={itemName}
+                                  className="w-24 h-24 object-cover rounded-lg border"
+                                />
+                              </div>
+                            )}
 
-                        {/* Item Details */}
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h4 className="text-sm font-semibold">
-                                {item.data?.name || t("orderDetail.item")}
-                              </h4>
-                              <Badge
-                                variant="outline"
-                                className="mt-1 capitalize"
-                              >
-                                {getItemCategory(item)}
-                              </Badge>
+                            {/* Item Details */}
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold">
+                                    {itemName}
+                                  </h4>
+                                  <Badge variant="outline" className="mt-1">
+                                    Custom Cake
+                                  </Badge>
+                                </div>
+                                <span className="text-lg font-bold text-primary">
+                                  {item.price} {t("orderDetail.egp")}
+                                </span>
+                              </div>
+
+                              {item.data?.flavor && (
+                                <p className="text-xs text-muted-foreground">
+                                  Flavor:{" "}
+                                  {
+                                    (item.data.flavor as { title?: string })
+                                      ?.title
+                                  }
+                                </p>
+                              )}
+
+                              {item.data?.decoration && (
+                                <p className="text-xs text-muted-foreground">
+                                  Decoration:{" "}
+                                  {
+                                    (item.data.decoration as { title?: string })
+                                      ?.title
+                                  }
+                                </p>
+                              )}
+
+                              <div className="flex items-center gap-4 pt-2 text-sm flex-nowrap overflow-x-hidden">
+                                <span className="font-medium flex items-center gap-2 flex-nowrap">
+                                  {t("orderDetail.quantity")}:{" "}
+                                  <span className="font-bold text-primary">
+                                    {item.quantity}
+                                  </span>
+                                </span>
+                                <span className="text-muted-foreground shrink-0">
+                                  {t("orderDetail.total")}:{" "}
+                                  {item.quantity * item.price}{" "}
+                                  {t("orderDetail.egp")}
+                                </span>
+                              </div>
+
+                              {item.data?.color && (
+                                <div className="text-xs text-muted-foreground">
+                                  Color:{" "}
+                                  {(item.data.color as { name?: string })?.name}
+                                </div>
+                              )}
                             </div>
-                            <span className="text-lg font-bold text-primary">
-                              {item.price} {t("orderDetail.egp")}
-                            </span>
                           </div>
-
-                          {item.data?.description && (
-                            <p className="text-xs text-muted-foreground">
-                              {item.data.description}
-                            </p>
-                          )}
-
-                          <div className="flex items-center gap-4 pt-2 text-sm">
-                            <span className="font-medium">
-                              {t("orderDetail.quantity")}:{" "}
-                              <span className="font-bold text-primary">
-                                {item.quantity}
-                              </span>
-                            </span>
-                            <span className="text-muted-foreground">
-                              {t("orderDetail.total")}:{" "}
-                              {item.quantity * item.price}{" "}
-                              {t("orderDetail.egp")}
-                            </span>
-                          </div>
-
-                          {item.size && (
-                            <div className="text-xs text-muted-foreground">
-                              {t("orderDetail.size")}: {item.size}
-                            </div>
-                          )}
-
-                          {item.flavor && (
-                            <div className="text-xs text-muted-foreground">
-                              {t("orderDetail.flavor")}: {item.flavor}
-                            </div>
+                          {index < (order.customCakes?.length || 0) - 1 && (
+                            <Separator className="mt-4" />
                           )}
                         </div>
-                      </div>
-                      {index < order.orderItems!.length - 1 && (
-                        <Separator className="mt-4" />
-                      )}
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Featured Cakes */}
+                {order.featuredCakes && order.featuredCakes.length > 0 && (
+                  <>
+                    {order.customCakes && order.customCakes.length > 0 && (
+                      <Separator className="my-2" />
+                    )}
+                    {order.featuredCakes.map(
+                      (item: CartItem, index: number) => {
+                        const itemName =
+                          (item.data?.name as string | undefined) ||
+                          "Featured Cake";
+
+                        return (
+                          <div key={item.id} className="border rounded-lg p-4">
+                            <div className="flex gap-4">
+                              {/* Item Details */}
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <h4 className="text-sm font-semibold">
+                                      {itemName}
+                                    </h4>
+                                    <Badge variant="outline" className="mt-1">
+                                      Featured Cake
+                                    </Badge>
+                                  </div>
+                                  <span className="text-lg font-bold text-primary">
+                                    {item.price} {t("orderDetail.egp")}
+                                  </span>
+                                </div>
+
+                                {item.data?.description && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {item.data.description}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center gap-4 pt-2 text-sm flex-nowrap overflow-x-hidden">
+                                  <span className="font-medium flex items-center gap-2 flex-nowrap">
+                                    {t("orderDetail.quantity")}:{" "}
+                                    <span className="font-bold text-primary">
+                                      {item.quantity}
+                                    </span>
+                                  </span>
+                                  <span className="text-muted-foreground shrink-0">
+                                    {t("orderDetail.total")}:{" "}
+                                    {item.quantity * item.price}{" "}
+                                    {t("orderDetail.egp")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            {index < (order.featuredCakes?.length || 0) - 1 && (
+                              <Separator className="mt-4" />
+                            )}
+                          </div>
+                        );
+                      },
+                    )}
+                  </>
+                )}
+
+                {/* Add Ons */}
+                {order.addons && order.addons.length > 0 && (
+                  <>
+                    {(order.customCakes?.length || 0) +
+                      (order.featuredCakes?.length || 0) >
+                      0 && <Separator className="my-2" />}
+                    {order.addons.map((item: CartItem, index: number) => {
+                      const itemName =
+                        (item.data?.name as string | undefined) || "Add on";
+
+                      return (
+                        <div key={item.id} className="border rounded-lg p-4">
+                          <div className="flex gap-4">
+                            {/* Item Details */}
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold">
+                                    {itemName}
+                                  </h4>
+                                  <Badge variant="outline" className="mt-1">
+                                    Add on
+                                  </Badge>
+                                </div>
+                                <span className="text-lg font-bold text-primary">
+                                  {item.price} {t("orderDetail.egp")}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-4 pt-2 text-sm flex-nowrap overflow-x-hidden">
+                                <span className="font-medium flex items-center gap-2 flex-nowrap">
+                                  {t("orderDetail.quantity")}:{" "}
+                                  <span className="font-bold text-primary">
+                                    {item.quantity}
+                                  </span>
+                                </span>
+                                <span className="text-muted-foreground shrink-0">
+                                  {t("orderDetail.total")}:{" "}
+                                  {item.quantity * item.price}{" "}
+                                  {t("orderDetail.egp")}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {index < (order.addons?.length || 0) - 1 && (
+                            <Separator className="mt-4" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Sweets */}
+                {order.sweets && order.sweets.length > 0 && (
+                  <>
+                    {(order.customCakes?.length || 0) +
+                      (order.featuredCakes?.length || 0) +
+                      (order.addons?.length || 0) >
+                      0 && <Separator className="my-2" />}
+                    {order.sweets.map((item: CartItem, index: number) => {
+                      const itemName =
+                        (item.data?.name as string | undefined) || "Sweet";
+
+                      return (
+                        <div key={item.id} className="border rounded-lg p-4">
+                          <div className="flex gap-4">
+                            {/* Item Details */}
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold">
+                                    {itemName}
+                                  </h4>
+                                  <Badge variant="outline" className="mt-1">
+                                    Sweet
+                                  </Badge>
+                                </div>
+                                <span className="text-lg font-bold text-primary">
+                                  {item.price} {t("orderDetail.egp")}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-4 pt-2 text-sm flex-nowrap overflow-x-hidden">
+                                <span className="font-medium flex items-center gap-2 flex-nowrap">
+                                  {t("orderDetail.quantity")}:{" "}
+                                  <span className="font-bold text-primary">
+                                    {item.quantity}
+                                  </span>
+                                </span>
+                                <span className="text-muted-foreground shrink-0">
+                                  {t("orderDetail.total")}:{" "}
+                                  {item.quantity * item.price}{" "}
+                                  {t("orderDetail.egp")}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {index < (order.sweets?.length || 0) - 1 && (
+                            <Separator className="mt-4" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
@@ -315,18 +667,32 @@ export default function OrderDetailPage() {
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{order.customerName}</span>
+              <span className="text-sm font-medium">
+                {order.userData
+                  ? `${(order.userData as { firstName?: string; lastName?: string }).firstName} ${(order.userData as { firstName?: string; lastName?: string }).lastName}`
+                  : order.customerName}
+              </span>
             </div>
-            {order.customerPhone && (
+            {(order.userData?.phoneNumber || order.customerPhone) && (
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{order.customerPhone}</span>
+                <span className="text-sm">
+                  {
+                    ((order.userData?.phoneNumber as string) ||
+                      order.customerPhone) as string
+                  }
+                </span>
               </div>
             )}
-            {order.customerEmail && (
+            {(order.userData?.email || order.customerEmail) && (
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{order.customerEmail}</span>
+                <span className="text-sm">
+                  {
+                    ((order.userData?.email as string) ||
+                      order.customerEmail) as string
+                  }
+                </span>
               </div>
             )}
           </CardContent>
@@ -365,13 +731,29 @@ export default function OrderDetailPage() {
               <span className="text-xs text-muted-foreground">
                 {t("orderDetail.region")}
               </span>
-              <p className="text-sm font-medium">{order.region}</p>
+              <p className="text-sm font-medium">
+                {order.regionName || order.region}
+              </p>
             </div>
             <div>
               <span className="text-xs text-muted-foreground">
                 {t("orderDetail.address")}
               </span>
-              <p className="text-sm">{order.deliveryLocation}</p>
+              <p className="text-sm">
+                {order.locationData
+                  ? `${(order.locationData as { street?: string; buildingNo?: string; label?: string }).street || ""} ${
+                      (
+                        order.locationData as {
+                          street?: string;
+                          buildingNo?: string;
+                          label?: string;
+                        }
+                      ).buildingNo
+                        ? `#${(order.locationData as { street?: string; buildingNo?: string; label?: string }).buildingNo}`
+                        : ""
+                    } - ${(order.locationData as { street?: string; buildingNo?: string; label?: string }).label || ""}`
+                  : order.deliveryLocation}
+              </p>
             </div>
             <div className="flex items-center gap-2 pt-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -380,7 +762,12 @@ export default function OrderDetailPage() {
                   {t("orderDetail.deliveryDate")}
                 </span>
                 <p className="text-sm font-medium">
-                  {format(new Date(order.deliverDay), "EEEE, MMMM d, yyyy")}
+                  {format(
+                    new Date(
+                      order.willDeliverAt || order.deliverDay || Date.now(),
+                    ),
+                    "EEEE, MMMM d, yyyy",
+                  )}
                 </p>
               </div>
             </div>
@@ -388,24 +775,37 @@ export default function OrderDetailPage() {
         </Card>
 
         {/* Delivery Location Map */}
-        {order.deliveryLatitude && order.deliveryLongitude && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                {t("orderDetail.deliveryMap") || "Delivery Location Map"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LocationMap
-                latitude={order.deliveryLatitude}
-                longitude={order.deliveryLongitude}
-                address={order.deliveryLocation}
-                className="w-full h-64 rounded-lg border"
-              />
-            </CardContent>
-          </Card>
-        )}
+        {(order.locationData?.latitude || order.deliveryLatitude) &&
+          (order.locationData?.longitude || order.deliveryLongitude) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  {t("orderDetail.deliveryMap") || "Delivery Location Map"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LocationMap
+                  latitude={
+                    ((order.locationData?.latitude as number) ||
+                      order.deliveryLatitude) ??
+                    0
+                  }
+                  longitude={
+                    ((order.locationData?.longitude as number) ||
+                      order.deliveryLongitude) ??
+                    0
+                  }
+                  address={
+                    ((order.locationData?.label as string) ||
+                      order.deliveryLocation ||
+                      "") as string
+                  }
+                  className="w-full h-64 rounded-lg border"
+                />
+              </CardContent>
+            </Card>
+          )}
 
         {/* Order Timeline */}
         <Card>
@@ -421,7 +821,10 @@ export default function OrderDetailPage() {
                 {t("orderDetail.orderedAt")}
               </span>
               <p className="text-sm font-medium">
-                {format(new Date(order.orderedAt), "MMM d, yyyy 'at' h:mm a")}
+                {format(
+                  new Date(order.createdAt || order.orderedAt || Date.now()),
+                  "MMM d, yyyy 'at' h:mm a",
+                )}
               </p>
             </div>
             <Separator />
@@ -430,7 +833,12 @@ export default function OrderDetailPage() {
                 {t("orderDetail.expectedDelivery")}
               </span>
               <p className="text-sm font-medium">
-                {format(new Date(order.deliverDay), "MMM d, yyyy")}
+                {format(
+                  new Date(
+                    order.willDeliverAt || order.deliverDay || Date.now(),
+                  ),
+                  "MMM d, yyyy",
+                )}
               </p>
             </div>
             <Separator />
@@ -438,7 +846,9 @@ export default function OrderDetailPage() {
               <span className="text-xs text-muted-foreground">
                 {t("orderDetail.capacitySlots")}
               </span>
-              <p className="text-sm font-medium">{order.capacitySlots}</p>
+              <p className="text-sm font-medium">
+                {order.totalCapacity || order.capacitySlots}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -452,43 +862,126 @@ export default function OrderDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">
-                {t("orderDetail.basePrice")}
-              </span>
-              <span className="text-sm font-medium">
-                {order.basePrice} {t("orderDetail.egp")}
-              </span>
-            </div>
-            {order.addOns && order.addOns.length > 0 && (
+            {order.basePrice ? (
               <>
-                <Separator />
-                <div className="space-y-2">
-                  <span className="text-sm font-medium">
-                    {t("orderDetail.addOns")}:
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {t("orderDetail.basePrice")}
                   </span>
-                  {order.addOns.map((addon) => (
-                    <div key={addon.id} className="flex justify-between pl-2">
-                      <span className="text-sm text-muted-foreground">
-                        {addon.name} x{addon.quantity}
+                  <span className="text-sm font-medium">
+                    {order.basePrice} {t("orderDetail.egp")}
+                  </span>
+                </div>
+                {order.addOns && order.addOns.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <span className="text-sm font-medium">
+                        {t("orderDetail.addOns")}:
                       </span>
-                      <span className="text-sm">
-                        {addon.price * addon.quantity} {t("orderDetail.egp")}
+                      {order.addOns.map((addon: CartItem) => (
+                        <div
+                          key={addon.id}
+                          className="flex justify-between pl-2"
+                        >
+                          <span className="text-sm text-muted-foreground">
+                            {addon.name} x{addon.quantity}
+                          </span>
+                          <span className="text-sm">
+                            {addon.price * addon.quantity}{" "}
+                            {t("orderDetail.egp")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Subtotal
+                  </span>
+                  <span className="text-sm font-medium">
+                    {order.totalPrice} {t("orderDetail.egp")}
+                  </span>
+                </div>
+                {(order.discountAmount ?? 0) > 0 && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Discount
+                      </span>
+                      <span className="text-sm font-medium text-red-500">
+                        -{order.discountAmount} {t("orderDetail.egp")}
                       </span>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </>
             )}
             <Separator />
             <div className="flex justify-between font-bold text-lg">
               <span>{t("orderDetail.total")}</span>
               <span>
-                {order.totalPrice} {t("orderDetail.egp")}
+                {order.finalPrice || order.totalPrice} {t("orderDetail.egp")}
               </span>
             </div>
           </CardContent>
         </Card>
+
+        {/* Design Image to Print */}
+        {order.customCakes &&
+          order.customCakes.length > 0 &&
+          order.customCakes.some(
+            (cake: CartItem) =>
+              cake.data?.imageToPrint || cake.customCake?.imageToPrint,
+          ) && (
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Download className="w-4 h-4" />
+                    {t("orderDetail.designToPrint") || "Design"}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {order.customCakes.map((cake: CartItem, index: number) => {
+                  const imageToPrint =
+                    cake.data?.imageToPrint || cake.customCake?.imageToPrint;
+                  if (!imageToPrint) return null;
+
+                  return (
+                    <div key={index} className="flex flex-col gap-3">
+                      <div className="rounded-lg overflow-hidden border bg-muted/50 p-2">
+                        <img
+                          src={imageToPrint}
+                          alt="Design to Print"
+                          className="w-full h-auto max-h-64 object-contain"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          downloadImage(
+                            imageToPrint,
+                            `design-to-print-${order.referenceNumber || order.id}.png`,
+                          )
+                        }
+                        className="w-full gap-2 h-8 text-xs"
+                      >
+                        <Download className="w-3 h-3" />
+                        {t("orderDetail.download") || "Download"}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
 
         {/* General Order Details */}
         <Card className="lg:col-span-3">
@@ -514,6 +1007,17 @@ export default function OrderDetailPage() {
                 {order.deliveryNote || t("orderDetail.noDeliveryNote")}
               </p>
             </div>
+            {order.wantedDeliveryTimeSlot && (
+              <div className="border-t pt-4">
+                <span className="text-xs text-muted-foreground">
+                  Preferred Delivery Time
+                </span>
+                <p className="text-sm font-medium">
+                  {order.wantedDeliveryTimeSlot.from} -{" "}
+                  {order.wantedDeliveryTimeSlot.to}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -527,7 +1031,7 @@ export default function OrderDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(() => {
+              {((): React.ReactNode => {
                 const checks = order.qualityChecks;
                 const totalChecks = Object.keys(checks).length;
                 const completedChecks = Object.values(checks).filter(
@@ -582,7 +1086,7 @@ export default function OrderDetailPage() {
                                 : "border-muted-foreground/30"
                             }`}
                           >
-                            {isChecked && (
+                            {isChecked ? (
                               <svg
                                 className="w-3 h-3 text-white"
                                 fill="none"
@@ -596,7 +1100,7 @@ export default function OrderDetailPage() {
                                   d="M5 13l4 4L19 7"
                                 />
                               </svg>
-                            )}
+                            ) : null}
                           </div>
                           <span
                             className={`text-sm ${
@@ -605,7 +1109,11 @@ export default function OrderDetailPage() {
                                 : "text-muted-foreground"
                             }`}
                           >
-                            {checkLabels[checkId] || checkId}
+                            {
+                              (checkLabels[
+                                checkId as keyof typeof checkLabels
+                              ] || checkId) as string
+                            }
                           </span>
                         </div>
                       ))}
@@ -639,7 +1147,7 @@ export default function OrderDetailPage() {
                   {t("bakeryOrders.finalImageTaken")}{" "}
                   {order.finalImageUploadedAt
                     ? format(
-                        new Date(order.finalImageUploadedAt),
+                        new Date(order.finalImageUploadedAt || Date.now()),
                         "MMM d, yyyy 'at' h:mm a",
                       )
                     : ""}
@@ -661,7 +1169,17 @@ export default function OrderDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => downloadCardAsImage(order.cardMessage!)}
+                  onClick={() =>
+                    downloadCardAsImage(
+                      typeof order.cardMessage === "string"
+                        ? { to: "", from: "", message: order.cardMessage }
+                        : (order.cardMessage as {
+                            to: string;
+                            from: string;
+                            message: string;
+                          }),
+                    )
+                  }
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" />
@@ -674,7 +1192,9 @@ export default function OrderDetailPage() {
                 {/* Card Preview */}
                 <div className="flex-1">
                   <div
-                    className={`relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden ${i18n.language === "ar" ? "rtl" : "ltr"}`}
+                    className={`relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden ${
+                      i18n.language === "ar" ? "rtl" : "ltr"
+                    }`}
                   >
                     {/* Decorative elements */}
                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
@@ -682,7 +1202,9 @@ export default function OrderDetailPage() {
 
                     {/* Top - To field */}
                     <div
-                      className={`relative z-10 ${i18n.language === "ar" ? "text-right" : "text-left"}`}
+                      className={`relative z-10 ${
+                        i18n.language === "ar" ? "text-right" : "text-left"
+                      }`}
                     >
                       <p className="text-sm text-amber-700/70 font-medium">
                         {i18n.language === "ar" ? (
@@ -690,14 +1212,30 @@ export default function OrderDetailPage() {
                             {t("orderDetail.cardTo")}
                             {": "}
                             <span className="font-semibold">
-                              {order.cardMessage.to}
+                              {
+                                (
+                                  order.cardMessage as {
+                                    to: string;
+                                    from: string;
+                                    message: string;
+                                  }
+                                ).to
+                              }
                             </span>
                           </>
                         ) : (
                           <>
                             {t("orderDetail.cardTo")}:
                             <span className="font-semibold">
-                              {order.cardMessage.to}
+                              {
+                                (
+                                  order.cardMessage as {
+                                    to: string;
+                                    from: string;
+                                    message: string;
+                                  }
+                                ).to
+                              }
                             </span>
                           </>
                         )}
@@ -707,19 +1245,37 @@ export default function OrderDetailPage() {
                     {/* Middle - Centered Message */}
                     <div className="relative z-10 flex-1 flex items-center justify-center">
                       <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center">
-                        {order.cardMessage.message}
+                        {
+                          (
+                            order.cardMessage as {
+                              to: string;
+                              from: string;
+                              message: string;
+                            }
+                          ).message
+                        }
                       </p>
                     </div>
 
                     {/* Bottom - Signature */}
                     <div
-                      className={`relative z-10 ${i18n.language === "ar" ? "text-left" : "text-right"}`}
+                      className={`relative z-10 ${
+                        i18n.language === "ar" ? "text-left" : "text-right"
+                      }`}
                     >
                       <p className="text-sm text-amber-700/70">
                         {t("orderDetail.cardWithWarmWishes")}
                       </p>
                       <p className="text-lg font-serif text-amber-900">
-                        {order.cardMessage.from}
+                        {
+                          (
+                            order.cardMessage as {
+                              to: string;
+                              from: string;
+                              message: string;
+                            }
+                          ).from
+                        }
                       </p>
                     </div>
                   </div>
@@ -732,7 +1288,15 @@ export default function OrderDetailPage() {
                       {t("orderDetail.cardFrom")}
                     </label>
                     <p className="text-sm font-medium">
-                      {order.cardMessage.from}
+                      {typeof order.cardMessage === "string"
+                        ? order.cardMessage
+                        : (
+                            order.cardMessage as {
+                              to: string;
+                              from: string;
+                              message: string;
+                            }
+                          ).from}
                     </p>
                   </div>
 
@@ -743,7 +1307,15 @@ export default function OrderDetailPage() {
                       {t("orderDetail.cardTo")}
                     </label>
                     <p className="text-sm font-medium">
-                      {order.cardMessage.to}
+                      {typeof order.cardMessage === "string"
+                        ? ""
+                        : (
+                            order.cardMessage as {
+                              to: string;
+                              from: string;
+                              message: string;
+                            }
+                          ).to}
                     </p>
                   </div>
 
@@ -757,7 +1329,10 @@ export default function OrderDetailPage() {
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <User className="w-4 h-4 text-muted-foreground" />
-                          {order.recipientData.name}
+                          {String(
+                            (order.recipientData as Record<string, unknown>)
+                              .name,
+                          )}
                         </p>
                       </div>
 
@@ -769,7 +1344,10 @@ export default function OrderDetailPage() {
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <Mail className="w-4 h-4 text-muted-foreground" />
-                          {order.recipientData.email}
+                          {String(
+                            (order.recipientData as Record<string, unknown>)
+                              .email,
+                          )}
                         </p>
                       </div>
 
@@ -781,7 +1359,10 @@ export default function OrderDetailPage() {
                         </label>
                         <p className="text-sm font-medium flex items-center gap-2">
                           <Phone className="w-4 h-4 text-muted-foreground" />
-                          {order.recipientData.phoneNumber}
+                          {String(
+                            (order.recipientData as Record<string, unknown>)
+                              .phoneNumber,
+                          )}
                         </p>
                       </div>
                     </>

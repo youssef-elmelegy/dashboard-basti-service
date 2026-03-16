@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
+import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 import { useReviewStore } from "@/stores/reviewStore";
 import { useStockStore } from "@/stores/stockStore";
 import type { Review } from "@/data/reviews";
@@ -23,6 +24,7 @@ import { ChevronLeft, MapPin, Package, Star, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
 import { RestockDialog } from "@/components/RestockDialog";
+import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
 
 function RatingStars({ rating }: { rating: number }) {
   return (
@@ -43,15 +45,16 @@ function RatingStars({ rating }: { rating: number }) {
 }
 
 function ReviewCard({ review }: { review: Review }) {
+  const customerName = `${review.firstName} ${review.lastName}`;
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {review.customerImage ? (
+            {review.profileImage ? (
               <img
-                src={review.customerImage}
-                alt={review.customerName}
+                src={review.profileImage}
+                alt={customerName}
                 className="w-8 h-8 rounded-full object-cover shrink-0"
               />
             ) : (
@@ -60,9 +63,7 @@ function ReviewCard({ review }: { review: Review }) {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">
-                {review.customerName}
-              </p>
+              <p className="text-sm font-semibold truncate">{customerName}</p>
             </div>
           </div>
           <Badge variant="outline" className="shrink-0">
@@ -70,10 +71,9 @@ function ReviewCard({ review }: { review: Review }) {
           </Badge>
         </div>
         <RatingStars rating={review.rating} />
-        <h4 className="text-sm font-semibold mt-2">{review.title}</h4>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{review.comment}</p>
+        <p className="text-sm text-muted-foreground">{review.reviewText}</p>
         <p className="text-xs text-muted-foreground mt-3">
           {format(new Date(review.createdAt), "MMM d, yyyy")}
         </p>
@@ -87,16 +87,95 @@ export default function BakeryDetailPage() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
-  const bakeries = useBakeryStore((state) => state.bakeries);
-  const getReviewsByBakeryId = useReviewStore(
-    (state) => state.getReviewsByBakeryId,
-  );
-  const getAverageRating = useReviewStore((state) => state.getAverageRating);
 
+  // Bakery store
+  const bakeries = useBakeryStore((state) => state.bakeries);
+  const bakery = bakeries.find((b) => b.id === id) || null;
+
+  // Bakery items store with subscription to updates
+  const allItems = useBakeryItemStore((state) => state.items);
+  const isItemsLoading = useBakeryItemStore((state) => state.isLoading);
+
+  // Filter items for this bakery - use useMemo to avoid re-filtering on every render
+  const bakeryItems = useMemo(() => {
+    if (!id) return [];
+    return allItems.filter((item) => item.bakeryId === id);
+  }, [id, allItems]);
+
+  const fetchBakeryItems = useCallback(async (bakeryId: string) => {
+    return useBakeryItemStore.getState().fetchBakeryItems(bakeryId);
+  }, []);
+
+  // Reviews - Get all reviews from store
+  const allReviews = useReviewStore((state) => state.reviews);
+  const isReviewsLoading = useReviewStore((state) => state.isLoading);
+  const reviewError = useReviewStore((state) => state.error);
+
+  // Memoize filtered reviews to prevent infinite loop
+  const reviews = useMemo(() => {
+    if (!bakery) return [];
+    return allReviews.filter((review) => review.bakeryId === bakery.id);
+  }, [bakery, allReviews]);
+
+  const averageRating = useMemo(() => {
+    if (!bakery || reviews.length === 0) return 0;
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return Math.round((total / reviews.length) * 10) / 10;
+  }, [bakery, reviews]);
+
+  const fetchReviews = useCallback(async (bakeryId: string) => {
+    console.log("Fetching reviews for bakeryId:", bakeryId);
+    return useReviewStore.getState().fetchReviewsByBakeryId(bakeryId);
+  }, []);
+
+  const fetchMoreReviews = useCallback(async (bakeryId: string) => {
+    console.log("Fetching more reviews for bakeryId:", bakeryId);
+    return useReviewStore.getState().fetchNextPageReviewsByBakeryId(bakeryId);
+  }, []);
+
+  // Ref for reviews container to handle scroll
+  const reviewsContainerRef = useRef<HTMLDivElement>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Handle scroll detection for infinite scroll
+  useEffect(() => {
+    const container = reviewsContainerRef.current;
+    if (!container || !bakery || isReviewsLoading || isLoadingMore) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+      // Load more when 80% scrolled
+      if (scrollPercentage > 0.8) {
+        setIsLoadingMore(true);
+        fetchMoreReviews(bakery.id)
+          .then(() => setIsLoadingMore(false))
+          .catch(() => setIsLoadingMore(false));
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [bakery, isReviewsLoading, isLoadingMore, fetchMoreReviews]);
+
+  // Legacy stock
   const [selectedStock, setSelectedStock] = useState<AddOnStock | null>(null);
   const [isRestockOpen, setIsRestockOpen] = useState(false);
 
-  const bakery = bakeries.find((b) => b.id === id);
+  // Fetch bakery items when bakery ID changes
+  useEffect(() => {
+    if (id) {
+      fetchBakeryItems(id).catch((error) => {
+        console.error("Failed to fetch bakery items:", error);
+        alert(t("bakeriesManagement.failedToLoadItems"));
+      });
+      // Fetch reviews for this bakery
+      fetchReviews(id).catch((error) => {
+        console.error("Failed to fetch reviews:", error);
+      });
+    }
+  }, [id, fetchBakeryItems, fetchReviews, t]);
 
   // Get all stocks for this bakery
   const allStocks = useMemo(
@@ -111,16 +190,6 @@ export default function BakeryDetailPage() {
     // Return only stocks for this bakery's region
     return allStocks.filter((stock) => stock.regionName === bakery.regionId);
   }, [bakery, allStocks]);
-
-  const reviews = useMemo(
-    () => (bakery ? getReviewsByBakeryId(bakery.id) : []),
-    [bakery, getReviewsByBakeryId],
-  );
-
-  const averageRating = useMemo(
-    () => (bakery ? getAverageRating(bakery.id) : 0),
-    [bakery, getAverageRating],
-  );
 
   const handleEditStock = (stock: AddOnStock) => {
     setSelectedStock(stock);
@@ -252,10 +321,20 @@ export default function BakeryDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Stored Items Section (from API) */}
+          {bakeryItems && bakeryItems.length > 0 && (
+            <BakeryItemsDisplay
+              items={bakeryItems}
+              bakeryId={id || ""}
+              isLoading={isItemsLoading}
+            />
+          )}
         </div>
 
         {/* Right Column - Reviews Sidebar */}
         <div
+          ref={reviewsContainerRef}
           className={cn(
             "overflow-y-auto space-y-4",
             isRTL && "pl-4",
@@ -312,11 +391,35 @@ export default function BakeryDetailPage() {
           </Card>
 
           {/* Reviews List */}
-          {reviews.length > 0 ? (
+          {reviewError ? (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="pt-6">
+                <p className="text-sm text-red-600">{reviewError}</p>
+              </CardContent>
+            </Card>
+          ) : isReviewsLoading ? (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {t("bakeriesManagement.loadingReviews") ||
+                    "Loading reviews..."}
+                </p>
+              </CardContent>
+            </Card>
+          ) : reviews.length > 0 ? (
             <div className="space-y-3">
               {reviews.map((review) => (
                 <ReviewCard key={review.id} review={review} />
               ))}
+              {isLoadingMore && (
+                <Card>
+                  <CardContent className="pt-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Loading more reviews...
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             <Card>

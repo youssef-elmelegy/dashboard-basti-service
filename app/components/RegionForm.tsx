@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useRegionStore } from "@/stores/regionStore";
+import { convertToWebP } from "@/lib/image-utils";
 import { useState } from "react";
 import type { Region } from "@/data/regions";
 
@@ -78,34 +79,18 @@ export function RegionForm({
       // Need to upload
       try {
         setUploadingImage(true);
-        console.log("Uploading image to Cloudinary...");
 
-        // Convert data URL to File
-        const response = await fetch(image);
-        const blob = await response.blob();
-        console.log("Blob created - size:", blob.size, "type:", blob.type);
-
-        const file = new File([blob], "region-image.jpg", {
-          type: "image/jpeg",
+        // Convert to WebP and compress before uploading
+        const webpBlob = await convertToWebP(image);
+        const file = new File([webpBlob], "region-image.webp", {
+          type: "image/webp",
         });
-        console.log(
-          "File object created - size:",
-          file.size,
-          "type:",
-          file.type,
-          "name:",
-          file.name,
-        );
 
-        // Upload to Cloudinary using store
-        console.log("Calling uploadRegionImage with file:", file);
         const result = await uploadRegionImage(file);
-        console.log("Upload result:", result);
 
         const uploadedUrl = result.secure_url;
         setUploadedImageUrl(uploadedUrl);
         form.setValue("image", uploadedUrl, { shouldValidate: true });
-        console.log("Image uploaded successfully:", uploadedUrl);
       } catch (error) {
         console.error("Error uploading image:", error);
         // Keep the old image on error

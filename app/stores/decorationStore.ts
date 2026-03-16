@@ -2,12 +2,13 @@ import { create } from "zustand";
 import {
   decorationApi,
   type Decoration,
+  type DecorationConflictData,
 } from "@/lib/services/decoration.service";
 import { apiClient } from "@/lib/api-client";
 
 interface DecorationVariantImage {
   shapeId: string;
-  sideViewUrl: string;
+  slicedViewUrl: string;
   frontViewUrl: string;
   topViewUrl: string;
 }
@@ -50,6 +51,9 @@ interface DecorationState {
     data: Partial<Omit<Decoration, "id" | "createdAt" | "updatedAt">>,
   ) => Promise<Decoration>;
   deleteDecoration: (id: string) => Promise<void>;
+  forceDeleteDecoration: (id: string) => Promise<void>;
+  decorationConflict: (DecorationConflictData & { decorationId: string }) | null;
+  clearConflict: () => void;
   clearError: () => void;
 }
 
@@ -59,6 +63,7 @@ export const useDecorationStore = create<DecorationState>((set, get) => ({
   isLoadingMore: false,
   error: null,
   isCached: false,
+  decorationConflict: null,
   pagination: {
     total: 0,
     totalPages: 0,
@@ -199,7 +204,7 @@ export const useDecorationStore = create<DecorationState>((set, get) => ({
   },
 
   deleteDecoration: async (id) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, decorationConflict: null });
     try {
       const response = await decorationApi.delete(id);
       if (response.success) {
@@ -209,12 +214,58 @@ export const useDecorationStore = create<DecorationState>((set, get) => ({
         }));
       }
     } catch (error) {
+      // 409 Conflict — decoration has related predesigned cake configs
+      const apiErr = error as {
+        code?: number;
+        data?: {
+          relatedConfigsCount?: number;
+          affectedPredesignedCakesCount?: number;
+          affectedPredesignedCakeIds?: string[];
+        };
+        message?: string;
+      };
+      if (
+        apiErr.code === 409 &&
+        apiErr.data?.relatedConfigsCount !== undefined
+      ) {
+        set({
+          isLoading: false,
+          decorationConflict: {
+            decorationId: id,
+            relatedConfigsCount: apiErr.data.relatedConfigsCount ?? 0,
+            affectedPredesignedCakesCount:
+              apiErr.data.affectedPredesignedCakesCount ?? 0,
+            affectedPredesignedCakeIds:
+              apiErr.data.affectedPredesignedCakeIds ?? [],
+          },
+        });
+      } else {
+        const errorMsg = apiErr.message ?? "Failed to delete decoration";
+        set({ error: errorMsg, isLoading: false });
+        throw error;
+      }
+    }
+  },
+
+  forceDeleteDecoration: async (id) => {
+    set({ isLoading: true, error: null, decorationConflict: null });
+    try {
+      await decorationApi.forceDelete(id);
+      set((state) => ({
+        decorations: state.decorations.filter((d) => d.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
       const errorMsg =
-        error instanceof Error ? error.message : "Failed to delete decoration";
+        error instanceof Error
+          ? error.message
+          : "Failed to force-delete decoration";
       set({ error: errorMsg, isLoading: false });
       throw error;
     }
   },
+
+  clearConflict: () => set({ decorationConflict: null }),
 
   clearError: () => set({ error: null }),
 }));

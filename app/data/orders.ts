@@ -15,6 +15,7 @@ export type OrderStatus =
   | "confirmed"
   | "preparing"
   | "ready"
+  | "out_for_delivery"
   | "delivered"
   | "cancelled";
 
@@ -95,6 +96,7 @@ export type Order = {
   assignedBakeryId?: string;
   assignedBakeryName?: string;
   assignedAt?: string; // ISO timestamp when assigned to bakery
+  assigningDate?: string; // ISO timestamp for pending order timer (1 hour from this time)
 
   // Cancellation
   cancellationReason?: string;

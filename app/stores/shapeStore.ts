@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { shapeApi, type Shape } from "@/lib/services/shape.service";
+import {
+  shapeApi,
+  type Shape,
+  type ShapeConflictData,
+  type CreateShapeRequest,
+  type UpdateShapeRequest,
+} from "@/lib/services/shape.service";
 import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/cake.api";
 
 interface ShapeState {
@@ -7,20 +13,19 @@ interface ShapeState {
   isLoading: boolean;
   error: string | null;
   isCached: boolean;
+  shapeConflict: (ShapeConflictData & { shapeId: string }) | null;
   fetchShapes: (
     page?: number,
     limit?: number,
     search?: string,
     forceRefresh?: boolean,
   ) => Promise<void>;
-  addShape: (
-    data: Omit<Shape, "id" | "createdAt" | "updatedAt">,
-  ) => Promise<Shape>;
-  updateShape: (
-    id: string,
-    data: Partial<Omit<Shape, "id" | "createdAt" | "updatedAt">>,
-  ) => Promise<Shape>;
+  addShape: (data: CreateShapeRequest) => Promise<Shape>;
+  updateShape: (id: string, data: UpdateShapeRequest) => Promise<Shape>;
   deleteShape: (id: string) => Promise<void>;
+  forceDeleteShape: (id: string) => Promise<void>;
+  changeShapeOrder: (id: string, newOrder: number) => Promise<void>;
+  clearConflict: () => void;
   uploadShapeImage: (file: File) => Promise<CloudinaryUploadResult>;
   clearError: () => void;
 }
@@ -30,6 +35,7 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
   isLoading: false,
   error: null,
   isCached: false,
+  shapeConflict: null,
 
   fetchShapes: async (
     _page?: number,
@@ -106,7 +112,7 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
   },
 
   deleteShape: async (id) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, shapeConflict: null });
     try {
       const response = await shapeApi.delete(id);
       if (response.success) {
@@ -116,12 +122,77 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
         }));
       }
     } catch (error) {
+      // 409 Conflict — shape has related predesigned cake configs
+      const apiErr = error as {
+        code?: number;
+        data?: {
+          relatedConfigsCount?: number;
+          affectedPredesignedCakesCount?: number;
+          affectedPredesignedCakeIds?: string[];
+        };
+        message?: string;
+      };
+      if (
+        apiErr.code === 409 &&
+        apiErr.data?.relatedConfigsCount !== undefined
+      ) {
+        set({
+          isLoading: false,
+          shapeConflict: {
+            shapeId: id,
+            relatedConfigsCount: apiErr.data.relatedConfigsCount ?? 0,
+            affectedPredesignedCakesCount:
+              apiErr.data.affectedPredesignedCakesCount ?? 0,
+            affectedPredesignedCakeIds:
+              apiErr.data.affectedPredesignedCakeIds ?? [],
+          },
+        });
+      } else {
+        const errorMsg = apiErr.message ?? "Failed to delete shape";
+        set({ error: errorMsg, isLoading: false });
+        throw error;
+      }
+    }
+  },
+
+  forceDeleteShape: async (id) => {
+    set({ isLoading: true, error: null, shapeConflict: null });
+    try {
+      await shapeApi.forceDelete(id);
+      set((state) => ({
+        shapes: state.shapes.filter((s) => s.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
       const errorMsg =
-        error instanceof Error ? error.message : "Failed to delete shape";
+        error instanceof Error ? error.message : "Failed to force-delete shape";
       set({ error: errorMsg, isLoading: false });
       throw error;
     }
   },
+
+  changeShapeOrder: async (id: string, newOrder: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await shapeApi.changeOrder(id, newOrder);
+      if (response.success && response.data) {
+        // Backend returns full sorted shapes array
+        set({
+          shapes: response.data as Shape[],
+          isLoading: false,
+        });
+      } else {
+        throw new Error(response.message || "Failed to change shape order");
+      }
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to change shape order";
+      set({ error: errorMsg, isLoading: false });
+      throw error;
+    }
+  },
+
+  clearConflict: () => set({ shapeConflict: null }),
 
   uploadShapeImage: async (file: File) => {
     set({ isLoading: true, error: null });

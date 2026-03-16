@@ -13,6 +13,10 @@ export interface UpdateRegionRequest {
   isAvailable?: boolean;
 }
 
+export interface ChangeRegionOrderRequest {
+  order: number;
+}
+
 export const regionApi = {
   /**
    * Get all regions
@@ -50,5 +54,12 @@ export const regionApi = {
    */
   async delete(id: string): Promise<ApiResponse<{ message: string }>> {
     return apiClient.delete<{ message: string }>(`/regions/${id}`);
+  },
+
+  /**
+   * Change region order
+   */
+  async changeOrder(id: string, order: number): Promise<ApiResponse<Region[]>> {
+    return apiClient.patch<Region[]>(`/regions/${id}/order`, { order });
   },
 };

@@ -31,7 +31,7 @@ import {
 
 const AppSidebar = () => {
   const { i18n, t } = useTranslation();
-  const { isManager, canViewAllContent } = useAuth();
+  const { canViewAllContent } = useAuth();
   const isRTL = i18n.language === "ar";
 
   const items = [
@@ -163,30 +163,12 @@ const AppSidebar = () => {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("sidebar.orders")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {orderItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("sidebar.management")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {canViewAllContent() &&
-                managementItems.map((item) => (
+        {canViewAllContent() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.orders")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {orderItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link to={item.url}>
@@ -196,21 +178,17 @@ const AppSidebar = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              {isManager() && !canViewAllContent() && (
-                <p className="text-xs text-muted-foreground px-4 py-2">
-                  {t("sidebar.managerLimited")}
-                </p>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("sidebar.products")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {canViewAllContent() &&
-                productItems.map((item) => (
+        {canViewAllContent() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.management")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {managementItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link to={item.url}>
@@ -220,21 +198,17 @@ const AppSidebar = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              {isManager() && !canViewAllContent() && (
-                <p className="text-xs text-muted-foreground px-4 py-2">
-                  {t("sidebar.productLimited")}
-                </p>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("sidebar.customCakes")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {canViewAllContent() &&
-                customCakesItems.map((item) => (
+        {canViewAllContent() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.products")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {productItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link to={item.url}>
@@ -244,14 +218,30 @@ const AppSidebar = () => {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-              {isManager() && !canViewAllContent() && (
-                <p className="text-xs text-muted-foreground px-4 py-2">
-                  {t("sidebar.customCakesLimited")}
-                </p>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {canViewAllContent() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.customCakes")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {customCakesItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

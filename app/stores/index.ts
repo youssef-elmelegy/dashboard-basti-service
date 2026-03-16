@@ -5,6 +5,7 @@
  */
 
 export { useBakeryStore } from "@/stores/bakeryStore";
+export { useBakeryItemStore } from "@/stores/bakeryItemStore";
 export { useChefStore } from "@/stores/chefStore";
 export { useRegionStore } from "@/stores/regionStore";
 export { useAddRegionStore } from "@/stores/addRegionStore";

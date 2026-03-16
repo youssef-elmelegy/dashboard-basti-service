@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useTranslation } from "react-i18next";
 import type { Sweet } from "@/lib/services/sweet.service";
+import { useSweetStore } from "@/stores/sweetStore";
+import { convertToWebP } from "@/lib/image-utils";
 import { X, Plus } from "lucide-react";
 
 const sweetSchema = z.object({
@@ -43,17 +46,50 @@ export function SweetForm({
 }: SweetFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!initialSweet;
+  const uploadSweetImage = useSweetStore((state) => state.uploadSweetImage);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const form = useForm<SweetFormValues>({
     resolver: zodResolver(sweetSchema),
-    defaultValues: initialSweet || {
-      name: "",
-      description: "",
-      images: [],
-      sizes: [],
-      isActive: true,
+    defaultValues: {
+      name: initialSweet?.name || "",
+      description: initialSweet?.description || "",
+      images: initialSweet?.images || [],
+      sizes: initialSweet?.sizes || [],
+      isActive: initialSweet?.isActive ?? true,
     },
   });
+
+  const handleImagesChange = async (images: string[]) => {
+    form.setValue("images", images, { shouldValidate: true });
+
+    if (images.length === 0) return;
+
+    const newDataUrls = images.filter((img) => img.startsWith("data:"));
+    const existingUrls = images.filter((img) => !img.startsWith("data:"));
+
+    if (newDataUrls.length === 0) return;
+
+    try {
+      setUploadingImage(true);
+      const uploaded: string[] = [];
+      for (const img of newDataUrls) {
+        const webpBlob = await convertToWebP(img);
+        const file = new File([webpBlob], "sweet-image.webp", {
+          type: "image/webp",
+        });
+        const result = await uploadSweetImage(file);
+        uploaded.push(result.secure_url);
+      }
+      const finalUrls = [...existingUrls, ...uploaded];
+      form.setValue("images", finalUrls, { shouldValidate: true });
+    } catch (err) {
+      console.error("Failed to upload sweet image:", err);
+      form.setValue("images", existingUrls, { shouldValidate: true });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   return (
     <Form {...form}>
@@ -113,7 +149,7 @@ export function SweetForm({
               <FormControl>
                 <MultiImageUploader
                   images={field.value}
-                  onImagesChange={field.onChange}
+                  onImagesChange={handleImagesChange}
                   label={t("common.uploadImage")}
                   error={form.formState.errors.images?.message}
                 />
@@ -193,8 +229,12 @@ export function SweetForm({
         />
 
         {/* Submit Button */}
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading
+        <Button
+          type="submit"
+          disabled={isLoading || uploadingImage}
+          className="w-full"
+        >
+          {isLoading || uploadingImage
             ? t("common.loading")
             : isEditMode
               ? t("sweets.updateSweet")

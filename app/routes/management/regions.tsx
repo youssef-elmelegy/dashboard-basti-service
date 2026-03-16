@@ -14,7 +14,7 @@ import { useRegionStore } from "@/stores/regionStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useAddRegionStore } from "@/stores/addRegionStore";
 import { RegionFormDialog } from "@/components/RegionFormDialog";
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Region } from "@/data/regions";
 
 export default function RegionsPage() {
@@ -24,15 +24,25 @@ export default function RegionsPage() {
   const error = useRegionStore((state) => state.error);
   const fetchRegions = useRegionStore((state) => state.fetchRegions);
   const deleteRegion = useRegionStore((state) => state.deleteRegion);
+  const changeRegionOrder = useRegionStore((state) => state.changeRegionOrder);
   const clearError = useRegionStore((state) => state.clearError);
 
   const { openDeleteDialog } = useDeleteDialog();
   const { openDialog: openAddRegionDialog } = useAddRegionStore();
 
+  // Drag and drop state
+  const [draggedRegion, setDraggedRegion] = useState<Region | null>(null);
+
   // Fetch regions on component mount
   useEffect(() => {
     fetchRegions();
   }, [fetchRegions]);
+
+  // Compute displayed regions sorted by order
+  const displayedRegions = useMemo(
+    () => [...regions].sort((a, b) => a.order - b.order),
+    [regions],
+  );
 
   const handleDeleteRegion = (region: Region) => {
     openDeleteDialog(
@@ -55,6 +65,55 @@ export default function RegionsPage() {
         }
       },
     );
+  };
+
+  const handleDragStart = (region: Region) => {
+    setDraggedRegion(region);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedRegion(null);
+  };
+
+  const handleDrop = async (targetRegion: Region) => {
+    if (!draggedRegion || draggedRegion.id === targetRegion.id) {
+      setDraggedRegion(null);
+      return;
+    }
+
+    // Find positions
+    const draggedIndex = displayedRegions.findIndex(
+      (r) => r.id === draggedRegion.id,
+    );
+    const targetIndex = displayedRegions.findIndex(
+      (r) => r.id === targetRegion.id,
+    );
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedRegion(null);
+      return;
+    }
+
+    // Calculate new order (1-indexed)
+    const newOrder = targetIndex + 1;
+
+    // Send request to update backend
+    try {
+      // changeRegionOrder now returns the full sorted regions array
+      await changeRegionOrder(draggedRegion.id, newOrder);
+
+      // The store is now updated with the new regions array from backend
+      // The useMemo hook will automatically recompute displayedRegions
+    } catch (error) {
+      console.error("Failed to change region order:", error);
+    }
+
+    setDraggedRegion(null);
   };
 
   return (
@@ -117,18 +176,29 @@ export default function RegionsPage() {
         </Empty>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {regions.map((region) => (
-            <RegionCard
+          {displayedRegions.map((region) => (
+            <div
               key={region.id}
-              region={region}
-              onEdit={(r) => {
-                openAddRegionDialog({
-                  mode: "edit",
-                  region: r,
-                });
-              }}
-              onDelete={handleDeleteRegion}
-            />
+              draggable
+              onDragStart={() => handleDragStart(region)}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDrop={() => handleDrop(region)}
+              className={`cursor-grab active:cursor-grabbing transition-opacity ${
+                draggedRegion?.id === region.id ? "opacity-50" : ""
+              }`}
+            >
+              <RegionCard
+                region={region}
+                onEdit={(r) => {
+                  openAddRegionDialog({
+                    mode: "edit",
+                    region: r,
+                  });
+                }}
+                onDelete={handleDeleteRegion}
+              />
+            </div>
           ))}
         </div>
       )}

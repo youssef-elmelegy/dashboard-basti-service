@@ -6,6 +6,7 @@ export interface Flavor {
   title: string;
   description: string;
   flavorUrl: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,7 +25,7 @@ export interface UpdateFlavorRequest {
 
 export interface ShapeVariantImage {
   shapeId: string;
-  sideViewUrl: string;
+  slicedViewUrl: string;
   frontViewUrl: string;
   topViewUrl: string;
 }
@@ -44,6 +45,22 @@ export interface PaginatedResponse<T> {
     page: number;
     limit: number;
   };
+}
+
+export interface FlavorVariantImage {
+  id: string;
+  shapeId: string;
+  slicedViewUrl: string;
+  frontViewUrl: string;
+  topViewUrl: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FlavorConflictData {
+  relatedConfigsCount: number;
+  affectedPredesignedCakesCount: number;
+  affectedPredesignedCakeIds: string[];
 }
 
 export const flavorApi = {
@@ -107,9 +124,36 @@ export const flavorApi = {
   },
 
   /**
-   * Delete flavor
+   * Delete flavor (safe — returns 409 if related predesigned cakes exist)
    */
   delete: (id: string): Promise<ApiResponse<{ message: string }>> => {
     return apiClient.delete<{ message: string }>(`/custom-cakes/flavors/${id}`);
+  },
+
+  /**
+   * Force-delete flavor and all its predesigned cake configs
+   */
+  forceDelete: (id: string): Promise<ApiResponse<null>> => {
+    return apiClient.delete<null>(`/custom-cakes/flavors/${id}/force`);
+  },
+
+  /**
+   * Change flavor order
+   */
+  changeOrder: (id: string, order: number): Promise<ApiResponse<Flavor[]>> => {
+    return apiClient.patch<Flavor[]>(`/custom-cakes/flavors/${id}/order`, {
+      order,
+    });
+  },
+
+  /**
+   * Get all shape variant images for a flavor
+   */
+  getVariantImages: (
+    id: string,
+  ): Promise<ApiResponse<FlavorVariantImage[]>> => {
+    return apiClient.get<FlavorVariantImage[]>(
+      `/custom-cakes/flavors/${id}/variant-images`,
+    );
   },
 };

@@ -23,6 +23,7 @@ import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useRegionStore } from "@/stores/regionStore";
+import { convertToWebP } from "@/lib/image-utils";
 import type {
   CreateDecorationFormValues,
   UpdateDecorationFormValues,
@@ -34,11 +35,12 @@ import {
   createDecorationWithVariantImagesSchema,
 } from "@/schemas/custom-cakes.schema";
 import type { Decoration } from "@/lib/services/decoration.service";
+import { decorationApi } from "@/lib/services/decoration.service";
 import { DecorationVariantImagesInput } from "./DecorationVariantImagesInput";
 
 interface DecorationVariantImageData {
   shapeId: string;
-  sideViewUrl: string;
+  slicedViewUrl: string;
   frontViewUrl: string;
   topViewUrl: string;
 }
@@ -73,6 +75,29 @@ export function DecorationForm({
   const [variantImages, setVariantImages] = useState<
     DecorationVariantImageData[]
   >([]);
+
+  // Fetch existing variant images when editing
+  useEffect(() => {
+    if (decoration?.id) {
+      decorationApi.getVariantImages(decoration.id).then((res) => {
+        if (res.success && res.data) {
+          const loaded: DecorationVariantImageData[] = res.data.map((v) => ({
+            shapeId: v.shapeId,
+            slicedViewUrl: v.slicedViewUrl,
+            frontViewUrl: v.frontViewUrl,
+            topViewUrl: v.topViewUrl,
+          }));
+          setVariantImages(loaded);
+          if (withVariantImages) {
+            form.setValue("variantImages", loaded, { shouldValidate: false });
+          }
+        }
+      }).catch(() => {
+        // silently ignore — form is still usable without pre-loaded images
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decoration?.id]);
 
   useEffect(() => {
     if (!tags || tags.length === 0) {
@@ -135,10 +160,9 @@ export function DecorationForm({
 
     try {
       setUploadingImage(true);
-      const response = await fetch(imageToUpload);
-      const blob = await response.blob();
-      const file = new File([blob], "decoration-image.jpg", {
-        type: "image/jpeg",
+      const webpBlob = await convertToWebP(imageToUpload);
+      const file = new File([webpBlob], "decoration-image.webp", {
+        type: "image/webp",
       });
 
       const result = await uploadRegionImage(file);
@@ -162,7 +186,7 @@ export function DecorationForm({
     if (withVariantImages) {
       const variantData = data as CreateDecorationWithVariantImagesFormValues;
       const filteredVariants = variantImages.filter(
-        (v) => v.sideViewUrl && v.frontViewUrl && v.topViewUrl,
+        (v) => v.slicedViewUrl && v.frontViewUrl && v.topViewUrl,
       );
 
       const finalData: CreateDecorationWithVariantImagesFormValues = {

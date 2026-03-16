@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useFeaturedCakeStore } from "@/stores/featuredCakeStore";
+import { convertToWebP } from "@/lib/image-utils";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useState, useEffect } from "react";
 import {
@@ -139,11 +140,10 @@ export function AddFeaturedCakeForm({
         const uploadedUrls: string[] = [];
 
         for (const imageData of urlsToUpload) {
-          // Convert data URL to File
-          const response = await fetch(imageData);
-          const blob = await response.blob();
-          const file = new File([blob], "image.jpg", { type: "image/jpeg" });
-
+          const webpBlob = await convertToWebP(imageData);
+          const file = new File([webpBlob], "featured-cake.webp", {
+            type: "image/webp",
+          });
           const uploadResult = await uploadFeaturedCakeImage(file);
           if (uploadResult.url) {
             uploadedUrls.push(uploadResult.url);

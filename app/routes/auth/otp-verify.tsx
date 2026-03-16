@@ -18,15 +18,18 @@ import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { authApi } from "@/lib/api/auth.api";
 import { useTranslation } from "react-i18next";
 
 export default function OTPPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOtp, forgotPassword, isLoading, error } = useAuth();
+  const { isLoading, error } = useAuth();
   const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localVerifying, setLocalVerifying] = useState(false);
+  const [localResending, setLocalResending] = useState(false);
   const email = (location.state as { email: string } | null)?.email || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,12 +47,21 @@ export default function OTPPage() {
     }
 
     try {
-      const resetToken = await verifyOtp(email, otp);
-      // Store resetToken in localStorage as fallback
-      localStorage.setItem("resetToken", resetToken);
-      navigate("/auth/reset-password", { state: { email, resetToken } });
-    } catch {
-      setLocalError(error || t("auth.otp.verifyFailed"));
+      setLocalVerifying(true);
+      const response = await authApi.verifyOtp({ email, otp });
+      if (response.success && response.data) {
+        const resetToken = response.data.resetToken;
+        // Store resetToken in localStorage as fallback
+        localStorage.setItem("resetToken", resetToken);
+        navigate("/auth/reset-password", { state: { email, resetToken } });
+      } else {
+        setLocalError(response.message || t("auth.otp.verifyFailed"));
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : null;
+      setLocalError(errMsg || error || t("auth.otp.verifyFailed"));
+    } finally {
+      setLocalVerifying(false);
     }
   };
 
@@ -63,9 +75,16 @@ export default function OTPPage() {
     }
 
     try {
-      await forgotPassword(email);
-    } catch {
-      setLocalError(error || t("auth.otp.resendFailed"));
+      setLocalResending(true);
+      const response = await authApi.forgotPassword({ email });
+      if (!response.success) {
+        setLocalError(response.message || t("auth.otp.resendFailed"));
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : null;
+      setLocalError(errMsg || error || t("auth.otp.resendFailed"));
+    } finally {
+      setLocalResending(false);
     }
   };
 
@@ -112,7 +131,7 @@ export default function OTPPage() {
                       required
                       value={otp}
                       onChange={setOtp}
-                      disabled={isLoading}
+                      disabled={isLoading || localVerifying}
                     >
                       <InputOTPGroup className="gap-2 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
                         <InputOTPSlot index={0} />
@@ -135,9 +154,9 @@ export default function OTPPage() {
                   </Field>
                   <Button
                     type="submit"
-                    disabled={otp.length !== 6 || isLoading}
+                    disabled={otp.length !== 6 || isLoading || localVerifying}
                   >
-                    {isLoading
+                    {localVerifying
                       ? t("auth.otp.verifying")
                       : t("auth.otp.verifyButton")}
                   </Button>
@@ -147,9 +166,11 @@ export default function OTPPage() {
                       type="button"
                       onClick={handleResend}
                       className="underline hover:text-foreground disabled:opacity-50"
-                      disabled={isLoading}
+                      disabled={isLoading || localResending}
                     >
-                      {t("auth.otp.resendButton")}
+                      {localResending
+                        ? t("auth.otp.resending")
+                        : t("auth.otp.resendButton")}
                     </button>
                   </FieldDescription>
                 </FieldGroup>
