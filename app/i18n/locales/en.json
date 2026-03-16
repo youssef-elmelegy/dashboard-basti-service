@@ -55,7 +55,8 @@
     "tag": "Tag",
     "selectTag": "Select Tag",
     "status": "Status",
-    "endOfList": "End of list"
+    "endOfList": "End of list",
+    "reset": "Reset"
   },
   "auth": {
     "login": {
@@ -543,6 +544,7 @@
     "admins": "Admins",
     "chefs": "Chefs",
     "sliderImages": "Slider Images",
+    "appConfig": "App Configuration",
     "featuredCakes": "Featured Cakes",
     "readyCakes": "Ready Cakes",
     "sweets": "Sweets",
@@ -789,6 +791,28 @@
     "creating": "Creating...",
     "updating": "Updating...",
     "clearSelection": "Clear selection"
+  },
+  "appConfig": {
+    "title": "App Configuration",
+    "operatingHours": "Operating Hours",
+    "openingHour": "Opening hour (0-23)",
+    "closingHour": "Closing hour (0-23)",
+    "preparationTime": "Preparation Time",
+    "minHoursToPrepare": "Minimum hours needed to prepare an order",
+    "weekendDays": "Weekend Days",
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "holidays": "Holidays",
+    "chooseHolidayDates": "Choose holiday dates",
+    "selectedHolidays": "Selected Holidays",
+    "noHolidaysSelected": "No holidays selected",
+    "save": "Save",
+    "saving": "Saving..."
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this? This action cannot be undone."

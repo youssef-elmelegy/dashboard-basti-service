@@ -55,7 +55,8 @@
     "tag": "العلامة",
     "selectTag": "اختر العلامة",
     "status": "الحالة",
-    "endOfList": "نهاية القائمة"
+    "endOfList": "نهاية القائمة",
+    "reset": "إعادة تعيين"
   },
   "auth": {
     "login": {
@@ -543,6 +544,7 @@
     "admins": "المسؤولون",
     "chefs": "الطهاة",
     "sliderImages": "صور السلايدر",
+    "appConfig": "إعدادات التطبيق",
     "featuredCakes": "الكعكات المميزة",
     "readyCakes": "الكعكات الجاهزة",
     "sweets": "الحلويات",
@@ -789,6 +791,28 @@
     "creating": "جاري الإنشاء...",
     "updating": "جاري التحديث...",
     "clearSelection": "مسح الاختيار"
+  },
+  "appConfig": {
+    "title": "إعدادات التطبيق",
+    "operatingHours": "ساعات العمل",
+    "openingHour": "ساعة افتتاح المتجر (0-23)",
+    "closingHour": "ساعة إغلاق المتجر (0-23)",
+    "preparationTime": "وقت التحضير",
+    "minHoursToPrepare": "الحد الأدنى من الساعات المطلوبة لتحضير الطلب",
+    "weekendDays": "أيام نهاية الأسبوع",
+    "sunday": "الأحد",
+    "monday": "الإثنين",
+    "tuesday": "الثلاثاء",
+    "wednesday": "الأربعاء",
+    "thursday": "الخميس",
+    "friday": "الجمعة",
+    "saturday": "السبت",
+    "holidays": "الإجازات",
+    "chooseHolidayDates": "اختر تواريخ الإجازات",
+    "selectedHolidays": "الإجازات المحددة",
+    "noHolidaysSelected": "لم يتم اختيار أي إجازات",
+    "save": "حفظ",
+    "saving": "جاري الحفظ..."
   },
   "messages": {
     "confirmDelete": "هل أنت متأكد من أنك تريد حذف هذا؟ لا يمكن التراجع عن هذا الإجراء."

@@ -11,6 +11,7 @@ import {
   Shapes,
   Flower,
   Film,
+  Settings,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -67,6 +68,11 @@ const AppSidebar = () => {
       title: t("sidebar.sliderImages"),
       url: "/management/slider-images",
       icon: Film,
+    },
+    {
+      title: t("sidebar.appConfig"),
+      url: "/management/app-config",
+      icon: Settings,
     },
   ];
 

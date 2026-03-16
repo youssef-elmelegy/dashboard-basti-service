@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "react-day-picker/style.css";
 
 html,
 body,
@@ -48,6 +49,10 @@ body {
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-calendar-selected: var(--calendar-selected);
+  --color-calendar-selected-foreground: var(--calendar-selected-foreground);
+  --color-calendar-range: var(--calendar-range);
+  --color-calendar-range-foreground: var(--calendar-range-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -83,6 +88,10 @@ body {
   --chart-3: oklch(44.565% 0.09953 157.034);
   --chart-4: oklch(0.8579 0.1713 87.91);
   --chart-5: oklch(79.672% 0.16692 70.596);
+  --calendar-selected: oklch(87.79% 0.23094 129.081);
+  --calendar-selected-foreground: oklch(1 0 0);
+  --calendar-range: oklch(44.565% 0.09953 157.034);
+  --calendar-range-foreground: oklch(1 0 0);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -113,6 +122,10 @@ body {
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(87.79% 0.23094 129.081 / 0.672);
+  --calendar-selected: oklch(87.79% 0.23094 129.081 / 0.85);
+  --calendar-selected-foreground: oklch(0.985 0 0);
+  --calendar-range: oklch(44.565% 0.09953 157.034 / 0.7);
+  --calendar-range-foreground: oklch(0.985 0 0);
   --chart-2: oklch(60.488% 0.10705 184.202 / 0.605);
   --chart-3: oklch(44.565% 0.09953 157.034 / 0.684);
   --chart-4: oklch(86.176% 0.17204 88.899 / 0.944);
@@ -172,5 +185,143 @@ body {
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: oklch(87.79% 0.23094 129.081 / 0.8);
+  }
+
+  /* Calendar color overrides for react-day-picker - COMPREHENSIVE */
+  [data-slot="calendar"] {
+    --rdp-cell-size: 40px;
+    --rdp-accent-color: var(--calendar-selected);
+    --rdp-background-color: var(--calendar-range);
+  }
+
+  [data-slot="calendar"] .rdp {
+    --rdp-cell-size: 40px;
+    --rdp-accent-color: var(--calendar-selected) !important;
+    --rdp-background-color: var(--calendar-range) !important;
+    color: inherit;
+  }
+
+  /* Remove all default blue colors */
+  [data-slot="calendar"] .rdp-day_today {
+    font-weight: 700;
+    color: var(--foreground) !important;
+  }
+
+  [data-slot="calendar"] .rdp-day_today::before {
+    background-color: var(--calendar-selected) !important;
+    box-shadow: inset 0 0 0 1px var(--calendar-selected) !important;
+  }
+
+  [data-slot="calendar"] .rdp-day_today:not([aria-selected="true"]) {
+    color: var(--foreground) !important;
+  }
+
+  /* Button base styling */
+  [data-slot="calendar"] .rdp-button {
+    color: inherit;
+    border-color: transparent;
+  }
+
+  [data-slot="calendar"] .rdp-button[aria-selected="true"] {
+    background-color: var(--calendar-selected) !important;
+    color: var(--calendar-selected-foreground) !important;
+    font-weight: 700;
+    border-color: transparent !important;
+  }
+
+  [data-slot="calendar"] .rdp-button[aria-selected="true"]::before {
+    box-shadow: none;
+  }
+
+  [data-slot="calendar"] .rdp-button:hover:not([disabled]) {
+    background-color: var(--calendar-range) !important;
+    color: inherit !important;
+  }
+
+  /* Range styling */
+  [data-slot="calendar"] .rdp-day_range_middle {
+    background-color: var(--calendar-range) !important;
+    color: inherit !important;
+  }
+
+  [data-slot="calendar"] .rdp-day_range_start,
+  [data-slot="calendar"] .rdp-day_range_end {
+    background-color: var(--calendar-selected) !important;
+    color: var(--calendar-selected-foreground) !important;
+  }
+
+  /* Focus visible - override the blue outline */
+  [data-slot="calendar"] .rdp-button:focus-visible {
+    outline: 2px solid var(--calendar-selected) !important;
+    outline-offset: 2px !important;
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--calendar-selected) !important;
+  }
+
+  /* Ensure caption styling */
+  [data-slot="calendar"] .rdp-caption {
+    color: inherit;
+    font-weight: 600;
+  }
+
+  /* Dropdown/select styling */
+  [data-slot="calendar"] .rdp-dropdown {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border-color: var(--border);
+  }
+
+  [data-slot="calendar"] .rdp-dropdown_trigger {
+    color: inherit;
+  }
+
+  /* Head cells */
+  [data-slot="calendar"] .rdp-head_cell {
+    color: var(--muted-foreground);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  /* Weekdays */
+  [data-slot="calendar"] .rdp-weekday {
+    color: var(--muted-foreground);
+    font-weight: 500;
+  }
+
+  /* Week number */
+  [data-slot="calendar"] .rdp-week_number {
+    color: var(--muted-foreground);
+  }
+
+  /* Outside days */
+  [data-slot="calendar"] .rdp-day_outside {
+    color: var(--muted-foreground);
+    opacity: 0.5;
+  }
+
+  /* Disabled days */
+  [data-slot="calendar"] .rdp-day_disabled {
+    color: var(--muted-foreground);
+    opacity: 0.5;
+  }
+
+  /* Override any remaining blue from ::after and ::before selectors */
+  [data-slot="calendar"] .rdp-button::before,
+  [data-slot="calendar"] .rdp-button::after {
+    background-color: transparent !important;
+    border-color: transparent !important;
+  }
+
+  /* Specifically target the rdp-day_today circle/ring */
+  [data-slot="calendar"] .rdp:not([class*="dark"]) .rdp-day_today::before {
+    background-color: var(--calendar-selected);
+    box-shadow: inset 0 0 0 1px var(--calendar-selected);
+  }
+
+  [data-slot="calendar"] .dark .rdp-day_today::before,
+  .dark [data-slot="calendar"] .rdp-day_today::before {
+    background-color: var(--calendar-selected);
+    box-shadow: inset 0 0 0 1px var(--calendar-selected);
   }
 }
