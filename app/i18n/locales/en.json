@@ -139,6 +139,8 @@
     "allRegions": "All Regions",
     "sortByTime": "Sort by Time",
     "filterByDate": "Filter by Date",
+    "searchByReference": "Search by Reference",
+    "enterReference": "Enter reference number",
     "capacity": "Capacity",
     "used": "used",
     "available": "available",

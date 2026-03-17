@@ -139,6 +139,8 @@
     "allRegions": "جميع المناطق",
     "sortByTime": "الترتيب حسب الوقت",
     "filterByDate": "التصفية حسب التاريخ",
+    "searchByReference": "البحث برقم المرجع",
+    "enterReference": "أدخل رقم المرجع",
     "capacity": "السعة",
     "used": "مستخدم",
     "available": "متاح",

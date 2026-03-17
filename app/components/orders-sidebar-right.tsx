@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronsUpDown,
   X,
+  Search,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Select } from "@/components/ui/select";
@@ -36,6 +37,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 
 type DraggableOrderCardProps = {
   order: Order;
@@ -136,6 +138,8 @@ export function OrdersSidebarRight({
     undefined,
   );
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
   // Get regions from the region store
   const regions = useRegionStore((state) => state.regions);
@@ -159,8 +163,16 @@ export function OrdersSidebarRight({
       );
     }
 
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((order) =>
+        (order.referenceNumber || order.id).toLowerCase().includes(searchLower),
+      );
+    }
+
     return filtered;
-  }, [orders, regionFilter, dateFilter]);
+  }, [orders, regionFilter, dateFilter, searchTerm]);
 
   // Sort orders by deliverDay or show original
   const sortedOrders = React.useMemo(() => {
@@ -220,6 +232,49 @@ export function OrdersSidebarRight({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Search by Reference Number */}
+          <Popover open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 flex items-center justify-center"
+                title={t("orders.searchByReference") || "Search by reference"}
+              >
+                <Search className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-64 p-3"
+              align={isRTL ? "end" : "start"}
+            >
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground">
+                  {t("orders.searchByReference") ||
+                    "Search by reference number"}
+                </label>
+                <Input
+                  placeholder={
+                    t("orders.enterReference") || "Enter reference number"
+                  }
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="h-8 text-xs"
+                  autoFocus
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="text-xs text-muted-foreground hover:text-foreground transition"
+                  >
+                    {t("common.clear")}
+                  </button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <div className="flex-1" />
           <button
             type="button"
