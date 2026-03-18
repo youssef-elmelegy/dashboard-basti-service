@@ -119,6 +119,7 @@ export type Order = {
     to: string;
     from: string;
     message: string;
+    link?: string;
   };
   recipientData?: {
     name: string;

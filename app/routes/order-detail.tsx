@@ -6,6 +6,7 @@ import { useOrderStore } from "@/stores/orderStore";
 import { env } from "@/config/env";
 import { httpRequest } from "@/lib/http-handler";
 import { LocationMap } from "@/components/location-map";
+import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +76,9 @@ interface OrderData {
   finalPrice?: number;
   totalPrice?: number;
   imageToPrint?: string;
-  cardMessage?: { to: string; from: string; message: string } | string;
+  cardMessage?:
+    | { to: string; from: string; message: string; link?: string }
+    | string;
   assignedBakeryName?: string;
   customerName?: string;
   customerPhone?: string;
@@ -139,82 +142,122 @@ async function downloadImage(imageUrl: string, fileName: string) {
   }
 }
 
-// Function to download greeting card as image
-function downloadCardAsImage(cardMessage: {
+// Function to download greeting card as image with QR code
+async function downloadCardAsImage(cardMessage: {
   to: string;
   from: string;
   message: string;
+  link?: string;
 }) {
-  // Create a canvas element
-  const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 600;
-  const ctx = canvas.getContext("2d");
+  try {
+    // Create a canvas element
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext("2d");
 
-  if (!ctx) return;
+    if (!ctx) return;
 
-  // Draw gradient background
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, "#fef3c7"); // amber-50
-  gradient.addColorStop(1, "#fed7aa"); // orange-50
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+    gradient.addColorStop(0, "#fef3c7"); // amber-50
+    gradient.addColorStop(1, "#fed7aa"); // orange-50
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw border
-  ctx.strokeStyle = "#fbbf24"; // amber-200
-  ctx.lineWidth = 4;
-  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+    // Draw border
+    ctx.strokeStyle = "#fbbf24"; // amber-200
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-  // Set text properties
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.textAlign = "center";
+    // Draw "To"
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b45309"; // amber-700
+    ctx.textAlign = "left";
+    ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
 
-  // Draw "To"
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "#b45309"; // amber-700
-  ctx.textAlign = "left";
-  ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
+    // Draw message
+    ctx.font = "italic 28px Georgia";
+    ctx.fillStyle = "#78350f"; // amber-900
+    ctx.textAlign = "center";
+    const lines = cardMessage.message.split("\n");
+    let yPos = 240;
+    lines.forEach((line: string) => {
+      ctx.fillText(line, canvas.width / 2, yPos);
+      yPos += 40;
+    });
 
-  // Draw message
-  ctx.font = "italic 28px Georgia";
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.textAlign = "center";
-  const lines = cardMessage.message.split("\n");
-  let yPos = 240;
-  lines.forEach((line: string) => {
-    ctx.fillText(line, canvas.width / 2, yPos);
-    yPos += 40;
-  });
+    // Generate and draw QR code if link exists
+    if (cardMessage.link) {
+      try {
+        // Use qr-server.com API to generate QR code
+        const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(cardMessage.link)}`;
 
-  // Draw signature
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "#b45309"; // amber-700
-  ctx.textAlign = "right";
-  ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+        // Create image and draw it on canvas
+        const qrImage = new Image();
+        qrImage.crossOrigin = "anonymous";
 
-  ctx.font = "24px Georgia";
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
-
-  // Convert canvas to blob and download
-  canvas.toBlob((blob) => {
-    if (blob) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+        await new Promise<void>((resolve) => {
+          qrImage.onload = () => {
+            // Draw white background for QR code
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(580, 220, 180, 180);
+            // Draw QR code border
+            ctx.strokeStyle = "#fbbf24"; // amber-200
+            ctx.lineWidth = 2;
+            ctx.strokeRect(580, 220, 180, 180);
+            // Draw QR code
+            ctx.drawImage(qrImage, 590, 230, 160, 160);
+            resolve();
+          };
+          qrImage.onerror = () => {
+            console.error("Failed to load QR code image");
+            resolve(); // Continue even if QR fails
+          };
+          qrImage.src = qrDataUrl;
+        });
+      } catch (error) {
+        console.error("Error generating QR code:", error);
+      }
     }
-  });
+
+    // Draw signature
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b45309"; // amber-700
+    ctx.textAlign = "right";
+    ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+
+    ctx.font = "24px Georgia";
+    ctx.fillStyle = "#78350f"; // amber-900
+    ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
+
+    // Convert canvas to blob and download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    });
+  } catch (error) {
+    console.error("Error downloading card:", error);
+  }
 }
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const orders = useOrderStore((state) => state.orders);
   const getDetailedOrder = useOrderStore((state) => state.getDetailedOrder);
   const cacheDetailedOrder = useOrderStore((state) => state.cacheDetailedOrder);
@@ -1169,17 +1212,18 @@ export default function OrderDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    downloadCardAsImage(
+                  onClick={() => {
+                    const cardMsg =
                       typeof order.cardMessage === "string"
                         ? { to: "", from: "", message: order.cardMessage }
                         : (order.cardMessage as {
                             to: string;
                             from: string;
                             message: string;
-                          }),
-                    )
-                  }
+                            link?: string;
+                          });
+                    downloadCardAsImage(cardMsg);
+                  }}
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" />
@@ -1191,94 +1235,16 @@ export default function OrderDetailPage() {
               <div className="flex flex-col lg:flex-row gap-6">
                 {/* Card Preview */}
                 <div className="flex-1">
-                  <div
-                    className={`relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden ${
-                      i18n.language === "ar" ? "rtl" : "ltr"
-                    }`}
-                  >
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
-
-                    {/* Top - To field */}
-                    <div
-                      className={`relative z-10 ${
-                        i18n.language === "ar" ? "text-right" : "text-left"
-                      }`}
-                    >
-                      <p className="text-sm text-amber-700/70 font-medium">
-                        {i18n.language === "ar" ? (
-                          <>
-                            {t("orderDetail.cardTo")}
-                            {": "}
-                            <span className="font-semibold">
-                              {
-                                (
-                                  order.cardMessage as {
-                                    to: string;
-                                    from: string;
-                                    message: string;
-                                  }
-                                ).to
-                              }
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            {t("orderDetail.cardTo")}:
-                            <span className="font-semibold">
-                              {
-                                (
-                                  order.cardMessage as {
-                                    to: string;
-                                    from: string;
-                                    message: string;
-                                  }
-                                ).to
-                              }
-                            </span>
-                          </>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Middle - Centered Message */}
-                    <div className="relative z-10 flex-1 flex items-center justify-center">
-                      <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center">
-                        {
-                          (
-                            order.cardMessage as {
-                              to: string;
-                              from: string;
-                              message: string;
-                            }
-                          ).message
-                        }
-                      </p>
-                    </div>
-
-                    {/* Bottom - Signature */}
-                    <div
-                      className={`relative z-10 ${
-                        i18n.language === "ar" ? "text-left" : "text-right"
-                      }`}
-                    >
-                      <p className="text-sm text-amber-700/70">
-                        {t("orderDetail.cardWithWarmWishes")}
-                      </p>
-                      <p className="text-lg font-serif text-amber-900">
-                        {
-                          (
-                            order.cardMessage as {
-                              to: string;
-                              from: string;
-                              message: string;
-                            }
-                          ).from
-                        }
-                      </p>
-                    </div>
-                  </div>
+                  <GreetingCardPreview
+                    cardMessage={
+                      order.cardMessage as {
+                        to: string;
+                        from: string;
+                        message: string;
+                        link?: string;
+                      }
+                    }
+                  />
                 </div>
 
                 {/* Card Details */}

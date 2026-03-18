@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
 import { LocationMap } from "@/components/location-map";
+import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import type { Order, OrderItem } from "@/data/orders";
 import { orderApi, type OrderResponse } from "@/lib/services/order.service";
 import { Button } from "@/components/ui/button";
@@ -65,76 +66,142 @@ function getItemCategory(item: OrderItem): string {
   return "Item";
 }
 
-// Function to download greeting card as image
-function downloadCardAsImage(cardMessage: {
+// Function to download greeting card as image with QR code
+async function downloadCardAsImage(cardMessage: {
   to: string;
   from: string;
   message: string;
+  link?: string;
 }) {
-  // Create a canvas element
-  const canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 600;
-  const ctx = canvas.getContext("2d");
+  try {
+    // Create a canvas element
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext("2d");
 
-  if (!ctx) return;
+    if (!ctx) return;
 
-  // Draw gradient background
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, "#fef3c7"); // amber-50
-  gradient.addColorStop(1, "#fed7aa"); // orange-50
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+    gradient.addColorStop(0, "#fef3c7"); // amber-50
+    gradient.addColorStop(1, "#fed7aa"); // orange-50
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw border
-  ctx.strokeStyle = "#fbbf24"; // amber-200
-  ctx.lineWidth = 4;
-  ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+    // Draw border
+    ctx.strokeStyle = "#fbbf24"; // amber-200
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-  // Set text properties
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.textAlign = "center";
+    // Draw "To"
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b45309"; // amber-700
+    ctx.textAlign = "left";
+    ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
 
-  // Draw "To"
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "#b45309"; // amber-700
-  ctx.textAlign = "left";
-  ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
+    // Draw message
+    ctx.font = "italic 28px Georgia";
+    ctx.fillStyle = "#78350f"; // amber-900
+    ctx.textAlign = "center";
+    const lines = cardMessage.message.split("\n");
+    let yPos = 240;
+    lines.forEach((line: string) => {
+      ctx.fillText(line, canvas.width / 2, yPos);
+      yPos += 40;
+    });
 
-  // Draw message
-  ctx.font = "italic 28px Georgia";
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.textAlign = "center";
-  const lines = cardMessage.message.split("\n");
-  let yPos = 240;
-  lines.forEach((line: string) => {
-    ctx.fillText(line, canvas.width / 2, yPos);
-    yPos += 40;
-  });
+    // Generate and draw QR code if link exists
+    if (cardMessage.link) {
+      try {
+        // Use qr-server.com API to generate QR code
+        const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(cardMessage.link)}`;
 
-  // Draw signature
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "#b45309"; // amber-700
-  ctx.textAlign = "right";
-  ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+        // Create image and draw it on canvas
+        const qrImage = new Image();
+        qrImage.crossOrigin = "anonymous";
 
-  ctx.font = "24px Georgia";
-  ctx.fillStyle = "#78350f"; // amber-900
-  ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
-
-  // Convert canvas to blob and download
-  canvas.toBlob((blob) => {
-    if (blob) {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+        await new Promise<void>((resolve) => {
+          qrImage.onload = () => {
+            // Draw white background for QR code
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(580, 220, 180, 180);
+            // Draw QR code border
+            ctx.strokeStyle = "#fbbf24"; // amber-200
+            ctx.lineWidth = 2;
+            ctx.strokeRect(580, 220, 180, 180);
+            // Draw QR code
+            ctx.drawImage(qrImage, 590, 230, 160, 160);
+            resolve();
+          };
+          qrImage.onerror = () => {
+            console.error("Failed to load QR code image");
+            resolve(); // Continue even if QR fails
+          };
+          qrImage.src = qrDataUrl;
+        });
+      } catch (error) {
+        console.error("Error generating QR code:", error);
+      }
     }
-  });
+
+    // Draw signature
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b45309"; // amber-700
+    ctx.textAlign = "right";
+    ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
+
+    ctx.font = "24px Georgia";
+    ctx.fillStyle = "#78350f"; // amber-900
+    ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
+
+    // Convert canvas to blob and download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    });
+  } catch (error) {
+    console.error("Error downloading card:", error);
+  }
+}
+
+// Function to download image properly
+async function downloadImage(imageUrl: string, fileName: string) {
+  try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName || "image.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error downloading image:", error);
+    // Fallback to simple download
+    const link = document.createElement("a");
+    link.href = imageUrl;
+    link.download = fileName || "image.png";
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
 
 // Standalone Image Upload Component (without form context)
@@ -650,6 +717,7 @@ export default function BakeryOrdersPage() {
                           to: parsed.to,
                           from: parsed.from,
                           message: parsed.message,
+                          link: parsed.link,
                         };
                       } catch {
                         return undefined;
@@ -1257,6 +1325,78 @@ export default function BakeryOrdersPage() {
                     </Card>
                   )}
 
+                {/* Design Image to Print */}
+                {selectedOrder.customCakes &&
+                  selectedOrder.customCakes.length > 0 &&
+                  selectedOrder.customCakes.some(
+                    (cake: Record<string, unknown>) =>
+                      (cake.data as unknown as Record<string, unknown>)
+                        ?.imageToPrint ||
+                      (cake.customCake as unknown as Record<string, unknown>)
+                        ?.imageToPrint,
+                  ) &&
+                  (() => {
+                    const firstCake = selectedOrder.customCakes?.[0];
+                    const imageUrl =
+                      ((firstCake?.data as unknown as Record<string, unknown>)
+                        ?.imageToPrint as string | undefined) ||
+                      ((
+                        firstCake?.customCake as unknown as Record<
+                          string,
+                          unknown
+                        >
+                      )?.imageToPrint as string | undefined);
+                    const cakeName =
+                      ((firstCake?.data as unknown as Record<string, unknown>)
+                        ?.name as string | undefined) ||
+                      ((
+                        firstCake?.customCake as unknown as Record<
+                          string,
+                          unknown
+                        >
+                      )?.name as string | undefined) ||
+                      "cake-1";
+
+                    return imageUrl ? (
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <Download className="w-4 h-4" />
+                              Design to Print
+                            </CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-center p-4 h-64">
+                          <div className="w-full h-full">
+                            <div className="rounded-lg overflow-hidden border bg-muted h-48">
+                              <img
+                                src={imageUrl}
+                                alt="Design to Print"
+                                className="w-full h-full object-contain bg-white"
+                              />
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                variant="outline"
+                                className="flex-1 gap-2 text-xs h-8"
+                                onClick={() =>
+                                  downloadImage(
+                                    imageUrl,
+                                    `${cakeName}-design.png`,
+                                  )
+                                }
+                              >
+                                <Download className="w-3 h-3" />
+                                Download Design
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : null;
+                  })()}
+
                 {/* Status Buttons */}
                 <Card className="md:col-span-2">
                   <CardHeader>
@@ -1391,9 +1531,9 @@ export default function BakeryOrdersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            downloadCardAsImage(selectedOrder.cardMessage!)
-                          }
+                          onClick={() => {
+                            downloadCardAsImage(selectedOrder.cardMessage!);
+                          }}
                           className="gap-2"
                         >
                           <Download className="w-4 h-4" />
@@ -1405,38 +1545,16 @@ export default function BakeryOrdersPage() {
                       <div className="flex flex-col lg:flex-row gap-6">
                         {/* Card Preview */}
                         <div className="flex-1">
-                          <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
-                            {/* Decorative elements */}
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
-                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
-
-                            {/* Top - To field */}
-                            <div className="relative z-10">
-                              <p className="text-sm text-amber-700/70 font-medium">
-                                To:{" "}
-                                <span className="font-semibold">
-                                  {selectedOrder.cardMessage.to}
-                                </span>
-                              </p>
-                            </div>
-
-                            {/* Middle - Centered Message */}
-                            <div className="relative z-10 flex-1 flex items-center justify-center">
-                              <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center">
-                                {selectedOrder.cardMessage.message}
-                              </p>
-                            </div>
-
-                            {/* Bottom - Signature */}
-                            <div className="relative z-10 text-right">
-                              <p className="text-sm text-amber-700/70">
-                                With warm wishes,
-                              </p>
-                              <p className="text-lg font-serif text-amber-900">
-                                {selectedOrder.cardMessage.from}
-                              </p>
-                            </div>
-                          </div>
+                          <GreetingCardPreview
+                            cardMessage={
+                              selectedOrder.cardMessage as {
+                                to: string;
+                                from: string;
+                                message: string;
+                                link?: string;
+                              }
+                            }
+                          />
                         </div>
 
                         {/* Card Details */}
