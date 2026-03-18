@@ -51,6 +51,17 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
+const orderTypeColors: Record<string, string> = {
+  big_cakes: "bg-rose-500/10",
+  small_cakes: "bg-amber-500/10",
+  others: "bg-teal-500/10",
+};
+
+function getOrderTypeStyle(orderType?: string): string {
+  if (!orderType) return "";
+  return orderTypeColors[orderType] || "bg-teal-500/10";
+}
+
 // Sortable Order Card within column
 function SortableOrderCard({ order }: { order: Order }) {
   const navigate = useNavigate();
@@ -91,7 +102,8 @@ function SortableOrderCard({ order }: { order: Order }) {
     >
       <Card
         className={cn(
-          "bg-background hover:bg-accent/50 transition-colors cursor-grab active:cursor-grabbing",
+          "hover:shadow-md transition-all cursor-grab active:cursor-grabbing border",
+          getOrderTypeStyle(order.type),
           isDragging && "opacity-50",
         )}
         onClick={handleClick}

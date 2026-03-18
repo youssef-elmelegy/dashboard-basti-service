@@ -42,6 +42,17 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
+const orderTypeColors: Record<string, string> = {
+  big_cakes: "bg-rose-500/10",
+  small_cakes: "bg-amber-500/10",
+  others: "bg-teal-500/10",
+};
+
+function getOrderTypeStyle(orderType?: string): string {
+  if (!orderType) return "bg-background";
+  return orderTypeColors[orderType] || "bg-teal-500/10";
+}
+
 /**
  * Get the category type of an order item
  */
@@ -399,7 +410,8 @@ function OrderSidebarCard({
     <>
       <Card
         className={cn(
-          "cursor-pointer transition-all hover:shadow-md",
+          "cursor-pointer transition-all hover:shadow-md border",
+          getOrderTypeStyle(order.type),
           isSelected && "ring-2 ring-primary",
         )}
         onClick={onSelect}

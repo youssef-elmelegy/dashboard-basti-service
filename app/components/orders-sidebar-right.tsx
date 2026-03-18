@@ -65,15 +65,22 @@ function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
   if (order.capacitySlots >= 3)
     slotBg = "bg-[color:oklch(0.577_0.245_27.325_/_0.35)]";
 
+  const orderTypeColors: Record<string, string> = {
+    big_cakes: "bg-rose-500/10",
+    small_cakes: "bg-amber-500/10",
+    others: "bg-teal-500/10",
+  };
+  const typeColor = orderTypeColors[order.type] || "bg-teal-500/10";
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
-      className={`transition-all hover:shadow-md border border-border/60 cursor-grab active:cursor-grabbing ${
-        isDragging ? "opacity-50" : ""
-      }`}
+      className={`transition-all hover:shadow-md border cursor-grab active:cursor-grabbing ${
+        typeColor
+      } ${isDragging ? "opacity-50" : ""}`}
       onDoubleClick={() => !isDragging && onNavigate(order.id)}
     >
       <CardHeader className="py-0 px-3 flex flex-col gap-0.5">
