@@ -28,6 +28,7 @@ import {
   Download,
   FileText,
   MessageSquare,
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -518,6 +519,7 @@ export default function BakeryOrdersPage() {
   const [bakeryOrders, setBakeryOrdersLocal] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const autoConfirmedOrders = useRef(new Set<string>());
 
   // Fetch bakery details on mount or when id changes
@@ -879,12 +881,33 @@ export default function BakeryOrdersPage() {
   }
 
   return (
-    <div className="flex w-full h-full overflow-hidden">
+    <div className="flex w-full h-full overflow-hidden relative">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile FAB Toggle Button */}
+      <button
+        className="lg:hidden fixed bottom-6 right-6 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label="Toggle sidebar"
+      >
+        {isSidebarOpen ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <Menu className="w-6 h-6" />
+        )}
+      </button>
+
       {/* Main Content */}
       <div
         className={cn(
           "flex-1 flex flex-col overflow-hidden",
-          isRTL ? "pl-88 order-last" : "pr-88 order-first",
+          isRTL ? "lg:pl-88 order-last" : "lg:pr-88 order-first",
         )}
       >
         {/* Header */}
@@ -1461,14 +1484,27 @@ export default function BakeryOrdersPage() {
       {/* Right Sidebar - Orders List */}
       <div
         className={cn(
-          "fixed top-16 h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden",
-          isRTL ? "left-0 border-r order-first" : "right-0 border-l order-last",
+          "h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden transition-transform duration-300",
+          "lg:fixed lg:top-16 lg:translate-x-0",
+          isRTL
+            ? "lg:left-0 lg:border-r order-first"
+            : "lg:right-0 lg:border-l order-last",
+          isSidebarOpen
+            ? "fixed top-16 right-0 border-l shadow-lg translate-x-0"
+            : "fixed top-16 right-0 translate-x-full",
         )}
       >
-        <div className="shrink-0 border-b px-4 py-3">
+        <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between">
           <h2 className="font-semibold text-lg">
             {t("bakeryOrders.orders")} ({bakeryOrders.length})
           </h2>
+          <button
+            className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-2 p-4">
@@ -1491,7 +1527,12 @@ export default function BakeryOrdersPage() {
                   key={order.id}
                   order={order}
                   isSelected={selectedOrderId === order.id}
-                  onSelect={() => setSelectedOrderId(order.id)}
+                  onSelect={() => {
+                    setSelectedOrderId(order.id);
+                    if (window.innerWidth < 1024) {
+                      setIsSidebarOpen(false);
+                    }
+                  }}
                   onConfirm={() => handleConfirm(order.id)}
                   onDecline={(reason) => handleDecline(order.id, reason)}
                 />

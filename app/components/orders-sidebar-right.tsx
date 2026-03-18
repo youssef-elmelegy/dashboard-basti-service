@@ -125,8 +125,9 @@ function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
 }
 
 export function OrdersSidebarRight({
+  onClose,
   ...props
-}: React.ComponentProps<typeof Sidebar>) {
+}: React.ComponentProps<typeof Sidebar> & { onClose?: () => void }) {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
@@ -186,6 +187,7 @@ export function OrdersSidebarRight({
 
   const handleOrderClick = (orderId: string) => {
     navigate(`/orders/${orderId}`);
+    onClose?.();
   };
 
   // Get all unassigned order dates for calendar highlighting
@@ -200,21 +202,33 @@ export function OrdersSidebarRight({
   return (
     <Sidebar
       collapsible="none"
-      className={`fixed ${
-        isRTL ? "left-0" : "right-0"
-      } top-16 h-[calc(100vh-4rem)] w-88 ${
-        isRTL ? "border-r" : "border-l"
-      } hidden lg:flex flex-col bg-sidebar z-30`}
+      className="flex flex-col h-full w-full bg-sidebar"
       {...props}
     >
       <SidebarHeader className="border-sidebar-border h-16 border-b">
-        <div>
-          <span className="font-semibold text-lg">
-            {t("orders.unassignedOrders")}
-          </span>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("orders.dragToAssign")}
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <span className="font-semibold text-lg">
+              {t("orders.unassignedOrders")}
+            </span>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("orders.dragToAssign")}
+            </p>
+          </div>
+          {/* Close button for mobile */}
+          {onClose && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="lg:hidden flex-shrink-0 p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
+              title={t("common.close")}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="p-4 flex flex-col h-full overflow-hidden">

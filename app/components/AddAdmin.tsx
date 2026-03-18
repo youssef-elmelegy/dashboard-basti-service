@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import type { CreateAdminPayload } from "@/lib/services/admin.service";
+import { Eye, EyeOff } from "lucide-react";
 
 interface AddAdminProps {
   onSubmit: (data: CreateAdminPayload) => Promise<void>;
@@ -21,6 +22,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
   const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -101,14 +103,28 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">{t("admins.password")}</label>
-          <Input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="At least 8 characters with uppercase, lowercase, and numbers"
-            required
-          />
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="At least 8 characters with uppercase, lowercase, and numbers"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">

@@ -36,6 +36,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Menu,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -395,6 +396,7 @@ const Orders = () => {
     new Set(),
   );
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Fetch bakeries and orders only once on mount
   useEffect(() => {
@@ -585,6 +587,11 @@ const Orders = () => {
     if (order) {
       setActiveOrder(order);
     }
+
+    // Close sidebar on small screens when starting to drag
+    if (window.innerWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -774,8 +781,40 @@ const Orders = () => {
         </div>
 
         {/* Right Sidebar - Scrollable, fixed width, absolutely positioned */}
-        <div className="w-88 shrink-0 flex flex-col border-l overflow-hidden">
-          <OrdersSidebarRight />
+        {/* Mobile Toggle Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "lg:hidden fixed bottom-6 right-6 rounded-full w-12 h-12 p-0 flex items-center justify-center shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 z-50 transition-opacity",
+            isSidebarOpen && "opacity-0 pointer-events-none",
+          )}
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          title="Open sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+
+        {/* Sidebar Overlay for mobile */}
+        {isSidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Right Sidebar - Responsive */}
+        <div
+          className={cn(
+            "w-88 border-l bg-sidebar overflow-hidden transition-transform duration-300 ease-in-out",
+            // Desktop: always visible
+            "hidden lg:flex lg:flex-col lg:relative",
+            // Mobile: slides in/out from right
+            isSidebarOpen &&
+              "!flex !fixed right-0 top-16 h-[calc(100vh-4rem)] z-40 w-full max-w-xs flex-col",
+          )}
+        >
+          <OrdersSidebarRight onClose={() => setIsSidebarOpen(false)} />
         </div>
       </div>
 
