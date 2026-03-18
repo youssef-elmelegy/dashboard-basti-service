@@ -304,108 +304,342 @@ export default function ItemDetailPage() {
               )}
             </div>
 
-            {/* Item Images Slider */}
-            {(() => {
-              const sliderData = getCakeSliderImages(item);
-              if (sliderData.images.length > 0) {
-                const currentConfig =
-                  item.predesignedCakeId &&
-                  Array.isArray(itemData.configs) &&
-                  itemData.configs.length > 0
-                    ? (
-                        itemData.configs as Array<{
-                          flavor?: {
-                            title?: string;
-                            description?: string;
-                          };
-                          decoration?: {
-                            title?: string;
-                            description?: string;
-                          };
-                          shape?: {
-                            title?: string;
-                            description?: string;
-                          };
-                          frostColorValue?: string;
-                        }>
-                      )[0]
-                    : null;
+            {/* Right Column - Item Images or Custom Cake */}
+            {item.customCake
+              ? (() => {
+                  const snapshotImages: string[] = [];
+                  const snapshotLabels: string[] = [];
 
-                return (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-sm">
-                        <Package className="w-4 h-4" />
-                        {item.predesignedCakeId ? "Cake" : "Image"}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      <ImageSlider
-                        images={sliderData.images}
-                        labels={sliderData.labels}
-                        square={true}
-                      />
+                  if (typeof itemData.snapshotTop === "string") {
+                    snapshotImages.push(itemData.snapshotTop as string);
+                    snapshotLabels.push("Top View");
+                  }
+                  if (typeof itemData.snapshotFront === "string") {
+                    snapshotImages.push(itemData.snapshotFront as string);
+                    snapshotLabels.push("Front View");
+                  }
+                  if (typeof itemData.snapshotSliced === "string") {
+                    snapshotImages.push(itemData.snapshotSliced as string);
+                    snapshotLabels.push("Sliced View");
+                  }
 
-                      {/* Cake Configuration Details */}
-                      {currentConfig && (
-                        <div className="border-t pt-4">
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            {currentConfig.flavor && (
-                              <div className="space-y-1">
-                                <p className="font-semibold text-xs">
-                                  {currentConfig.flavor.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {currentConfig.flavor.description}
-                                </p>
-                              </div>
-                            )}
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Package className="w-5 h-5" />
+                          Custom Cake
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-6">
+                        {/* Cake Snapshots Slider */}
+                        {snapshotImages.length > 0 && (
+                          <div className="space-y-4">
+                            <div className="border-t pt-4">
+                              <ImageSlider
+                                images={snapshotImages}
+                                labels={snapshotLabels}
+                                square={true}
+                              />
+                            </div>
 
-                            {currentConfig.shape && (
-                              <div className="space-y-1">
-                                <p className="font-semibold text-xs">
-                                  {currentConfig.shape.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {currentConfig.shape.description}
-                                </p>
-                              </div>
-                            )}
+                            {/* Selected Components Grid */}
+                            <div className="grid grid-cols-1 gap-4 pt-4 border-t">
+                              {/* Shape */}
+                              {typeof itemData.shape === "object" &&
+                                itemData.shape && (
+                                  <div className="space-y-2">
+                                    {typeof (
+                                      itemData.shape as Record<string, unknown>
+                                    ).shapeUrl === "string" && (
+                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                        <img
+                                          src={
+                                            (
+                                              itemData.shape as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).shapeUrl as string
+                                          }
+                                          alt="Shape"
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-xs text-muted-foreground uppercase font-medium">
+                                        Shape
+                                      </p>
+                                      <p className="font-semibold text-sm">
+                                        {typeof (
+                                          itemData.shape as Record<
+                                            string,
+                                            unknown
+                                          >
+                                        ).title === "string"
+                                          ? ((
+                                              itemData.shape as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).title as string)
+                                          : "Unknown"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
 
-                            {currentConfig.decoration && (
-                              <div className="space-y-1">
-                                <p className="font-semibold text-xs">
-                                  {currentConfig.decoration.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {currentConfig.decoration.description}
-                                </p>
-                              </div>
-                            )}
+                              {/* Flavor */}
+                              {typeof itemData.flavor === "object" &&
+                                itemData.flavor && (
+                                  <div className="space-y-2">
+                                    {typeof (
+                                      itemData.flavor as Record<string, unknown>
+                                    ).flavorUrl === "string" && (
+                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                        <img
+                                          src={
+                                            (
+                                              itemData.flavor as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).flavorUrl as string
+                                          }
+                                          alt="Flavor"
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-xs text-muted-foreground uppercase font-medium">
+                                        Flavor
+                                      </p>
+                                      <p className="font-semibold text-sm">
+                                        {typeof (
+                                          itemData.flavor as Record<
+                                            string,
+                                            unknown
+                                          >
+                                        ).title === "string"
+                                          ? ((
+                                              itemData.flavor as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).title as string)
+                                          : "Unknown"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
 
-                            {currentConfig.frostColorValue && (
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-5 h-5 rounded border flex-shrink-0"
-                                  style={{
-                                    backgroundColor:
-                                      currentConfig.frostColorValue,
-                                  }}
-                                />
-                                <span className="text-xs font-mono truncate">
-                                  {currentConfig.frostColorValue}
-                                </span>
-                              </div>
-                            )}
+                              {/* Decoration */}
+                              {typeof itemData.decoration === "object" &&
+                                itemData.decoration && (
+                                  <div className="space-y-2">
+                                    {typeof (
+                                      itemData.decoration as Record<
+                                        string,
+                                        unknown
+                                      >
+                                    ).decorationUrl === "string" && (
+                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                        <img
+                                          src={
+                                            (
+                                              itemData.decoration as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).decorationUrl as string
+                                          }
+                                          alt="Decoration"
+                                          className="w-full h-full object-contain"
+                                        />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <p className="text-xs text-muted-foreground uppercase font-medium">
+                                        Decoration
+                                      </p>
+                                      <p className="font-semibold text-sm">
+                                        {typeof (
+                                          itemData.decoration as Record<
+                                            string,
+                                            unknown
+                                          >
+                                        ).title === "string"
+                                          ? ((
+                                              itemData.decoration as Record<
+                                                string,
+                                                unknown
+                                              >
+                                            ).title as string)
+                                          : "Unknown"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
                           </div>
+                        )}
+
+                        {/* Color & Message Section */}
+                        <div className="space-y-4 border-t pt-4">
+                          {/* Color Swatch */}
+                          {typeof itemData.color === "object" &&
+                            itemData.color && (
+                              <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                                <div
+                                  className="w-10 h-10 rounded-lg border-2 border-gray-300 shrink-0"
+                                  style={{
+                                    backgroundColor: (
+                                      itemData.color as Record<string, unknown>
+                                    ).hex as string,
+                                  }}
+                                  title={
+                                    (itemData.color as Record<string, unknown>)
+                                      .hex as string
+                                  }
+                                />
+                                <div className="text-xs">
+                                  <p className="text-muted-foreground uppercase font-medium">
+                                    Color
+                                  </p>
+                                  <p className="font-semibold">
+                                    {
+                                      (
+                                        itemData.color as Record<
+                                          string,
+                                          unknown
+                                        >
+                                      ).name as string
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Message */}
+                          {typeof itemData.message === "string" &&
+                            itemData.message && (
+                              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">
+                                  Message
+                                </p>
+                                <p className="font-medium text-sm text-blue-900 dark:text-blue-100 italic">
+                                  "{itemData.message}"
+                                </p>
+                              </div>
+                            )}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              }
-              return null;
-            })()}
+                      </CardContent>
+                    </Card>
+                  );
+                })()
+              : (() => {
+                  const sliderData = getCakeSliderImages(item);
+                  if (sliderData.images.length > 0) {
+                    const currentConfig =
+                      item.predesignedCakeId &&
+                      Array.isArray(itemData.configs) &&
+                      itemData.configs.length > 0
+                        ? (
+                            itemData.configs as Array<{
+                              flavor?: {
+                                title?: string;
+                                description?: string;
+                              };
+                              decoration?: {
+                                title?: string;
+                                description?: string;
+                              };
+                              shape?: {
+                                title?: string;
+                                description?: string;
+                              };
+                              frostColorValue?: string;
+                            }>
+                          )[0]
+                        : null;
+
+                    return (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-sm">
+                            <Package className="w-4 h-4" />
+                            {item.predesignedCakeId ? "Cake" : "Image"}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-4">
+                          <ImageSlider
+                            images={sliderData.images}
+                            labels={sliderData.labels}
+                            square={true}
+                          />
+
+                          {/* Cake Configuration Details */}
+                          {currentConfig && (
+                            <div className="border-t pt-4">
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                {currentConfig.flavor && (
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-xs">
+                                      {currentConfig.flavor.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      {currentConfig.flavor.description}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {currentConfig.shape && (
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-xs">
+                                      {currentConfig.shape.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      {currentConfig.shape.description}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {currentConfig.decoration && (
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-xs">
+                                      {currentConfig.decoration.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                      {currentConfig.decoration.description}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {currentConfig.frostColorValue && (
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className="w-5 h-5 rounded border shrink-0"
+                                      style={{
+                                        backgroundColor:
+                                          currentConfig.frostColorValue,
+                                      }}
+                                    />
+                                    <span className="text-xs font-mono truncate">
+                                      {currentConfig.frostColorValue}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  return null;
+                })()}
           </div>
 
           {/* Selected Options */}

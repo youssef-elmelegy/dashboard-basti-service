@@ -996,16 +996,33 @@ export default function BakeryOrdersPage() {
                         style={{ scrollbarWidth: "thin" }}
                       >
                         {selectedOrder.orderItems.map((item, index) => {
-                          // Get image from different sources based on item type
+                          // Check if this is a custom cake
+                          const isCustomCake = Boolean(item.customCake);
                           const itemData = item.data as Record<string, unknown>;
-                          const imageUrl =
-                            (Array.isArray(itemData?.images) &&
-                              (itemData.images[0] as string)) ||
-                            (typeof itemData?.thumbnailUrl === "string" &&
-                              itemData.thumbnailUrl) ||
-                            (typeof itemData?.decorationTopView === "string" &&
-                              itemData.decorationTopView) ||
-                            "";
+
+                          // Get image from different sources based on item type
+                          const imageUrl = isCustomCake
+                            ? ((
+                                item.customCake as unknown as Record<
+                                  string,
+                                  unknown
+                                >
+                              )?.snapshotFront as string) ||
+                              ((
+                                item.customCake as unknown as Record<
+                                  string,
+                                  unknown
+                                >
+                              )?.snapshotTop as string) ||
+                              ""
+                            : (Array.isArray(itemData?.images) &&
+                                (itemData.images[0] as string)) ||
+                              (typeof itemData?.thumbnailUrl === "string" &&
+                                itemData.thumbnailUrl) ||
+                              (typeof itemData?.decorationTopView ===
+                                "string" &&
+                                itemData.decorationTopView) ||
+                              "";
 
                           return (
                             <div
@@ -1027,7 +1044,11 @@ export default function BakeryOrdersPage() {
                                   <div className="shrink-0">
                                     <img
                                       src={imageUrl}
-                                      alt={item.data?.name}
+                                      alt={
+                                        isCustomCake
+                                          ? "Custom Cake"
+                                          : item.data?.name
+                                      }
                                       className="w-24 h-24 object-cover rounded-lg border"
                                     />
                                   </div>
@@ -1038,7 +1059,9 @@ export default function BakeryOrdersPage() {
                                   <div className="flex items-start justify-between gap-2">
                                     <div>
                                       <h4 className="text-sm font-semibold">
-                                        {item.data?.name || "Item"}
+                                        {isCustomCake
+                                          ? "Custom Cake"
+                                          : item.data?.name || "Item"}
                                       </h4>
                                       <Badge
                                         variant="outline"
@@ -1049,7 +1072,7 @@ export default function BakeryOrdersPage() {
                                     </div>
                                   </div>
 
-                                  {item.data?.description && (
+                                  {!isCustomCake && item.data?.description && (
                                     <p className="text-xs text-muted-foreground">
                                       {item.data.description}
                                     </p>
