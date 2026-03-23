@@ -144,16 +144,16 @@ export function useConfirmSelectionHandler({
         let message = "Failed to add product to region. Please try again.";
         try {
           if (error && typeof error === "object") {
+            const err = error as Record<string, unknown>;
             // Common shapes: { message }, { data: { message } }, axios-like { response: { data: { message } } }
-            // @ts-ignore
+            const data = err.data as Record<string, unknown> | undefined;
+            const resp = err.response as Record<string, unknown> | undefined;
+            const respData = resp?.data as Record<string, unknown> | undefined;
+
             message =
-              error.message ||
-              // @ts-ignore
-              (error.data && error.data.message) ||
-              // @ts-ignore
-              (error.response &&
-                error.response.data &&
-                error.response.data.message) ||
+              (err.message as string) ||
+              (data?.message as string) ||
+              (respData?.message as string) ||
               JSON.stringify(error);
           } else if (typeof error === "string") {
             message = error;
