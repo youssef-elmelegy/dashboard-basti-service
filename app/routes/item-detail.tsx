@@ -9,6 +9,31 @@ import { ImageSlider } from "@/components/ImageSlider";
 import { cn } from "@/lib/utils";
 import type { OrderItem } from "@/data/orders";
 
+interface ExtraLayer {
+  layer: number;
+  flavor?: { id?: string; title?: string; name?: string };
+  flavorId?: string;
+}
+
+function extractExtraLayers(item: OrderItem): ExtraLayer[] {
+  // Prioritize data.extraLayers since it has complete flavor information
+  const d = item.data as Record<string, unknown> | undefined;
+  if (d && Array.isArray(d.extraLayers)) {
+    return d.extraLayers as unknown as ExtraLayer[];
+  }
+
+  const custom = item.customCake && (item.customCake as unknown);
+  if (
+    custom &&
+    Array.isArray((custom as Record<string, unknown>).extraLayers)
+  ) {
+    return (custom as Record<string, unknown>)
+      .extraLayers as unknown as ExtraLayer[];
+  }
+
+  return [];
+}
+
 function getItemCategory(item: OrderItem): string {
   if (item.addonId) return "Add-on";
   if (item.sweetId) return "Sweet";
@@ -82,7 +107,7 @@ function getCakeSliderImages(item: OrderItem): {
 export default function ItemDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
 
   const item = location.state?.item as OrderItem | undefined;
@@ -534,6 +559,35 @@ export default function ItemDetailPage() {
                                 </p>
                               </div>
                             )}
+
+                          {/* Extra Layers */}
+                          {extractExtraLayers(item).length > 0 && (
+                            <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                              <p className="text-xs text-muted-foreground uppercase font-medium mb-2">
+                                {t("orderDetail.extraLayers") || "Extra Layers"}
+                              </p>
+                              <ul className="list-disc list-inside space-y-1">
+                                {extractExtraLayers(item).map(
+                                  (layer: ExtraLayer, li: number) => {
+                                    const flavorTitle =
+                                      layer?.flavor?.title ||
+                                      layer?.flavor?.name ||
+                                      "";
+
+                                    return (
+                                      <li
+                                        key={li}
+                                        className="text-sm text-purple-900 dark:text-purple-100"
+                                      >
+                                        <strong>Layer {layer.layer}</strong>:{" "}
+                                        {flavorTitle || "Flavor not found"}
+                                      </li>
+                                    );
+                                  },
+                                )}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

@@ -140,7 +140,30 @@ export function useConfirmSelectionHandler({
         resetSelection();
       } catch (error) {
         console.error("Failed to create regional pricing:", error);
-        alert("Failed to add product to region. Please try again.");
+        // Try to extract a helpful message from the API error shape
+        let message = "Failed to add product to region. Please try again.";
+        try {
+          if (error && typeof error === "object") {
+            // Common shapes: { message }, { data: { message } }, axios-like { response: { data: { message } } }
+            // @ts-ignore
+            message =
+              error.message ||
+              // @ts-ignore
+              (error.data && error.data.message) ||
+              // @ts-ignore
+              (error.response &&
+                error.response.data &&
+                error.response.data.message) ||
+              JSON.stringify(error);
+          } else if (typeof error === "string") {
+            message = error;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // Show the API-provided message to the user so they know why it failed
+        alert(message);
       }
     },
     [

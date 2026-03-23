@@ -172,22 +172,45 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
   },
 
   changeShapeOrder: async (id: string, newOrder: number) => {
-    set({ isLoading: true, error: null });
+    // Optimistic update: apply new order locally immediately, call API, rollback on error
+    set({ error: null });
+
+    const prevShapes = get().shapes;
+
+    const currentOrdered = [...prevShapes].sort((a, b) => a.order - b.order);
+    const movingIndex = currentOrdered.findIndex((s) => s.id === id);
+    if (movingIndex === -1) return;
+
+    const movingShape = currentOrdered[movingIndex];
+    currentOrdered.splice(movingIndex, 1);
+    const targetIndex = Math.max(
+      0,
+      Math.min(newOrder - 1, currentOrdered.length),
+    );
+    currentOrdered.splice(targetIndex, 0, movingShape);
+
+    const optimisticShapes = currentOrdered.map((s, idx) => ({
+      ...s,
+      order: idx + 1,
+    }));
+    set({ shapes: optimisticShapes });
+
     try {
       const response = await shapeApi.changeOrder(id, newOrder);
-      if (response.success && response.data) {
-        // Backend returns full sorted shapes array
-        set({
-          shapes: response.data as Shape[],
-          isLoading: false,
-        });
+      if (response.success) {
+        // Success: keep optimistic state and clear any error
+        set({ error: null });
       } else {
+        set({
+          shapes: prevShapes,
+          error: response.message || "Failed to change shape order",
+        });
         throw new Error(response.message || "Failed to change shape order");
       }
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : "Failed to change shape order";
-      set({ error: errorMsg, isLoading: false });
+      set({ shapes: prevShapes, error: errorMsg });
       throw error;
     }
   },

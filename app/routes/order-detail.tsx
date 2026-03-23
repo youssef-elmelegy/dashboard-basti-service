@@ -30,6 +30,7 @@ import {
   Clock,
   DollarSign,
   CheckCircle,
+  Copy,
   Download,
   MessageSquare,
 } from "lucide-react";
@@ -50,7 +51,7 @@ interface CustomCakeData {
 
 interface CartItem {
   id: string;
-  data?: CustomCakeData;
+  data?: CustomCakeData & Record<string, unknown>;
   customCake?: CustomCakeData;
   addonId?: string | null;
   sweetId?: string | null;
@@ -59,6 +60,12 @@ interface CartItem {
   price: number;
   quantity: number;
   name?: string;
+}
+
+interface ExtraLayer {
+  layer: number;
+  flavor?: { id?: string; title?: string; name?: string };
+  flavorId?: string;
 }
 
 interface OrderData {
@@ -115,6 +122,47 @@ const statusColors = {
   delivered: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 } as const;
+
+function getFirstImage(
+  data?: Record<string, unknown> | CustomCakeData,
+): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const d = data as Record<string, unknown>;
+  const images = d.images;
+  if (
+    Array.isArray(images) &&
+    images.length > 0 &&
+    typeof images[0] === "string"
+  ) {
+    return images[0];
+  }
+  const image = d.image;
+  if (typeof image === "string") return image;
+  const thumbnail = d.thumbnailUrl || d.thumbnail;
+  if (typeof thumbnail === "string") return thumbnail;
+  const snapshotTop = d.snapshotTop || d.snapshotFront || d.snapshotSliced;
+  if (typeof snapshotTop === "string") return snapshotTop;
+  return undefined;
+}
+
+function extractExtraLayers(item: CartItem): ExtraLayer[] {
+  // Prioritize data.extraLayers since it has complete flavor information
+  const d = item.data as Record<string, unknown> | undefined;
+  if (d && Array.isArray(d.extraLayers)) {
+    return d.extraLayers as unknown as ExtraLayer[];
+  }
+
+  const custom = item.customCake && (item.customCake as unknown);
+  if (
+    custom &&
+    Array.isArray((custom as Record<string, unknown>).extraLayers)
+  ) {
+    return (custom as Record<string, unknown>)
+      .extraLayers as unknown as ExtraLayer[];
+  }
+
+  return [];
+}
 
 // Function to download image properly
 async function downloadImage(imageUrl: string, fileName: string) {
@@ -195,29 +243,26 @@ async function downloadCardAsImage(cardMessage: {
     // Generate and draw QR code if link exists
     if (cardMessage.link) {
       try {
-        // Use qr-server.com API to generate QR code
-        const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(cardMessage.link)}`;
+        const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+          cardMessage.link,
+        )}`;
 
-        // Create image and draw it on canvas
         const qrImage = new Image();
         qrImage.crossOrigin = "anonymous";
 
         await new Promise<void>((resolve) => {
           qrImage.onload = () => {
-            // Draw white background for QR code
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(580, 220, 180, 180);
-            // Draw QR code border
-            ctx.strokeStyle = "#fbbf24"; // amber-200
+            ctx.strokeStyle = "#fbbf24";
             ctx.lineWidth = 2;
             ctx.strokeRect(580, 220, 180, 180);
-            // Draw QR code
             ctx.drawImage(qrImage, 590, 230, 160, 160);
             resolve();
           };
           qrImage.onerror = () => {
             console.error("Failed to load QR code image");
-            resolve(); // Continue even if QR fails
+            resolve();
           };
           qrImage.src = qrDataUrl;
         });
@@ -264,8 +309,8 @@ export default function OrderDetailPage() {
   const [fetchedOrder, setFetchedOrder] = useState<OrderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  // Fetch order from admin endpoint with caching
   useEffect(() => {
     const fetchOrder = async () => {
       if (!id) {
@@ -278,7 +323,6 @@ export default function OrderDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        // Check if we have cached detailed order
         const cachedOrder = getDetailedOrder(id);
         if (cachedOrder) {
           setFetchedOrder(cachedOrder);
@@ -286,7 +330,6 @@ export default function OrderDetailPage() {
           return;
         }
 
-        // Fetch from API if not cached
         const response = await httpRequest(`${env.API_BASE_URL}/orders/${id}`, {
           method: "GET",
         });
@@ -299,7 +342,6 @@ export default function OrderDetailPage() {
         const data = await response.json();
         if (data.data) {
           setFetchedOrder(data.data);
-          // Cache the detailed order
           cacheDetailedOrder(id, data.data);
         }
       } catch (err) {
@@ -315,7 +357,6 @@ export default function OrderDetailPage() {
     fetchOrder();
   }, [id, getDetailedOrder, cacheDetailedOrder]);
 
-  // Use fetched order if available, fallback to store
   const order = (fetchedOrder || orders.find((o) => o.id === id)) as OrderData;
 
   if (isLoading) {
@@ -359,7 +400,6 @@ export default function OrderDetailPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-8">
-      {/* Header with Breadcrumb */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <Breadcrumb className="mb-4">
@@ -390,6 +430,44 @@ export default function OrderDetailPage() {
                 {order.orderStatus.replace(/_/g, " ")}
               </Badge>
             )}
+            {/* Reference number with copy button */}
+            <div className="ml-4 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {t("orderDetail.reference") || "Ref:"}
+              </span>
+              <span className="font-mono font-medium">
+                {order.referenceNumber || order.id}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      order.referenceNumber || order.id,
+                    );
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  } catch {
+                    // fallback: select and copy using DOM
+                    const el = document.createElement("textarea");
+                    el.value = order.referenceNumber || order.id || "";
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(el);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }
+                }}
+                className="ml-2 gap-2"
+              >
+                <Copy className="w-4 h-4" />{" "}
+                {copied
+                  ? t("common.copied") || "Copied"
+                  : t("common.copy") || "Copy"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -404,7 +482,6 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Order Items */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -421,6 +498,7 @@ export default function OrderDetailPage() {
               )}
             </CardTitle>
           </CardHeader>
+
           <CardContent>
             {order &&
             (order.customCakes?.length ||
@@ -444,7 +522,6 @@ export default function OrderDetailPage() {
                       return (
                         <div key={item.id} className="border rounded-lg p-4">
                           <div className="flex gap-4">
-                            {/* Item Image */}
                             {imageUrl && (
                               <div className="shrink-0">
                                 <img
@@ -455,7 +532,6 @@ export default function OrderDetailPage() {
                               </div>
                             )}
 
-                            {/* Item Details */}
                             <div className="flex-1 space-y-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -511,6 +587,32 @@ export default function OrderDetailPage() {
                                   {(item.data.color as { name?: string })?.name}
                                 </div>
                               )}
+                              {/* Extra Layers (if any) */}
+                              {extractExtraLayers(item).length > 0 && (
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  <div className="font-medium text-sm">
+                                    Extra Layers
+                                  </div>
+                                  <ul className="list-disc list-inside mt-1">
+                                    {extractExtraLayers(item).map(
+                                      (layer: ExtraLayer, li: number) => {
+                                        const flavorTitle =
+                                          layer?.flavor?.title ||
+                                          layer?.flavor?.name ||
+                                          "";
+
+                                        return (
+                                          <li key={li}>
+                                            <strong>Layer {layer.layer}</strong>
+                                            :{" "}
+                                            {flavorTitle || "Flavor not found"}
+                                          </li>
+                                        );
+                                      },
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           </div>
                           {index < (order.customCakes?.length || 0) - 1 && (
@@ -533,11 +635,21 @@ export default function OrderDetailPage() {
                         const itemName =
                           (item.data?.name as string | undefined) ||
                           "Featured Cake";
+                        const imageUrl = getFirstImage(item.data) ?? "";
 
                         return (
                           <div key={item.id} className="border rounded-lg p-4">
                             <div className="flex gap-4">
-                              {/* Item Details */}
+                              {imageUrl && (
+                                <div className="shrink-0">
+                                  <img
+                                    src={imageUrl}
+                                    alt={itemName}
+                                    className="w-24 h-24 object-cover rounded-lg border"
+                                  />
+                                </div>
+                              )}
+
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
@@ -584,6 +696,83 @@ export default function OrderDetailPage() {
                   </>
                 )}
 
+                {/* Predesigned Cakes */}
+                {order.predesignedCakes &&
+                  order.predesignedCakes.length > 0 && (
+                    <>
+                      {(order.customCakes?.length || 0) +
+                        (order.featuredCakes?.length || 0) >
+                        0 && <Separator className="my-2" />}
+                      {order.predesignedCakes.map(
+                        (item: CartItem, index: number) => {
+                          const itemName =
+                            (item.data?.name as string | undefined) ||
+                            "Predesigned Cake";
+                          const imageUrl = getFirstImage(item.data) ?? "";
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="border rounded-lg p-4"
+                            >
+                              <div className="flex gap-4">
+                                {imageUrl && (
+                                  <div className="shrink-0">
+                                    <img
+                                      src={imageUrl}
+                                      alt={itemName}
+                                      className="w-24 h-24 object-cover rounded-lg border"
+                                    />
+                                  </div>
+                                )}
+
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <h4 className="text-sm font-semibold">
+                                        {itemName}
+                                      </h4>
+                                      <Badge variant="outline" className="mt-1">
+                                        Predesigned Cake
+                                      </Badge>
+                                    </div>
+                                    <span className="text-lg font-bold text-primary">
+                                      {item.price} {t("orderDetail.egp")}
+                                    </span>
+                                  </div>
+
+                                  {item.data?.description && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.data.description}
+                                    </p>
+                                  )}
+
+                                  <div className="flex items-center gap-4 pt-2 text-sm flex-nowrap overflow-x-hidden">
+                                    <span className="font-medium flex items-center gap-2 flex-nowrap">
+                                      {t("orderDetail.quantity")}:{" "}
+                                      <span className="font-bold text-primary">
+                                        {item.quantity}
+                                      </span>
+                                    </span>
+                                    <span className="text-muted-foreground shrink-0">
+                                      {t("orderDetail.total")}:{" "}
+                                      {item.quantity * item.price}{" "}
+                                      {t("orderDetail.egp")}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              {index <
+                                (order.predesignedCakes?.length || 0) - 1 && (
+                                <Separator className="mt-4" />
+                              )}
+                            </div>
+                          );
+                        },
+                      )}
+                    </>
+                  )}
+
                 {/* Add Ons */}
                 {order.addons && order.addons.length > 0 && (
                   <>
@@ -593,11 +782,21 @@ export default function OrderDetailPage() {
                     {order.addons.map((item: CartItem, index: number) => {
                       const itemName =
                         (item.data?.name as string | undefined) || "Add on";
+                      const imageUrl = getFirstImage(item.data) ?? "";
 
                       return (
                         <div key={item.id} className="border rounded-lg p-4">
                           <div className="flex gap-4">
-                            {/* Item Details */}
+                            {imageUrl && (
+                              <div className="shrink-0">
+                                <img
+                                  src={imageUrl}
+                                  alt={itemName}
+                                  className="w-24 h-24 object-cover rounded-lg border"
+                                />
+                              </div>
+                            )}
+
                             <div className="flex-1 space-y-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -647,11 +846,21 @@ export default function OrderDetailPage() {
                     {order.sweets.map((item: CartItem, index: number) => {
                       const itemName =
                         (item.data?.name as string | undefined) || "Sweet";
+                      const imageUrl = getFirstImage(item.data) ?? "";
 
                       return (
                         <div key={item.id} className="border rounded-lg p-4">
                           <div className="flex gap-4">
-                            {/* Item Details */}
+                            {imageUrl && (
+                              <div className="shrink-0">
+                                <img
+                                  src={imageUrl}
+                                  alt={itemName}
+                                  className="w-24 h-24 object-cover rounded-lg border"
+                                />
+                              </div>
+                            )}
+
                             <div className="flex-1 space-y-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -784,17 +993,7 @@ export default function OrderDetailPage() {
               </span>
               <p className="text-sm">
                 {order.locationData
-                  ? `${(order.locationData as { street?: string; buildingNo?: string; label?: string }).street || ""} ${
-                      (
-                        order.locationData as {
-                          street?: string;
-                          buildingNo?: string;
-                          label?: string;
-                        }
-                      ).buildingNo
-                        ? `#${(order.locationData as { street?: string; buildingNo?: string; label?: string }).buildingNo}`
-                        : ""
-                    } - ${(order.locationData as { street?: string; buildingNo?: string; label?: string }).label || ""}`
+                  ? `${(order.locationData as { street?: string; buildingNo?: string; label?: string }).street || ""} ${(order.locationData as { street?: string; buildingNo?: string; label?: string }).buildingNo ? `#${(order.locationData as { street?: string; buildingNo?: string; label?: string }).buildingNo}` : ""} - ${(order.locationData as { street?: string; buildingNo?: string; label?: string }).label || ""}`
                   : order.deliveryLocation}
               </p>
             </div>
@@ -1075,7 +1274,7 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {((): React.ReactNode => {
-                const checks = order.qualityChecks;
+                const checks = order.qualityChecks as Record<string, boolean>;
                 const totalChecks = Object.keys(checks).length;
                 const completedChecks = Object.values(checks).filter(
                   (v) => v === true,
@@ -1092,7 +1291,6 @@ export default function OrderDetailPage() {
 
                 return (
                   <>
-                    {/* Progress Bar */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">
@@ -1115,7 +1313,6 @@ export default function OrderDetailPage() {
 
                     <Separator />
 
-                    {/* Quality Checks List */}
                     <div className="space-y-2">
                       {Object.entries(checks).map(([checkId, isChecked]) => (
                         <div
@@ -1123,40 +1320,29 @@ export default function OrderDetailPage() {
                           className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
                           <div
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                              isChecked
-                                ? "bg-green-500 border-green-500"
-                                : "border-muted-foreground/30"
-                            }`}
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isChecked ? "bg-green-500 border-green-500" : "border-muted-foreground/30"}`}
                           >
                             {isChecked ? (
                               <svg
                                 className="w-3 h-3 text-white"
+                                viewBox="0 0 16 16"
                                 fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
                               >
                                 <path
+                                  d="M12 5L6.5 10.5L4 8"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  strokeWidth={3}
-                                  d="M5 13l4 4L19 7"
                                 />
                               </svg>
                             ) : null}
                           </div>
                           <span
-                            className={`text-sm ${
-                              isChecked
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
-                            }`}
+                            className={`text-sm ${isChecked ? "text-foreground font-medium" : "text-muted-foreground"}`}
                           >
-                            {
-                              (checkLabels[
-                                checkId as keyof typeof checkLabels
-                              ] || checkId) as string
-                            }
+                            {checkLabels[checkId] || checkId}
                           </span>
                         </div>
                       ))}
@@ -1233,7 +1419,6 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col lg:flex-row gap-6">
-                {/* Card Preview */}
                 <div className="flex-1">
                   <GreetingCardPreview
                     cardMessage={
@@ -1247,7 +1432,6 @@ export default function OrderDetailPage() {
                   />
                 </div>
 
-                {/* Card Details */}
                 <div className="lg:w-64 space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase">

@@ -102,17 +102,13 @@ export default function RegionsPage() {
     // Calculate new order (1-indexed)
     const newOrder = targetIndex + 1;
 
-    // Send request to update backend
-    try {
-      // changeRegionOrder now returns the full sorted regions array
-      await changeRegionOrder(draggedRegion.id, newOrder);
-
-      // The store is now updated with the new regions array from backend
-      // The useMemo hook will automatically recompute displayedRegions
-    } catch (error) {
+    // Send request to update backend (fire-and-forget).
+    // The store performs an optimistic update immediately and will rollback on error.
+    changeRegionOrder(draggedRegion.id, newOrder).catch((error) => {
       console.error("Failed to change region order:", error);
-    }
+    });
 
+    // Clear drag state immediately so UI is responsive
     setDraggedRegion(null);
   };
 

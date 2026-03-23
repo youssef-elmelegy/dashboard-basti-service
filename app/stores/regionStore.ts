@@ -181,17 +181,51 @@ export const useRegionStore = create<RegionState>((set, get) => ({
 
   // Change region order
   changeRegionOrder: async (id: string, newOrder: number) => {
-    set({ isLoading: true, error: null });
+    // Optimistic update: apply new order locally immediately, call API, rollback on error
+    set({ error: null });
+
+    const prevRegions = get().regions;
+
+    // Build a new ordered array based on current regions and desired position
+    const currentOrdered = [...prevRegions].sort((a, b) => a.order - b.order);
+
+    const movingIndex = currentOrdered.findIndex((r) => r.id === id);
+    if (movingIndex === -1) return;
+
+    const movingRegion = currentOrdered[movingIndex];
+
+    // Remove the moving region
+    currentOrdered.splice(movingIndex, 1);
+
+    // Insert at target index (convert to 0-based)
+    const targetIndex = Math.max(
+      0,
+      Math.min(newOrder - 1, currentOrdered.length),
+    );
+    currentOrdered.splice(targetIndex, 0, movingRegion);
+
+    // Reassign continuous order numbers starting from 1
+    const optimisticRegions = currentOrdered.map((r, idx) => ({
+      ...r,
+      order: idx + 1,
+    }));
+
+    // Apply optimistic update immediately
+    set({ regions: optimisticRegions });
+
     try {
       const response = await regionApi.changeOrder(id, newOrder);
 
-      if (response.success && response.data) {
-        // Response now returns the full regions array sorted by order
-        set({
-          regions: response.data as Region[],
-          isLoading: false,
-        });
+      if (response.success) {
+        // Success: do not overwrite optimistic local state. Server acknowledged the change.
+        // Clear any previous error but keep the optimistic `regions` as-is.
+        set({ error: null });
       } else {
+        // Rollback to previous state on failure
+        set({
+          regions: prevRegions,
+          error: response.message || "Failed to change region order",
+        });
         throw new Error(response.message || "Failed to change region order");
       }
     } catch (error) {
@@ -199,7 +233,8 @@ export const useRegionStore = create<RegionState>((set, get) => ({
         error instanceof Error
           ? error.message
           : "Failed to change region order";
-      set({ error: errorMessage, isLoading: false });
+      // Rollback to previous regions
+      set({ regions: prevRegions, error: errorMessage });
       throw error;
     }
   },

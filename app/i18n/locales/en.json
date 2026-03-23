@@ -56,7 +56,14 @@
     "selectTag": "Select Tag",
     "status": "Status",
     "endOfList": "End of list",
-    "reset": "Reset"
+    "reset": "Reset",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "orderDetail": {
+    "reference": "Reference",
+    "extraLayers": "Extra Layers",
+    "layer": "Layer"
   },
   "auth": {
     "login": {

@@ -252,18 +252,48 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
   },
 
   changeFlavorOrder: async (id, newOrder) => {
-    set({ isLoading: true, error: null });
+    // Optimistic update: apply new order locally immediately, call API, rollback on error
+    set({ error: null });
+
+    const prevFlavors = get().flavors;
+
+    const currentOrdered = [...prevFlavors].sort((a, b) => a.order - b.order);
+    const movingIndex = currentOrdered.findIndex((f) => f.id === id);
+    if (movingIndex === -1) return;
+
+    const movingFlavor = currentOrdered[movingIndex];
+    currentOrdered.splice(movingIndex, 1);
+    const targetIndex = Math.max(
+      0,
+      Math.min(newOrder - 1, currentOrdered.length),
+    );
+    currentOrdered.splice(targetIndex, 0, movingFlavor);
+
+    const optimisticFlavors = currentOrdered.map((f, idx) => ({
+      ...f,
+      order: idx + 1,
+    }));
+    set({ flavors: optimisticFlavors });
+
     try {
       const response = await flavorApi.changeOrder(id, newOrder);
-      if (response.success && response.data) {
-        set({ flavors: response.data, isLoading: false });
+      if (response.success) {
+        // Success: keep optimistic state and clear any error
+        set({ error: null });
+      } else {
+        // Rollback on failure
+        set({
+          flavors: prevFlavors,
+          error: response.message || "Failed to change flavor order",
+        });
+        throw new Error(response.message || "Failed to change flavor order");
       }
     } catch (error) {
       const errorMsg =
         error instanceof Error
           ? error.message
           : "Failed to change flavor order";
-      set({ error: errorMsg, isLoading: false });
+      set({ flavors: prevFlavors, error: errorMsg });
       throw error;
     }
   },

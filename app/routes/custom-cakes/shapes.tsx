@@ -155,17 +155,12 @@ export default function ShapesPage() {
     // Calculate new order (1-indexed)
     const newOrder = targetIndex + 1;
 
-    // Send request to update backend
-    try {
-      // changeShapeOrder now returns the full sorted shapes array
-      await changeShapeOrder(draggedShape.id, newOrder);
-
-      // The store is now updated with the new shapes array from backend
-      // The useMemo hook will automatically recompute displayedShapes
-    } catch (error) {
+    // Fire-and-forget API call. Store handles optimistic update and rollback.
+    changeShapeOrder(draggedShape.id, newOrder).catch((error) => {
       console.error("Failed to change shape order:", error);
-    }
+    });
 
+    // Clear drag state immediately for responsive UI
     setDraggedShape(null);
   };
 

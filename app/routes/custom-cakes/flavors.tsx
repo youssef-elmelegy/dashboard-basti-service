@@ -195,17 +195,12 @@ export default function FlavorsPage() {
     // Calculate new order (1-indexed)
     const newOrder = targetIndex + 1;
 
-    // Send request to update backend
-    try {
-      // changeFlavorOrder now returns the full sorted flavors array
-      await changeFlavorOrder(draggedFlavor.id, newOrder);
-
-      // The store is now updated with the new flavors array from backend
-      // The useMemo hook will automatically recompute displayedFlavors
-    } catch (error) {
+    // Fire-and-forget API call. Store handles optimistic update and rollback.
+    changeFlavorOrder(draggedFlavor.id, newOrder).catch((error) => {
       console.error("Failed to change flavor order:", error);
-    }
+    });
 
+    // Clear drag state immediately for responsive UI
     setDraggedFlavor(null);
   };
 

@@ -56,7 +56,14 @@
     "selectTag": "اختر العلامة",
     "status": "الحالة",
     "endOfList": "نهاية القائمة",
-    "reset": "إعادة تعيين"
+    "reset": "إعادة تعيين",
+    "copy": "نسخ",
+    "copied": "تم النسخ"
+  },
+  "orderDetail": {
+    "reference": "رقم المرجع",
+    "extraLayers": "طبقات إضافية",
+    "layer": "الطبقة"
   },
   "auth": {
     "login": {
