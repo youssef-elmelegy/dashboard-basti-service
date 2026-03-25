@@ -58,7 +58,8 @@
     "endOfList": "End of list",
     "reset": "Reset",
     "copy": "Copy",
-    "copied": "Copied"
+    "copied": "Copied",
+    "viewDetails": "View Details"
   },
   "orderDetail": {
     "reference": "Reference",
@@ -451,7 +452,7 @@
     "enterLocationDescription": "Enter location description",
     "others": "Others",
     "smallCakes": "Small Cakes",
-    "largeCakes": "Large Cakes",
+    "bigCakes": "Big Cakes",
     "othersType": "Others",
     "storedItems": "Stored Items",
     "noItems": "No items available",

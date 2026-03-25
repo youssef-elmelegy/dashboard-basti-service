@@ -4,12 +4,7 @@
  * This is mock data for orders. Replace with API integration as needed.
  */
 
-export type OrderType =
-  | "basket_cakes"
-  | "midume"
-  | "small_cakes"
-  | "large_cakes"
-  | "custom";
+export type OrderType = "big_cakes" | "small_cakes" | "others";
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -26,26 +21,68 @@ export type OrderAddOn = {
   quantity: number;
 };
 
+export type OrderItemType =
+  | "addon"
+  | "sweet"
+  | "featured_cake"
+  | "predesigned_cake"
+  | "custom_cake";
+
 export type OrderItem = {
   id: string;
   orderId: string;
-  addonId: string | null;
-  sweetId: string | null;
-  predesignedCakeId: string | null;
-  featuredCakeId: string | null;
-  customCake: string | null;
+  addonId?: string | null;
+  sweetId?: string | null;
+  predesignedCakeId?: string | null;
+  featuredCakeId?: string | null;
+  customCake?: unknown | null;
   quantity: number;
-  size: string | null;
-  flavor: string | null;
+  size?: string | null;
+  flavor?: string | null;
   price: number;
-  selectedOptions: string | null;
+  selectedOptions?: unknown;
   createdAt: string;
   updatedAt: string;
+  type?: OrderItemType;
   data?: {
-    id: string;
-    name: string;
+    id?: string;
+    name?: string;
     description?: string;
     images?: string[];
+    category?: string;
+    price?: string | number;
+    tagName?: string;
+    color?: { hex: string; name: string };
+    shape?: {
+      id: string;
+      title: string;
+      shapeUrl: string;
+      capacity: number;
+      [key: string]: unknown;
+    };
+    flavor?: {
+      id: string;
+      title: string;
+      flavorUrl?: string;
+      description?: string;
+      [key: string]: unknown;
+    };
+    decoration?: {
+      id: string;
+      title: string;
+      decorationUrl: string;
+      description?: string;
+      [key: string]: unknown;
+    };
+    extraLayers?: Array<{
+      layer: number;
+      flavor?: { id?: string; title?: string; name?: string };
+    }>;
+    message?: string;
+    snapshotTop?: string;
+    snapshotFront?: string;
+    snapshotSliced?: string;
+    imageToPrint?: string;
     [key: string]: unknown;
   };
 };
@@ -134,7 +171,7 @@ export const ORDERS_DATA: Order[] = [
     customerName: "Sarah Ahmed",
     customerPhone: "+20 123 456 7890",
     customerEmail: "sarah.ahmed@example.com",
-    type: "large_cakes",
+    type: "big_cakes",
     productName: "Chocolate Fudge Cake",
     productImage:
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&h=500&fit=crop",
@@ -161,7 +198,7 @@ export const ORDERS_DATA: Order[] = [
     id: "B5X8N3Q6",
     customerName: "Mohamed Hassan",
     customerPhone: "+20 100 111 2222",
-    type: "midume",
+    type: "others",
     productName: "Birthday Macarons Box",
     productImage:
       "https://images.unsplash.com/photo-1569864358642-9d1684040f43?w=500&h=500&fit=crop",
@@ -179,7 +216,7 @@ export const ORDERS_DATA: Order[] = [
     id: "C9R4L7W2",
     customerName: "Fatima Ibrahim",
     customerEmail: "fatima.i@example.com",
-    type: "custom",
+    type: "big_cakes",
     productName: "Custom Wedding Cake",
     productImage:
       "https://images.unsplash.com/photo-1535254973040-607b474cb50d?w=500&h=500&fit=crop",
@@ -208,7 +245,7 @@ export const ORDERS_DATA: Order[] = [
     id: "D2K6F9H5",
     customerName: "Ali Mahmoud",
     customerPhone: "+20 122 333 4444",
-    type: "large_cakes",
+    type: "big_cakes",
     productName: "Anniversary Cake",
     productImage:
       "https://images.unsplash.com/photo-1588195538326-c5b1e5b80c23?w=500&h=500&fit=crop",
@@ -250,7 +287,7 @@ export const ORDERS_DATA: Order[] = [
     id: "F3J7M2S8",
     customerName: "Omar Khaled",
     customerPhone: "+20 102 222 3333",
-    type: "midume",
+    type: "others",
     productName: "Baklava Box",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -271,7 +308,7 @@ export const ORDERS_DATA: Order[] = [
     id: "G6Y9B1K3",
     customerName: "Nour El-Din",
     customerPhone: "+20 103 444 5555",
-    type: "large_cakes",
+    type: "big_cakes",
     productName: "Carrot Cake",
     productImage:
       "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?w=500&h=500&fit=crop",
@@ -292,7 +329,7 @@ export const ORDERS_DATA: Order[] = [
     id: "H4Z2D8R5",
     customerName: "Hana Youssef",
     customerPhone: "+20 104 666 7777",
-    type: "large_cakes",
+    type: "big_cakes",
     productName: "Holiday Cookies",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -310,7 +347,7 @@ export const ORDERS_DATA: Order[] = [
     id: "J1W5C9L6",
     customerName: "Yasmin Fathy",
     customerPhone: "+20 105 888 9999",
-    type: "custom",
+    type: "big_cakes",
     productName: "Custom Engagement Cake",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",
@@ -335,7 +372,7 @@ export const ORDERS_DATA: Order[] = [
     id: "K7X3N8M4",
     customerName: "Karim Adel",
     customerPhone: "+20 106 111 2222",
-    type: "large_cakes",
+    type: "big_cakes",
     productName: "Red Velvet Cake",
     productImage:
       "https://images.unsplash.com/photo-1588195538326-c5b1e5b80c23?w=500&h=500&fit=crop",
@@ -356,7 +393,7 @@ export const ORDERS_DATA: Order[] = [
     id: "L9T6P2V8",
     customerName: "Mona Nabil",
     customerPhone: "+20 107 333 4444",
-    type: "midume",
+    type: "others",
     productName: "Tiramisu Box",
     productImage:
       "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?w=500&h=500&fit=crop",

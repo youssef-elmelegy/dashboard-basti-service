@@ -58,12 +58,20 @@ function getOrderTypeStyle(orderType?: string): string {
  * Get the category type of an order item
  */
 function getItemCategory(item: OrderItem): string {
-  if (item.addonId) return "Add-on";
-  if (item.sweetId) return "Sweet";
-  if (item.featuredCakeId) return "Featured Cake";
-  if (item.predesignedCakeId) return "Predesigned Cake";
-  if (item.customCake) return "Custom Cake";
-  return "Item";
+  switch (item.type) {
+    case "addon":
+      return "Add-on";
+    case "sweet":
+      return "Sweet";
+    case "featured_cake":
+      return "Featured Cake";
+    case "predesigned_cake":
+      return "Predesigned Cake";
+    case "custom_cake":
+      return "Custom Cake";
+    default:
+      return "Item";
+  }
 }
 
 // Function to download greeting card as image with QR code
@@ -204,7 +212,6 @@ async function downloadImage(imageUrl: string, fileName: string) {
   }
 }
 
-// Standalone Image Upload Component (without form context)
 // function ImageUpload({
 //   onImageChange,
 //   initialImage = "",
@@ -645,11 +652,26 @@ export default function BakeryOrdersPage() {
           const bakeryOrdersList = response.data.map(
             (apiOrder: OrderResponse) => {
               const orderItems = [
-                ...(apiOrder.addons || []),
-                ...(apiOrder.sweets || []),
-                ...(apiOrder.featuredCakes || []),
-                ...(apiOrder.predesignedCakes || []),
-                ...(apiOrder.customCakes || []),
+                ...(apiOrder.addons || []).map((item) => ({
+                  ...item,
+                  type: "addon" as const,
+                })),
+                ...(apiOrder.sweets || []).map((item) => ({
+                  ...item,
+                  type: "sweet" as const,
+                })),
+                ...(apiOrder.featuredCakes || []).map((item) => ({
+                  ...item,
+                  type: "featured_cake" as const,
+                })),
+                ...(apiOrder.predesignedCakes || []).map((item) => ({
+                  ...item,
+                  type: "predesigned_cake" as const,
+                })),
+                ...(apiOrder.customCakes || []).map((item) => ({
+                  ...item,
+                  type: "custom_cake" as const,
+                })),
               ];
 
               const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
@@ -1076,33 +1098,29 @@ export default function BakeryOrdersPage() {
                         style={{ scrollbarWidth: "thin" }}
                       >
                         {selectedOrder.orderItems.map((item, index) => {
-                          // Check if this is a custom cake
-                          const isCustomCake = Boolean(item.customCake);
+                          // Determine item type and get image
+                          const itemType = item.type || "addon";
+                          const isCustomCake = itemType === "custom_cake";
                           const itemData = item.data as Record<string, unknown>;
 
                           // Get image from different sources based on item type
                           const imageUrl = isCustomCake
-                            ? ((
-                                item.customCake as unknown as Record<
-                                  string,
-                                  unknown
-                                >
-                              )?.snapshotFront as string) ||
-                              ((
-                                item.customCake as unknown as Record<
-                                  string,
-                                  unknown
-                                >
-                              )?.snapshotTop as string) ||
+                            ? (typeof itemData?.snapshotFront === "string" &&
+                                itemData.snapshotFront) ||
+                              (typeof itemData?.snapshotTop === "string" &&
+                                itemData.snapshotTop) ||
                               ""
                             : (Array.isArray(itemData?.images) &&
                                 (itemData.images[0] as string)) ||
                               (typeof itemData?.thumbnailUrl === "string" &&
                                 itemData.thumbnailUrl) ||
-                              (typeof itemData?.decorationTopView ===
-                                "string" &&
-                                itemData.decorationTopView) ||
                               "";
+
+                          const itemName = isCustomCake
+                            ? "Custom Cake"
+                            : typeof itemData?.name === "string"
+                              ? itemData.name
+                              : "Item";
 
                           return (
                             <div
@@ -1124,11 +1142,7 @@ export default function BakeryOrdersPage() {
                                   <div className="shrink-0">
                                     <img
                                       src={imageUrl}
-                                      alt={
-                                        isCustomCake
-                                          ? "Custom Cake"
-                                          : item.data?.name
-                                      }
+                                      alt={itemName}
                                       className="w-24 h-24 object-cover rounded-lg border"
                                     />
                                   </div>
@@ -1139,9 +1153,7 @@ export default function BakeryOrdersPage() {
                                   <div className="flex items-start justify-between gap-2">
                                     <div>
                                       <h4 className="text-sm font-semibold">
-                                        {isCustomCake
-                                          ? "Custom Cake"
-                                          : item.data?.name || "Item"}
+                                        {itemName}
                                       </h4>
                                       <Badge
                                         variant="outline"
@@ -1152,11 +1164,13 @@ export default function BakeryOrdersPage() {
                                     </div>
                                   </div>
 
-                                  {!isCustomCake && item.data?.description && (
-                                    <p className="text-xs text-muted-foreground">
-                                      {item.data.description}
-                                    </p>
-                                  )}
+                                  {!isCustomCake &&
+                                    typeof itemData?.description ===
+                                      "string" && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {itemData.description as string}
+                                      </p>
+                                    )}
 
                                   <div className="flex items-center gap-4 pt-2 text-sm">
                                     <span className="font-medium">
@@ -1178,6 +1192,34 @@ export default function BakeryOrdersPage() {
                                       Flavor: {item.flavor}
                                     </div>
                                   )}
+
+                                  {isCustomCake &&
+                                    typeof itemData?.shape === "object" &&
+                                    itemData.shape && (
+                                      <div className="text-xs text-muted-foreground">
+                                        Shape:{" "}
+                                        {((
+                                          itemData.shape as Record<
+                                            string,
+                                            string | unknown
+                                          >
+                                        ).title as string) || ""}
+                                      </div>
+                                    )}
+
+                                  {isCustomCake &&
+                                    typeof itemData?.flavor === "object" &&
+                                    itemData.flavor && (
+                                      <div className="text-xs text-muted-foreground">
+                                        Flavor:{" "}
+                                        {((
+                                          itemData.flavor as Record<
+                                            string,
+                                            string | unknown
+                                          >
+                                        ).title as string) || ""}
+                                      </div>
+                                    )}
 
                                   <div className="text-xs text-blue-600 dark:text-blue-400 font-medium pt-1">
                                     Click to view details

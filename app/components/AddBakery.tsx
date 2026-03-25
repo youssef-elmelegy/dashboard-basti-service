@@ -42,16 +42,7 @@ const formSchema = z.object({
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
   bakeryTypes: z
-    .array(
-      z.enum([
-        "small_cakes",
-        "large_cakes",
-        "others",
-        "basket_cakes",
-        "midume",
-        "custom",
-      ]),
-    )
+    .array(z.enum(["small_cakes", "big_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
 });
 
@@ -68,11 +59,8 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
   const getBakeryTypeLabel = (type: BakeryType): string => {
     const typeMap: Record<BakeryType, string> = {
       small_cakes: "smallCakes",
-      large_cakes: "largeCakes",
+      big_cakes: "bigCakes",
       others: "othersType",
-      basket_cakes: "basketCakes",
-      midume: "midume",
-      custom: "customType",
     };
     return t(`bakeriesManagement.${typeMap[type]}`);
   };
@@ -218,7 +206,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                       {(
                         Object.keys({
                           small_cakes: true,
-                          large_cakes: true,
+                          big_cakes: true,
                           others: true,
                         }) as BakeryType[]
                       ).map((value) => (

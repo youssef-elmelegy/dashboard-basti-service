@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import type { OrderItem } from "@/data/orders";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
@@ -162,6 +163,41 @@ function extractExtraLayers(item: CartItem): ExtraLayer[] {
   }
 
   return [];
+}
+
+/**
+ * Convert CartItem to OrderItem format for viewing item details
+ */
+function cartItemToOrderItem(
+  cartItem: CartItem,
+  itemType:
+    | "addon"
+    | "sweet"
+    | "featured_cake"
+    | "predesigned_cake"
+    | "custom_cake",
+  orderId: string,
+): OrderItem {
+  return {
+    id: cartItem.id,
+    orderId: orderId,
+    quantity: cartItem.quantity,
+    price: cartItem.price,
+    size:
+      typeof cartItem.data?.size === "string" ? cartItem.data.size : undefined,
+    flavor:
+      typeof cartItem.data?.flavor === "string"
+        ? cartItem.data.flavor
+        : typeof cartItem.data?.flavor === "object" &&
+            cartItem.data.flavor &&
+            "title" in cartItem.data.flavor
+          ? (cartItem.data.flavor as { title?: string }).title
+          : undefined,
+    type: itemType,
+    data: (cartItem.data || {}) as Record<string, unknown>,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 // Function to download image properly
@@ -613,6 +649,27 @@ export default function OrderDetailPage() {
                                   </ul>
                                 </div>
                               )}
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 w-full"
+                                onClick={() => {
+                                  const orderItem = cartItemToOrderItem(
+                                    item,
+                                    "custom_cake",
+                                    order.id,
+                                  );
+                                  navigate("/item-detail", {
+                                    state: {
+                                      item: orderItem,
+                                      orderId: order.id,
+                                    },
+                                  });
+                                }}
+                              >
+                                {t("common.viewDetails") || "View Details"}
+                              </Button>
                             </div>
                           </div>
                           {index < (order.customCakes?.length || 0) - 1 && (
@@ -684,6 +741,27 @@ export default function OrderDetailPage() {
                                     {t("orderDetail.egp")}
                                   </span>
                                 </div>
+
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-2 w-full"
+                                  onClick={() => {
+                                    const orderItem = cartItemToOrderItem(
+                                      item,
+                                      "featured_cake",
+                                      order.id,
+                                    );
+                                    navigate("/item-detail", {
+                                      state: {
+                                        item: orderItem,
+                                        orderId: order.id,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  {t("common.viewDetails") || "View Details"}
+                                </Button>
                               </div>
                             </div>
                             {index < (order.featuredCakes?.length || 0) - 1 && (
@@ -760,6 +838,27 @@ export default function OrderDetailPage() {
                                       {t("orderDetail.egp")}
                                     </span>
                                   </div>
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-2 w-full"
+                                    onClick={() => {
+                                      const orderItem = cartItemToOrderItem(
+                                        item,
+                                        "predesigned_cake",
+                                        order.id,
+                                      );
+                                      navigate("/item-detail", {
+                                        state: {
+                                          item: orderItem,
+                                          orderId: order.id,
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    {t("common.viewDetails") || "View Details"}
+                                  </Button>
                                 </div>
                               </div>
                               {index <
@@ -825,6 +924,27 @@ export default function OrderDetailPage() {
                                   {t("orderDetail.egp")}
                                 </span>
                               </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 w-full"
+                                onClick={() => {
+                                  const orderItem = cartItemToOrderItem(
+                                    item,
+                                    "addon",
+                                    order.id,
+                                  );
+                                  navigate("/item-detail", {
+                                    state: {
+                                      item: orderItem,
+                                      orderId: order.id,
+                                    },
+                                  });
+                                }}
+                              >
+                                {t("common.viewDetails") || "View Details"}
+                              </Button>
                             </div>
                           </div>
                           {index < (order.addons?.length || 0) - 1 && (
@@ -889,6 +1009,27 @@ export default function OrderDetailPage() {
                                   {t("orderDetail.egp")}
                                 </span>
                               </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 w-full"
+                                onClick={() => {
+                                  const orderItem = cartItemToOrderItem(
+                                    item,
+                                    "sweet",
+                                    order.id,
+                                  );
+                                  navigate("/item-detail", {
+                                    state: {
+                                      item: orderItem,
+                                      orderId: order.id,
+                                    },
+                                  });
+                                }}
+                              >
+                                {t("common.viewDetails") || "View Details"}
+                              </Button>
                             </div>
                           </div>
                           {index < (order.sweets?.length || 0) - 1 && (

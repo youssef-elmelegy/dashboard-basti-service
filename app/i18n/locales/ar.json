@@ -58,7 +58,8 @@
     "endOfList": "نهاية القائمة",
     "reset": "إعادة تعيين",
     "copy": "نسخ",
-    "copied": "تم النسخ"
+    "copied": "تم النسخ",
+    "viewDetails": "عرض التفاصيل"
   },
   "orderDetail": {
     "reference": "رقم المرجع",
@@ -451,7 +452,7 @@
     "enterLocationDescription": "أدخل وصف الموقع",
     "others": "أخرى",
     "smallCakes": "كعك صغير",
-    "largeCakes": "كعك كبير",
+    "bigCakes": "كعك كبير",
     "othersType": "أخرى",
     "storedItems": "المنتجات المخزنة",
     "noItems": "لا توجد عناصر متاحة",

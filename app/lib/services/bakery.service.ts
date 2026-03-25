@@ -9,13 +9,7 @@ import type { ApiResponse } from "@/lib/api-client";
 /**
  * Bakery type definitions
  */
-export type BakeryType =
-  | "large_cakes"
-  | "small_cakes"
-  | "others"
-  | "basket_cakes"
-  | "midume"
-  | "custom";
+export type BakeryType = "big_cakes" | "small_cakes" | "others";
 
 /**
  * Bakery data model

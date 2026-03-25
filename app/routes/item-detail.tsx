@@ -16,31 +16,30 @@ interface ExtraLayer {
 }
 
 function extractExtraLayers(item: OrderItem): ExtraLayer[] {
-  // Prioritize data.extraLayers since it has complete flavor information
-  const d = item.data as Record<string, unknown> | undefined;
-  if (d && Array.isArray(d.extraLayers)) {
-    return d.extraLayers as unknown as ExtraLayer[];
-  }
-
-  const custom = item.customCake && (item.customCake as unknown);
-  if (
-    custom &&
-    Array.isArray((custom as Record<string, unknown>).extraLayers)
-  ) {
-    return (custom as Record<string, unknown>)
-      .extraLayers as unknown as ExtraLayer[];
+  // Get data from the new nested structure
+  const itemData = item.data as Record<string, unknown> | undefined;
+  if (itemData && Array.isArray(itemData.extraLayers)) {
+    return itemData.extraLayers as unknown as ExtraLayer[];
   }
 
   return [];
 }
 
 function getItemCategory(item: OrderItem): string {
-  if (item.addonId) return "Add-on";
-  if (item.sweetId) return "Sweet";
-  if (item.featuredCakeId) return "Featured Cake";
-  if (item.predesignedCakeId) return "Predesigned Cake";
-  if (item.customCake) return "Custom Cake";
-  return "Item";
+  switch (item.type) {
+    case "addon":
+      return "Add-on";
+    case "sweet":
+      return "Sweet";
+    case "featured_cake":
+      return "Featured Cake";
+    case "predesigned_cake":
+      return "Predesigned Cake";
+    case "custom_cake":
+      return "Custom Cake";
+    default:
+      return "Item";
+  }
 }
 
 function getCakeSliderImages(item: OrderItem): {
@@ -48,9 +47,10 @@ function getCakeSliderImages(item: OrderItem): {
   labels: string[];
 } {
   const itemData = item.data as Record<string, unknown>;
+  const itemType = item.type;
 
   // For predesigned cakes, compile all configuration images
-  if (item.predesignedCakeId && Array.isArray(itemData.configs)) {
+  if (itemType === "predesigned_cake" && Array.isArray(itemData.configs)) {
     const images: string[] = [];
     const labels: string[] = [];
 
@@ -155,7 +155,7 @@ export default function ItemDetailPage() {
               <Badge className="capitalize">{category}</Badge>
               {typeof itemData.tagName === "string" && (
                 <Badge variant="outline" className="capitalize">
-                  {itemData.tagName}
+                  {itemData.tagName as string}
                 </Badge>
               )}
             </div>
@@ -197,7 +197,7 @@ export default function ItemDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground">
-                        {itemData.description}
+                        {itemData.description as string}
                       </p>
                     </CardContent>
                   </Card>
@@ -246,7 +246,7 @@ export default function ItemDetailPage() {
               </Card>
 
               {/* Featured Cake Details - Flavors & Palette */}
-              {item.featuredCakeId && (
+              {item.type === "featured_cake" && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -295,7 +295,7 @@ export default function ItemDetailPage() {
                           Capacity
                         </p>
                         <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                          {itemData.capacity} servings
+                          {itemData.capacity as number} servings
                         </p>
                       </div>
                     )}
@@ -304,7 +304,7 @@ export default function ItemDetailPage() {
               )}
 
               {/* Sweets Details - Available Sizes */}
-              {item.sweetId && (
+              {item.type === "sweet" && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Available Sizes</CardTitle>
@@ -330,374 +330,394 @@ export default function ItemDetailPage() {
             </div>
 
             {/* Right Column - Item Images or Custom Cake */}
-            {item.customCake
-              ? (() => {
-                  const snapshotImages: string[] = [];
-                  const snapshotLabels: string[] = [];
+            {
+              (item.type === "custom_cake"
+                ? (() => {
+                    const snapshotImages: string[] = [];
+                    const snapshotLabels: string[] = [];
 
-                  if (typeof itemData.snapshotTop === "string") {
-                    snapshotImages.push(itemData.snapshotTop as string);
-                    snapshotLabels.push("Top View");
-                  }
-                  if (typeof itemData.snapshotFront === "string") {
-                    snapshotImages.push(itemData.snapshotFront as string);
-                    snapshotLabels.push("Front View");
-                  }
-                  if (typeof itemData.snapshotSliced === "string") {
-                    snapshotImages.push(itemData.snapshotSliced as string);
-                    snapshotLabels.push("Sliced View");
-                  }
-
-                  return (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Package className="w-5 h-5" />
-                          Custom Cake
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4 space-y-6">
-                        {/* Cake Snapshots Slider */}
-                        {snapshotImages.length > 0 && (
-                          <div className="space-y-4">
-                            <div className="border-t pt-4">
-                              <ImageSlider
-                                images={snapshotImages}
-                                labels={snapshotLabels}
-                                square={true}
-                              />
-                            </div>
-
-                            {/* Selected Components Grid */}
-                            <div className="grid grid-cols-1 gap-4 pt-4 border-t">
-                              {/* Shape */}
-                              {typeof itemData.shape === "object" &&
-                                itemData.shape && (
-                                  <div className="space-y-2">
-                                    {typeof (
-                                      itemData.shape as Record<string, unknown>
-                                    ).shapeUrl === "string" && (
-                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
-                                        <img
-                                          src={
-                                            (
-                                              itemData.shape as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).shapeUrl as string
-                                          }
-                                          alt="Shape"
-                                          className="w-full h-full object-contain"
-                                        />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase font-medium">
-                                        Shape
-                                      </p>
-                                      <p className="font-semibold text-sm">
-                                        {typeof (
-                                          itemData.shape as Record<
-                                            string,
-                                            unknown
-                                          >
-                                        ).title === "string"
-                                          ? ((
-                                              itemData.shape as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).title as string)
-                                          : "Unknown"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Flavor */}
-                              {typeof itemData.flavor === "object" &&
-                                itemData.flavor && (
-                                  <div className="space-y-2">
-                                    {typeof (
-                                      itemData.flavor as Record<string, unknown>
-                                    ).flavorUrl === "string" && (
-                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
-                                        <img
-                                          src={
-                                            (
-                                              itemData.flavor as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).flavorUrl as string
-                                          }
-                                          alt="Flavor"
-                                          className="w-full h-full object-contain"
-                                        />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase font-medium">
-                                        Flavor
-                                      </p>
-                                      <p className="font-semibold text-sm">
-                                        {typeof (
-                                          itemData.flavor as Record<
-                                            string,
-                                            unknown
-                                          >
-                                        ).title === "string"
-                                          ? ((
-                                              itemData.flavor as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).title as string)
-                                          : "Unknown"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Decoration */}
-                              {typeof itemData.decoration === "object" &&
-                                itemData.decoration && (
-                                  <div className="space-y-2">
-                                    {typeof (
-                                      itemData.decoration as Record<
-                                        string,
-                                        unknown
-                                      >
-                                    ).decorationUrl === "string" && (
-                                      <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
-                                        <img
-                                          src={
-                                            (
-                                              itemData.decoration as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).decorationUrl as string
-                                          }
-                                          alt="Decoration"
-                                          className="w-full h-full object-contain"
-                                        />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <p className="text-xs text-muted-foreground uppercase font-medium">
-                                        Decoration
-                                      </p>
-                                      <p className="font-semibold text-sm">
-                                        {typeof (
-                                          itemData.decoration as Record<
-                                            string,
-                                            unknown
-                                          >
-                                        ).title === "string"
-                                          ? ((
-                                              itemData.decoration as Record<
-                                                string,
-                                                unknown
-                                              >
-                                            ).title as string)
-                                          : "Unknown"}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Color & Message Section */}
-                        <div className="space-y-4 border-t pt-4">
-                          {/* Color Swatch */}
-                          {typeof itemData.color === "object" &&
-                            itemData.color && (
-                              <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
-                                <div
-                                  className="w-10 h-10 rounded-lg border-2 border-gray-300 shrink-0"
-                                  style={{
-                                    backgroundColor: (
-                                      itemData.color as Record<string, unknown>
-                                    ).hex as string,
-                                  }}
-                                  title={
-                                    (itemData.color as Record<string, unknown>)
-                                      .hex as string
-                                  }
-                                />
-                                <div className="text-xs">
-                                  <p className="text-muted-foreground uppercase font-medium">
-                                    Color
-                                  </p>
-                                  <p className="font-semibold">
-                                    {
-                                      (
-                                        itemData.color as Record<
-                                          string,
-                                          unknown
-                                        >
-                                      ).name as string
-                                    }
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                          {/* Message */}
-                          {typeof itemData.message === "string" &&
-                            itemData.message && (
-                              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">
-                                  Message
-                                </p>
-                                <p className="font-medium text-sm text-blue-900 dark:text-blue-100 italic">
-                                  "{itemData.message}"
-                                </p>
-                              </div>
-                            )}
-
-                          {/* Extra Layers */}
-                          {extractExtraLayers(item).length > 0 && (
-                            <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                              <p className="text-xs text-muted-foreground uppercase font-medium mb-2">
-                                {t("orderDetail.extraLayers") || "Extra Layers"}
-                              </p>
-                              <ul className="list-disc list-inside space-y-1">
-                                {extractExtraLayers(item).map(
-                                  (layer: ExtraLayer, li: number) => {
-                                    const flavorTitle =
-                                      layer?.flavor?.title ||
-                                      layer?.flavor?.name ||
-                                      "";
-
-                                    return (
-                                      <li
-                                        key={li}
-                                        className="text-sm text-purple-900 dark:text-purple-100"
-                                      >
-                                        <strong>Layer {layer.layer}</strong>:{" "}
-                                        {flavorTitle || "Flavor not found"}
-                                      </li>
-                                    );
-                                  },
-                                )}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })()
-              : (() => {
-                  const sliderData = getCakeSliderImages(item);
-                  if (sliderData.images.length > 0) {
-                    const currentConfig =
-                      item.predesignedCakeId &&
-                      Array.isArray(itemData.configs) &&
-                      itemData.configs.length > 0
-                        ? (
-                            itemData.configs as Array<{
-                              flavor?: {
-                                title?: string;
-                                description?: string;
-                              };
-                              decoration?: {
-                                title?: string;
-                                description?: string;
-                              };
-                              shape?: {
-                                title?: string;
-                                description?: string;
-                              };
-                              frostColorValue?: string;
-                            }>
-                          )[0]
-                        : null;
+                    if (typeof itemData.snapshotTop === "string") {
+                      snapshotImages.push(itemData.snapshotTop as string);
+                      snapshotLabels.push("Top View");
+                    }
+                    if (typeof itemData.snapshotFront === "string") {
+                      snapshotImages.push(itemData.snapshotFront as string);
+                      snapshotLabels.push("Front View");
+                    }
+                    if (typeof itemData.snapshotSliced === "string") {
+                      snapshotImages.push(itemData.snapshotSliced as string);
+                      snapshotLabels.push("Sliced View");
+                    }
 
                     return (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="flex items-center gap-2 text-sm">
-                            <Package className="w-4 h-4" />
-                            {item.predesignedCakeId ? "Cake" : "Image"}
+                          <CardTitle className="flex items-center gap-2">
+                            <Package className="w-5 h-5" />
+                            Custom Cake
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                          <ImageSlider
-                            images={sliderData.images}
-                            labels={sliderData.labels}
-                            square={true}
-                          />
+                        <CardContent className="p-4 space-y-6">
+                          {/* Cake Snapshots Slider */}
+                          {snapshotImages.length > 0 && (
+                            <div className="space-y-4">
+                              <div className="border-t pt-4">
+                                <ImageSlider
+                                  images={snapshotImages}
+                                  labels={snapshotLabels}
+                                  square={true}
+                                />
+                              </div>
 
-                          {/* Cake Configuration Details */}
-                          {currentConfig && (
-                            <div className="border-t pt-4">
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                {currentConfig.flavor && (
-                                  <div className="space-y-1">
-                                    <p className="font-semibold text-xs">
-                                      {currentConfig.flavor.title}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {currentConfig.flavor.description}
-                                    </p>
-                                  </div>
-                                )}
+                              {/* Selected Components Grid */}
+                              <div className="grid grid-cols-1 gap-4 pt-4 border-t">
+                                {/* Shape */}
+                                {typeof itemData.shape === "object" &&
+                                  itemData.shape && (
+                                    <div className="space-y-2">
+                                      {typeof (
+                                        itemData.shape as Record<
+                                          string,
+                                          unknown
+                                        >
+                                      ).shapeUrl === "string" && (
+                                        <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                          <img
+                                            src={
+                                              (
+                                                itemData.shape as Record<
+                                                  string,
+                                                  unknown
+                                                >
+                                              ).shapeUrl as string
+                                            }
+                                            alt="Shape"
+                                            className="w-full h-full object-contain"
+                                          />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-xs text-muted-foreground uppercase font-medium">
+                                          Shape
+                                        </p>
+                                        <p className="font-semibold text-sm">
+                                          {typeof (
+                                            itemData.shape as Record<
+                                              string,
+                                              unknown
+                                            >
+                                          ).title === "string"
+                                            ? ((
+                                                itemData.shape as Record<
+                                                  string,
+                                                  string | unknown
+                                                >
+                                              ).title as string)
+                                            : "Unknown"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
 
-                                {currentConfig.shape && (
-                                  <div className="space-y-1">
-                                    <p className="font-semibold text-xs">
-                                      {currentConfig.shape.title}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {currentConfig.shape.description}
-                                    </p>
-                                  </div>
-                                )}
+                                {/* Flavor */}
+                                {typeof itemData.flavor === "object" &&
+                                  itemData.flavor && (
+                                    <div className="space-y-2">
+                                      {typeof (
+                                        itemData.flavor as Record<
+                                          string,
+                                          unknown
+                                        >
+                                      ).flavorUrl === "string" && (
+                                        <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                          <img
+                                            src={
+                                              (
+                                                itemData.flavor as Record<
+                                                  string,
+                                                  unknown
+                                                >
+                                              ).flavorUrl as string
+                                            }
+                                            alt="Flavor"
+                                            className="w-full h-full object-contain"
+                                          />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-xs text-muted-foreground uppercase font-medium">
+                                          Flavor
+                                        </p>
+                                        <p className="font-semibold text-sm">
+                                          {typeof (
+                                            itemData.flavor as Record<
+                                              string,
+                                              unknown
+                                            >
+                                          ).title === "string"
+                                            ? ((
+                                                itemData.flavor as Record<
+                                                  string,
+                                                  string | unknown
+                                                >
+                                              ).title as string)
+                                            : "Unknown"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
 
-                                {currentConfig.decoration && (
-                                  <div className="space-y-1">
-                                    <p className="font-semibold text-xs">
-                                      {currentConfig.decoration.title}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">
-                                      {currentConfig.decoration.description}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {currentConfig.frostColorValue && (
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className="w-5 h-5 rounded border shrink-0"
-                                      style={{
-                                        backgroundColor:
-                                          currentConfig.frostColorValue,
-                                      }}
-                                    />
-                                    <span className="text-xs font-mono truncate">
-                                      {currentConfig.frostColorValue}
-                                    </span>
-                                  </div>
-                                )}
+                                {/* Decoration */}
+                                {typeof itemData.decoration === "object" &&
+                                  itemData.decoration && (
+                                    <div className="space-y-2">
+                                      {typeof (
+                                        itemData.decoration as Record<
+                                          string,
+                                          unknown
+                                        >
+                                      ).decorationUrl === "string" && (
+                                        <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
+                                          <img
+                                            src={
+                                              (
+                                                itemData.decoration as Record<
+                                                  string,
+                                                  unknown
+                                                >
+                                              ).decorationUrl as string
+                                            }
+                                            alt="Decoration"
+                                            className="w-full h-full object-contain"
+                                          />
+                                        </div>
+                                      )}
+                                      <div>
+                                        <p className="text-xs text-muted-foreground uppercase font-medium">
+                                          Decoration
+                                        </p>
+                                        <p className="font-semibold text-sm">
+                                          {typeof (
+                                            itemData.decoration as Record<
+                                              string,
+                                              unknown
+                                            >
+                                          ).title === "string"
+                                            ? ((
+                                                itemData.decoration as Record<
+                                                  string,
+                                                  string | unknown
+                                                >
+                                              ).title as string)
+                                            : "Unknown"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                               </div>
                             </div>
                           )}
+
+                          {/* Color & Message Section */}
+                          <div className="space-y-4 border-t pt-4">
+                            {/* Color Swatch */}
+                            {typeof itemData.color === "object" &&
+                              itemData.color && (
+                                <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                                  <div
+                                    className="w-10 h-10 rounded-lg border-2 border-gray-300 shrink-0"
+                                    style={{
+                                      backgroundColor: (
+                                        itemData.color as Record<
+                                          string,
+                                          string | unknown
+                                        >
+                                      ).hex as string,
+                                    }}
+                                    title={
+                                      (
+                                        itemData.color as Record<
+                                          string,
+                                          string | unknown
+                                        >
+                                      ).hex as string
+                                    }
+                                  />
+                                  <div className="text-xs">
+                                    <p className="text-muted-foreground uppercase font-medium">
+                                      Color
+                                    </p>
+                                    <p className="font-semibold">
+                                      {
+                                        (
+                                          itemData.color as Record<
+                                            string,
+                                            string | unknown
+                                          >
+                                        ).name as string
+                                      }
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Message */}
+                            {typeof itemData.message === "string" &&
+                              itemData.message && (
+                                <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <p className="text-xs text-muted-foreground uppercase font-medium mb-1">
+                                    Message
+                                  </p>
+                                  <p className="font-medium text-sm text-blue-900 dark:text-blue-100 italic">
+                                    "{itemData.message as string}"
+                                  </p>
+                                </div>
+                              )}
+
+                            {/* Extra Layers */}
+                            {extractExtraLayers(item).length > 0 && (
+                              <div className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                                <p className="text-xs text-muted-foreground uppercase font-medium mb-2">
+                                  {t("orderDetail.extraLayers") ||
+                                    "Extra Layers"}
+                                </p>
+                                <ul className="list-disc list-inside space-y-1">
+                                  {extractExtraLayers(item).map(
+                                    (layer: ExtraLayer, li: number) => {
+                                      const flavorTitle =
+                                        layer?.flavor?.title ||
+                                        layer?.flavor?.name ||
+                                        "";
+
+                                      return (
+                                        <li
+                                          key={li}
+                                          className="text-sm text-purple-900 dark:text-purple-100"
+                                        >
+                                          <strong>Layer {layer.layer}</strong>:{" "}
+                                          {flavorTitle || "Flavor not found"}
+                                        </li>
+                                      );
+                                    },
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
-                    );
-                  }
-                  return null;
-                })()}
+                    ) as React.ReactNode;
+                  })()
+                : (() => {
+                    const sliderData = getCakeSliderImages(item);
+                    if (sliderData.images.length > 0) {
+                      const currentConfig =
+                        item.type === "predesigned_cake" &&
+                        Array.isArray(itemData.configs) &&
+                        itemData.configs.length > 0
+                          ? (
+                              itemData.configs as Array<{
+                                flavor?: {
+                                  title?: string;
+                                  description?: string;
+                                };
+                                decoration?: {
+                                  title?: string;
+                                  description?: string;
+                                };
+                                shape?: {
+                                  title?: string;
+                                  description?: string;
+                                };
+                                frostColorValue?: string;
+                              }>
+                            )[0]
+                          : null;
+
+                      return (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-sm">
+                              <Package className="w-4 h-4" />
+                              {item.type === "predesigned_cake"
+                                ? "Cake"
+                                : "Image"}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 space-y-4">
+                            <ImageSlider
+                              images={sliderData.images}
+                              labels={sliderData.labels}
+                              square={true}
+                            />
+
+                            {/* Cake Configuration Details */}
+                            {currentConfig && (
+                              <div className="border-t pt-4">
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  {currentConfig.flavor && (
+                                    <div className="space-y-1">
+                                      <p className="font-semibold text-xs">
+                                        {currentConfig.flavor.title || "Flavor"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {currentConfig.flavor.description || ""}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {currentConfig.shape && (
+                                    <div className="space-y-1">
+                                      <p className="font-semibold text-xs">
+                                        {currentConfig.shape.title || "Shape"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {currentConfig.shape.description || ""}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {currentConfig.decoration && (
+                                    <div className="space-y-1">
+                                      <p className="font-semibold text-xs">
+                                        {currentConfig.decoration.title ||
+                                          "Decoration"}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
+                                        {currentConfig.decoration.description ||
+                                          ""}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {currentConfig.frostColorValue && (
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="w-5 h-5 rounded border shrink-0"
+                                        style={{
+                                          backgroundColor:
+                                            currentConfig.frostColorValue,
+                                        }}
+                                      />
+                                      <span className="text-xs font-mono truncate">
+                                        {currentConfig.frostColorValue}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ) as React.ReactNode;
+                    }
+                    return null as unknown as React.ReactNode;
+                  })()) as React.ReactNode
+            }
           </div>
 
           {/* Selected Options */}
-          {item.selectedOptions && (
+          {/* {item.selectedOptions && (
             <>
               <Card>
                 <CardHeader>
@@ -710,7 +730,7 @@ export default function ItemDetailPage() {
                 </CardContent>
               </Card>
             </>
-          )}
+          )} */}
         </div>
       </ScrollArea>
     </div>

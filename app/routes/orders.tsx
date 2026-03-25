@@ -24,7 +24,7 @@ import { OrdersSidebarRight } from "@/components/orders-sidebar-right";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
 import type { Order } from "@/data/orders";
-import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
+import type { Bakery } from "@/lib/services/bakery.service";
 import { httpRequest } from "@/lib/http-handler";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -183,11 +183,9 @@ function getCapacityColor(percentage: number) {
 // Format bakery type for display
 function formatBakeryType(type: string): string {
   const typeMap: Record<string, string> = {
-    basket_cakes: "Basket Cakes",
-    midume: "Midume",
+    big_cakes: "Big Cakes",
     small_cakes: "Small Cakes",
-    large_cakes: "Large Cakes",
-    custom: "Custom",
+    others: "Others",
   };
   return typeMap[type] || type;
 }
@@ -527,32 +525,20 @@ const Orders = () => {
     order: Order,
     bakery: Bakery & { regions?: string[] },
   ): { valid: boolean; reason?: string } => {
-    // 1. Check if bakery supports the order's cartType
-    const orderCartType = (order as Record<string, unknown>).cartType as
-      | string
-      | undefined;
-    if (orderCartType && bakery.types) {
-      const bakeryTypeMap: Record<string, BakeryType[]> = {
-        big_cakes: ["large_cakes"],
-        small_cakes: ["small_cakes"],
-        others: ["others"],
-      };
-
-      const requiredTypes = bakeryTypeMap[orderCartType];
-      const hasRequiredType =
-        requiredTypes &&
-        requiredTypes.some((type) => bakery.types.includes(type));
+    // 1. Check if bakery supports the order's type (STRICT TYPE MATCHING)
+    if (order.type && bakery.types) {
+      const hasRequiredType = bakery.types.includes(order.type);
 
       if (!hasRequiredType) {
         return {
           valid: false,
-          reason: `Bakery doesn't support ${orderCartType} orders`,
+          reason: `Bakery only handles ${bakery.types.join(", ")} orders, not ${order.type}`,
         };
       }
     }
 
     // 2. Check if bakery is in the same region
-    const orderRegion = (order as Record<string, unknown>).regionName as
+    const orderRegion = (order as Record<string, unknown>).region as
       | string
       | undefined;
     if (orderRegion && bakery.regions) {
@@ -566,18 +552,12 @@ const Orders = () => {
     }
 
     // 3. Check available capacity
-    const orderCapacity =
-      ((order as Record<string, unknown>).totalCapacity as number) ||
-      order.capacitySlots ||
-      0;
+    const orderCapacity = order.capacitySlots || 0;
     const currentBakeryOrders = orders.filter(
       (o) => o.assignedBakeryId === bakery.id,
     );
     const usedCapacity = currentBakeryOrders.reduce((sum, o) => {
-      const capacity =
-        ((o as Record<string, unknown>).totalCapacity as number) ||
-        o.capacitySlots ||
-        0;
+      const capacity = o.capacitySlots || 0;
       return sum + capacity;
     }, 0);
 
@@ -823,7 +803,7 @@ const Orders = () => {
             "hidden lg:flex lg:flex-col lg:relative",
             // Mobile: slides in/out from right
             isSidebarOpen &&
-              "!flex !fixed right-0 top-16 h-[calc(100vh-4rem)] z-40 w-full max-w-xs flex-col",
+              "flex! fixed! right-0 top-16 h-[calc(100vh-4rem)] z-40 w-full max-w-xs flex-col",
           )}
         >
           <OrdersSidebarRight onClose={() => setIsSidebarOpen(false)} />
