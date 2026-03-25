@@ -215,7 +215,7 @@ export function ItemDetailModal({
             ) : null}
 
             {/* Predesigned Cake Specific Details */}
-            {item.predesignedCakeId && (
+            {item.predesignedCakeId ? (
               <>
                 <Separator />
                 <div className="space-y-3">
@@ -295,10 +295,10 @@ export function ItemDetailModal({
                     )}
                 </div>
               </>
-            )}
+            ) : null}
 
             {/* Sweets Specific Details */}
-            {item.sweetId && (
+            {item.sweetId ? (
               <>
                 <Separator />
                 <div className="space-y-3">
@@ -319,7 +319,7 @@ export function ItemDetailModal({
                   )}
                 </div>
               </>
-            )}
+            ) : null}
 
             {/* Tag Information */}
             {typeof itemData.tagName === "string" && (
@@ -335,7 +335,7 @@ export function ItemDetailModal({
             )}
 
             {/* Selected Options */}
-            {item.selectedOptions && (
+            {item.selectedOptions ? (
               <>
                 <Separator />
                 <div className="space-y-2">
@@ -345,7 +345,7 @@ export function ItemDetailModal({
                   </pre>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
         </ScrollArea>
 
