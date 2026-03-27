@@ -2,6 +2,7 @@ import { useState, useEffect, memo, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { createPortal } from "react-dom";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
 import { LocationMap } from "@/components/location-map";
@@ -402,7 +403,10 @@ function CancellationDialog({
     }
   };
 
-  return (
+  // Render the dialog into a portal so it's centered in the viewport
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className={cn(
         "fixed inset-0 z-50 flex items-center justify-center transition-all duration-200",
@@ -449,7 +453,8 @@ function CancellationDialog({
           </Button>
         </div>
       </Card>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -829,30 +834,33 @@ export default function BakeryOrdersPage() {
     [bakeryOrders, id, setBakeryOrders, updateOrder],
   );
 
-  const handleDecline = async (orderId: string, reason: string) => {
-    try {
-      // Call the unassign-bakery endpoint with the reason
-      const response = await orderApi.unassignFromBakery(orderId, reason);
+  const handleDecline = useCallback(
+    async (orderId: string, reason: string) => {
+      try {
+        // Call the unassign-bakery endpoint with the reason
+        const response = await orderApi.unassignFromBakery(orderId, reason);
 
-      if (response.success) {
-        // Remove the order from the bakery orders list
-        const updatedOrders = bakeryOrders.filter(
-          (order) => order.id !== orderId,
-        ) as Order[];
+        if (response.success) {
+          // Remove the order from the bakery orders list
+          const updatedOrders = bakeryOrders.filter(
+            (order) => order.id !== orderId,
+          ) as Order[];
 
-        // Update both local state and store
-        setBakeryOrdersLocal(updatedOrders);
-        if (id) setBakeryOrders(id, updatedOrders);
+          // Update both local state and store
+          setBakeryOrdersLocal(updatedOrders);
+          if (id) setBakeryOrders(id, updatedOrders);
 
-        // Reset selected order if it's the one being removed
-        if (selectedOrderId === orderId) {
-          setSelectedOrderId(null);
+          // Reset selected order if it's the one being removed
+          if (selectedOrderId === orderId) {
+            setSelectedOrderId(null);
+          }
         }
+      } catch (error) {
+        console.error("Failed to unassign order from bakery:", error);
       }
-    } catch (error) {
-      console.error("Failed to unassign order from bakery:", error);
-    }
-  };
+    },
+    [bakeryOrders, id, setBakeryOrders, selectedOrderId],
+  );
 
   // const handleQualityCheck = (checkId: string, checked: boolean) => {
   //   setQualityChecks((prev) => ({ ...prev, [checkId]: checked }));
@@ -964,6 +972,7 @@ export default function BakeryOrdersPage() {
       );
     };
   }, [
+    selectedOrder,
     selectedOrder?.id,
     selectedOrder?.status,
     selectedOrder?.assigningDate,

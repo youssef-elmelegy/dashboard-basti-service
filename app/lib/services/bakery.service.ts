@@ -58,6 +58,14 @@ export interface BakeryItemStore {
   regionItemPriceId: string;
   stock: number;
   price: string;
+  optionsStock?: Array<{
+    optionId: string;
+    stock: number;
+    label?: string;
+    value?: string;
+    type?: string;
+    imageUrl?: string | null;
+  }>;
   sizesPrices?: Record<string, string> | null;
   addonId?: string | null;
   featuredCakeId?: string | null;
@@ -135,15 +143,22 @@ export const bakeryApi = {
 
   /**
    * Update stock for a bakery item store
+   * Can accept either a number (for simple items) or an object with stock and optionsStock (for addons)
    */
   updateItemStock: (
     bakeryId: string,
     storeId: string,
-    stock: number,
+    payload:
+      | number
+      | {
+          stock: number;
+          optionsStock?: Array<{ optionId: string; stock: number }>;
+        },
   ): Promise<ApiResponse<BakeryItemStore>> => {
+    const body = typeof payload === "number" ? { stock: payload } : payload;
     return apiClient.patch<BakeryItemStore>(
       `/bakeries/${bakeryId}/items/${storeId}/stock`,
-      { stock },
+      body,
     );
   },
 };

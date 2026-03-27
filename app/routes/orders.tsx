@@ -626,7 +626,7 @@ const Orders = () => {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveOrder(null);
 
@@ -654,8 +654,47 @@ const Orders = () => {
         return; // Don't allow drop on incompatible bakery
       }
 
-      // Dropping on a bakery column - call API to assign
-      assignOrderToBakery(activeId, overBakery.id);
+      // --- Optimistic update: snapshot previous state ---
+      const prevPositions = { ...orderPositions };
+      const prevAssigned = {
+        assignedBakeryId: activeOrder.assignedBakeryId,
+        assignedBakeryName: activeOrder.assignedBakeryName,
+        assignedAt: activeOrder.assignedAt,
+      };
+
+      // Place the order at the end of the target bakery list locally
+      const targetListLength = (bakeryOrders[overBakery.id] || []).length;
+      const newPositions = { ...orderPositions };
+      newPositions[activeId] = targetListLength;
+      // Decrement indices in source bakery if needed
+      if (activeOrder.assignedBakeryId) {
+        const sourceList = bakeryOrders[activeOrder.assignedBakeryId] || [];
+        sourceList.forEach((o) => {
+          if (o.id === activeId) return; // skip the moved one
+          // compact indices if necessary
+          const pos = newPositions[o.id];
+          if (typeof pos === "number" && pos > (prevPositions[activeId] || 0)) {
+            newPositions[o.id] = pos - 1;
+          }
+        });
+      }
+
+      // Apply optimistic local changes
+      updateOrder(activeId, {
+        assignedBakeryId: overBakery.id,
+        assignedBakeryName: overBakery.name || "",
+        assignedAt: new Date().toISOString(),
+      });
+      setOrderPositions(newPositions);
+
+      // Call API and revert on failure
+      const ok = await assignOrderToBakery(activeId, overBakery.id);
+      if (!ok) {
+        console.error("Assign API failed, reverting optimistic update");
+        // revert assignment and positions
+        updateOrder(activeId, prevAssigned);
+        setOrderPositions(prevPositions);
+      }
     } else if (overOrder && overOrder.assignedBakeryId) {
       // Dropping on another order - reorder within the same bakery
       const bakeryId = overOrder.assignedBakeryId;
@@ -685,8 +724,43 @@ const Orders = () => {
             return;
           }
 
-          // Call API to assign order to bakery
-          assignOrderToBakery(activeId, bakery.id);
+          // --- Optimistic assign + API call ---
+          const prevPositions = { ...orderPositions };
+          const prevAssigned = {
+            assignedBakeryId: activeOrder.assignedBakeryId,
+            assignedBakeryName: activeOrder.assignedBakeryName,
+            assignedAt: activeOrder.assignedAt,
+          };
+
+          // Place at target index (where overOrder is)
+          const targetBakeryList = bakeryOrders[bakeryId] || [];
+          const targetIndex = targetBakeryList.findIndex(
+            (o) => o.id === overId,
+          );
+          const newPositions = { ...orderPositions };
+          // shift others to make room
+          Object.keys(newPositions).forEach((id) => {
+            const pos = newPositions[id];
+            if (typeof pos === "number" && pos >= targetIndex) {
+              newPositions[id] = pos + 1;
+            }
+          });
+          newPositions[activeId] = targetIndex;
+
+          // Apply optimistic change
+          updateOrder(activeId, {
+            assignedBakeryId: bakery.id,
+            assignedBakeryName: bakery.name || "",
+            assignedAt: new Date().toISOString(),
+          });
+          setOrderPositions(newPositions);
+
+          const ok = await assignOrderToBakery(activeId, bakery.id);
+          if (!ok) {
+            console.error("Assign API failed, reverting optimistic update");
+            updateOrder(activeId, prevAssigned);
+            setOrderPositions(prevPositions);
+          }
         }
       }
     } else if (overId === "unassigned-sidebar") {

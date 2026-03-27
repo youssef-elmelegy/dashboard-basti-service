@@ -21,7 +21,12 @@ interface BakeryItemStoreState {
   updateItemStock: (
     bakeryId: string,
     storeId: string,
-    stock: number,
+    payload:
+      | number
+      | {
+          stock: number;
+          optionsStock?: Array<{ optionId: string; stock: number }>;
+        },
   ) => Promise<void>;
   clearItems: () => void;
 }
@@ -82,19 +87,41 @@ export const useBakeryItemStore = create<BakeryItemStoreState>((set, get) => ({
     return get().items.filter((item) => item.bakeryId === bakeryId);
   },
 
-  updateItemStock: async (bakeryId: string, storeId: string, stock: number) => {
+  updateItemStock: async (
+    bakeryId: string,
+    storeId: string,
+    payload:
+      | number
+      | {
+          stock: number;
+          optionsStock?: Array<{
+            optionId: string;
+            stock: number;
+            label?: string;
+            value?: string;
+            type?: string;
+            imageUrl?: string | null;
+          }>;
+        },
+  ) => {
     try {
       const response = await bakeryApi.updateItemStock(
         bakeryId,
         storeId,
-        stock,
+        payload,
       );
 
       if (response.success && response.data) {
         const updatedData = response.data;
         set((state) => ({
           items: state.items.map((item) =>
-            item.id === storeId ? { ...item, stock: updatedData.stock } : item,
+            item.id === storeId
+              ? {
+                  ...item,
+                  stock: updatedData.stock,
+                  optionsStock: updatedData.optionsStock,
+                }
+              : item,
           ),
         }));
       } else {

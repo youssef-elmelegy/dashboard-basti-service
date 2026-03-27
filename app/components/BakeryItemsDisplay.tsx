@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Package } from "lucide-react";
+import { MoreVertical, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import { EditStockDialog } from "./EditStockDialog";
 
 interface BakeryItemsDisplayProps {
@@ -102,6 +102,27 @@ function ItemCard({
   const imageUrl = item.product?.images?.[0];
   const isLowStock = item.stock < 10;
   const isRTL = i18n.language === "ar";
+  const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
+
+  const hasOptions =
+    item.product?.type === "addon" && (item.optionsStock?.length ?? 0) > 0;
+  const currentOption = hasOptions
+    ? (item.optionsStock?.[currentOptionIndex] ?? null)
+    : null;
+
+  const handlePrevOption = () => {
+    const len = item.optionsStock?.length ?? 0;
+    if (hasOptions && len > 0) {
+      setCurrentOptionIndex((prev) => (prev === 0 ? len - 1 : prev - 1));
+    }
+  };
+
+  const handleNextOption = () => {
+    const len = item.optionsStock?.length ?? 0;
+    if (hasOptions && len > 0) {
+      setCurrentOptionIndex((prev) => (prev === len - 1 ? 0 : prev + 1));
+    }
+  };
 
   return (
     <div
@@ -188,27 +209,108 @@ function ItemCard({
         </div>
 
         {/* Stock Info */}
-        <div className="space-y-1">
-          <div
-            className={cn(
-              "flex items-center",
-              isRTL
-                ? "flex-row-reverse justify-start gap-2"
-                : "justify-between",
-            )}
-          >
-            <span className="text-xs text-muted-foreground">
-              {t("bakeriesManagement.stock")}:
-            </span>
-            <span
+        <div className="space-y-2">
+          {/* Show total stock only for non-addon items or addons without options */}
+          {item.product?.type !== "addon" || !item.optionsStock?.length ? (
+            <div
               className={cn(
-                "text-sm font-semibold",
-                isLowStock ? "text-destructive" : "text-foreground",
+                "flex items-center",
+                isRTL
+                  ? "flex-row-reverse justify-start gap-2"
+                  : "justify-between",
               )}
             >
-              {item.stock}
-            </span>
-          </div>
+              <span className="text-xs text-muted-foreground">
+                {t("bakeriesManagement.stock")}:
+              </span>
+              <span
+                className={cn(
+                  "text-sm font-semibold",
+                  isLowStock ? "text-destructive" : "text-foreground",
+                )}
+              >
+                {item.stock}
+              </span>
+            </div>
+          ) : null}
+
+          {/* Show horizontal options stock for addons with options */}
+          {hasOptions && (
+            <div className="space-y-2">
+              <span className="text-xs text-muted-foreground block">
+                {t("bakeriesManagement.optionsStock")}:
+              </span>
+
+              {/* Single Option Carousel */}
+              <div className="flex items-center gap-2">
+                {/* Previous Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 shrink-0"
+                  onClick={handlePrevOption}
+                  disabled={(item.optionsStock?.length ?? 0) <= 1}
+                >
+                  {isRTL ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4" />
+                  )}
+                </Button>
+
+                {/* Option Display */}
+                {currentOption && (
+                  <div className="flex-1 flex items-center gap-2 bg-muted/50 rounded p-2">
+                    {/* Option Image */}
+                    {currentOption.imageUrl ? (
+                      <img
+                        src={currentOption.imageUrl}
+                        alt={currentOption.label}
+                        className="w-8 h-8 rounded object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Option Info */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium truncate flex-1">
+                          {currentOption.label}
+                        </span>
+                        <span className="text-sm font-semibold text-primary shrink-0">
+                          {currentOption.stock}
+                        </span>
+                      </div>
+                      {(item.optionsStock?.length ?? 0) > 1 && (
+                        <p className="text-xs text-muted-foreground leading-tight">
+                          {currentOptionIndex + 1} /{" "}
+                          {item.optionsStock?.length ?? 0}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Next Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 shrink-0"
+                  onClick={handleNextOption}
+                  disabled={(item.optionsStock?.length ?? 0) <= 1}
+                >
+                  {isRTL ? (
+                    <ChevronLeft className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

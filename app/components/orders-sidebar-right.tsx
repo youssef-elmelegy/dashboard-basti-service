@@ -186,8 +186,9 @@ export function OrdersSidebarRight({
   const sortedOrders = React.useMemo(() => {
     if (!sortDir) return filteredOrders;
     return [...filteredOrders].sort((a, b) => {
-      const aTime = new Date(a.deliverDay).getTime();
-      const bTime = new Date(b.deliverDay).getTime();
+      // Sort by order creation time (API's createdAt mapped to `orderedAt`)
+      const aTime = new Date(a.orderedAt || a.deliverDay).getTime();
+      const bTime = new Date(b.orderedAt || b.deliverDay).getTime();
       return sortDir === "asc" ? aTime - bTime : bTime - aTime;
     });
   }, [filteredOrders, sortDir]);
@@ -230,7 +231,7 @@ export function OrdersSidebarRight({
                 e.stopPropagation();
                 onClose();
               }}
-              className="lg:hidden flex-shrink-0 p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
+              className="lg:hidden shrink-0 p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
               title={t("common.close")}
             >
               <X className="w-5 h-5" />
