@@ -22,33 +22,35 @@ export function ProductSearchResults({
   onLoadMore,
 }: ProductSearchResultsProps) {
   const resultsContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Load more products on scroll
+  // Load more products on scroll using Intersection Observer
   useEffect(() => {
-    const container = resultsContainerRef.current;
-    if (!container || !hasMore || isLoading) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore || isLoading) return;
 
-    const handleScroll = () => {
-      const sheetContent = container.closest("[class*='overflow-y-auto']");
-      if (!sheetContent) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && hasMore && !isLoading) {
+            console.log("Loading more products...");
+            onLoadMore();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "200px",
+        threshold: 0,
+      },
+    );
 
-      if (
-        sheetContent.scrollHeight -
-          sheetContent.scrollTop -
-          sheetContent.clientHeight <
-        200
-      ) {
-        onLoadMore();
-      }
+    observer.observe(sentinel);
+
+    return () => {
+      observer.unobserve(sentinel);
+      observer.disconnect();
     };
-
-    const sheetContent = container.closest(
-      "[class*='overflow-y-auto']",
-    ) as HTMLElement;
-    if (sheetContent) {
-      sheetContent.addEventListener("scroll", handleScroll);
-      return () => sheetContent.removeEventListener("scroll", handleScroll);
-    }
   }, [hasMore, isLoading, onLoadMore]);
 
   return (
@@ -101,6 +103,9 @@ export function ProductSearchResults({
               </div>
             </div>
           ))}
+
+          {/* Sentinel element for infinite scroll */}
+          {hasMore && <div ref={sentinelRef} className="py-2" />}
         </div>
       )}
 
