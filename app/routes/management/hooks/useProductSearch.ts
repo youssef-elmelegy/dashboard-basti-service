@@ -26,14 +26,15 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-function extractPaginationInfo(data: any): PaginationInfo | null {
+function extractPaginationInfo(data: unknown): PaginationInfo | null {
   // Handle pagination at root level (featured-cakes, addons, sweets, predesigned)
   if (data && typeof data === "object" && "totalPages" in data) {
-    const info = {
-      total: data.total || 0,
-      totalPages: data.totalPages || 1,
-      page: data.page || 1,
-      limit: data.limit || 10,
+    const obj = data as Record<string, unknown>;
+    const info: PaginationInfo = {
+      total: typeof obj.total === "number" ? obj.total : 0,
+      totalPages: typeof obj.totalPages === "number" ? obj.totalPages : 1,
+      page: typeof obj.page === "number" ? obj.page : 1,
+      limit: typeof obj.limit === "number" ? obj.limit : 10,
     };
     console.log("[Pagination] Root level:", info);
     return info;
@@ -41,12 +42,14 @@ function extractPaginationInfo(data: any): PaginationInfo | null {
 
   // Handle pagination in nested pagination object (decorations, predesigned-cakes)
   if (data && typeof data === "object" && "pagination" in data) {
-    const pagination = data.pagination;
-    const info = {
-      total: pagination.total || 0,
-      totalPages: pagination.totalPages || 1,
-      page: pagination.page || 1,
-      limit: pagination.limit || 10,
+    const obj = data as Record<string, unknown>;
+    const pagination = obj.pagination as Record<string, unknown>;
+    const info: PaginationInfo = {
+      total: typeof pagination.total === "number" ? pagination.total : 0,
+      totalPages:
+        typeof pagination.totalPages === "number" ? pagination.totalPages : 1,
+      page: typeof pagination.page === "number" ? pagination.page : 1,
+      limit: typeof pagination.limit === "number" ? pagination.limit : 10,
     };
     console.log("[Pagination] Nested object:", info);
     return info;
@@ -56,21 +59,21 @@ function extractPaginationInfo(data: any): PaginationInfo | null {
   return null;
 }
 
-function extractProducts(data: any): ProductData[] {
+function extractProducts(data: unknown): ProductData[] {
   if (!data) return [];
 
   // Handle items array with pagination info
   if (
     typeof data === "object" &&
     "items" in data &&
-    Array.isArray(data.items)
+    Array.isArray((data as Record<string, unknown>).items)
   ) {
-    return data.items;
+    return (data as Record<string, unknown>).items as ProductData[];
   }
 
   // Handle direct array response (shapes)
   if (Array.isArray(data)) {
-    return data;
+    return data as ProductData[];
   }
 
   // Handle single item
@@ -88,7 +91,6 @@ export function useProductSearch(
   const [results, setResults] = useState<ProductData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
   // Fetch products based on type and search query
@@ -96,7 +98,6 @@ export function useProductSearch(
     if (!productType) {
       setResults([]);
       setCurrentPage(1);
-      setTotalPages(1);
       setHasMore(false);
       return;
     }
@@ -125,7 +126,6 @@ export function useProductSearch(
         setCurrentPage(1);
 
         if (paginationInfo) {
-          setTotalPages(paginationInfo.totalPages);
           const shouldHaveMore = 1 < paginationInfo.totalPages;
           console.log(
             `[FetchResults] Page 1 < totalPages ${paginationInfo.totalPages} = hasMore: ${shouldHaveMore}`,
@@ -133,14 +133,12 @@ export function useProductSearch(
           setHasMore(shouldHaveMore);
         } else {
           // For responses without pagination info, assume single page
-          setTotalPages(1);
           setHasMore(false);
         }
       } catch (error) {
         console.error("[FetchResults] Search failed:", error);
         setResults([]);
         setCurrentPage(1);
-        setTotalPages(1);
         setHasMore(false);
       } finally {
         setIsLoading(false);
@@ -194,14 +192,12 @@ export function useProductSearch(
       setCurrentPage(nextPage);
 
       if (paginationInfo) {
-        setTotalPages(paginationInfo.totalPages);
         const shouldHaveMore = nextPage < paginationInfo.totalPages;
         console.log(
           `[LoadMore] Page ${nextPage} < totalPages ${paginationInfo.totalPages} = hasMore: ${shouldHaveMore}`,
         );
         setHasMore(shouldHaveMore);
       } else {
-        setTotalPages(1);
         setHasMore(false);
       }
     } catch (error) {
