@@ -150,7 +150,16 @@ function SortableOrderCard({ order }: { order: Order }) {
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <CalendarIcon className="w-3 h-3" />
-                <span>{format(new Date(order.deliverDay), "MMM d")}</span>
+                <span>
+                  {(() => {
+                    const dateStr = order.orderedAt || order.deliverDay;
+                    try {
+                      return format(new Date(dateStr), "MMM d");
+                    } catch {
+                      return "-";
+                    }
+                  })()}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <Package className="w-3 h-3" />
@@ -407,6 +416,7 @@ const Orders = () => {
   );
   const [hasInitialized, setHasInitialized] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
 
   // Fetch bakeries and orders only once on mount
   useEffect(() => {
@@ -500,13 +510,25 @@ const Orders = () => {
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        console.error("Failed to assign order:", error);
+        // Try to surface API error message to the UI
+        let errorMsg = "Failed to assign order";
+        try {
+          const errorData = await response.json();
+          if (errorData && typeof errorData.message === "string") {
+            errorMsg = errorData.message;
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+        console.error("Failed to assign order:", errorMsg);
+        setAssignError(errorMsg);
         return false;
       }
 
       const result = await response.json();
       // Update local store with the response
+      // Clear any previous assign error on success
+      setAssignError(null);
       const bakery = bakeries.find((b) => b.id === bakeryId);
       updateOrder(orderId, {
         assignedBakeryId: result.data.bakeryId,
@@ -516,6 +538,9 @@ const Orders = () => {
       return true;
     } catch (error) {
       console.error("Error assigning order:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to assign order";
+      setAssignError(message);
       return false;
     }
   };
@@ -795,6 +820,18 @@ const Orders = () => {
               {t("orders.title")}
             </h1>
             <p className="text-muted-foreground">{t("orders.description")}</p>
+            {assignError && (
+              <div className="rounded-md bg-red-50 p-3 mt-4 text-sm text-red-800 flex items-start justify-between">
+                <div className="mr-4">{assignError}</div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setAssignError(null)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Loading Indicator */}
@@ -917,7 +954,15 @@ const Orders = () => {
                   <div className="flex items-center gap-1">
                     <CalendarIcon className="w-3 h-3" />
                     <span>
-                      {format(new Date(activeOrder.deliverDay), "MMM d")}
+                      {(() => {
+                        const dateStr =
+                          activeOrder.orderedAt || activeOrder.deliverDay;
+                        try {
+                          return format(new Date(dateStr), "MMM d");
+                        } catch {
+                          return "-";
+                        }
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">

@@ -34,6 +34,25 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Normalize selectedOptions which may come as JSON string, null, or already an array
+function parseSelectedOptions(value: unknown): OrderItem["selectedOptions"] {
+  if (!value) return undefined;
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(parsed)) return undefined;
+
+    return parsed.map((opt) => ({
+      type: String(opt.type ?? ""),
+      label: String(opt.label ?? ""),
+      value: String(opt.value ?? ""),
+      imageUrl: String(opt.imageUrl ?? opt.image ?? ""),
+      optionId: String(opt.optionId ?? opt.id ?? ""),
+    }));
+  } catch {
+    return undefined;
+  }
+}
+
 const statusColors = {
   pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   confirmed: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -530,7 +549,14 @@ function OrderSidebarCard({
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                {format(new Date(order.deliverDay), "MMM d")}
+                {(() => {
+                  const dateStr = (order as any).orderedAt || order.deliverDay;
+                  try {
+                    return format(new Date(dateStr), "MMM d");
+                  } catch {
+                    return "-";
+                  }
+                })()}
               </span>
               <span>{order.capacitySlots} slots</span>
             </div>
@@ -660,22 +686,42 @@ export default function BakeryOrdersPage() {
                 ...(apiOrder.addons || []).map((item) => ({
                   ...item,
                   type: "addon" as const,
+                  selectedOptions: parseSelectedOptions(
+                    (item as any).selectedOptions ??
+                      (item as any).selected_options,
+                  ),
                 })),
                 ...(apiOrder.sweets || []).map((item) => ({
                   ...item,
                   type: "sweet" as const,
+                  selectedOptions: parseSelectedOptions(
+                    (item as any).selectedOptions ??
+                      (item as any).selected_options,
+                  ),
                 })),
                 ...(apiOrder.featuredCakes || []).map((item) => ({
                   ...item,
                   type: "featured_cake" as const,
+                  selectedOptions: parseSelectedOptions(
+                    (item as any).selectedOptions ??
+                      (item as any).selected_options,
+                  ),
                 })),
                 ...(apiOrder.predesignedCakes || []).map((item) => ({
                   ...item,
                   type: "predesigned_cake" as const,
+                  selectedOptions: parseSelectedOptions(
+                    (item as any).selectedOptions ??
+                      (item as any).selected_options,
+                  ),
                 })),
                 ...(apiOrder.customCakes || []).map((item) => ({
                   ...item,
                   type: "custom_cake" as const,
+                  selectedOptions: parseSelectedOptions(
+                    (item as any).selectedOptions ??
+                      (item as any).selected_options,
+                  ),
                 })),
               ];
 
@@ -728,11 +774,17 @@ export default function BakeryOrdersPage() {
                 deliveryLongitude: apiOrder.locationData?.longitude,
                 assigningDate: apiOrder.assigningDate,
                 orderItems,
-                addons: apiOrder.addons,
-                sweets: apiOrder.sweets,
-                featuredCakes: apiOrder.featuredCakes,
-                predesignedCakes: apiOrder.predesignedCakes,
-                customCakes: apiOrder.customCakes,
+                addons: orderItems.filter((it) => it.type === "addon"),
+                sweets: orderItems.filter((it) => it.type === "sweet"),
+                featuredCakes: orderItems.filter(
+                  (it) => it.type === "featured_cake",
+                ),
+                predesignedCakes: orderItems.filter(
+                  (it) => it.type === "predesigned_cake",
+                ),
+                customCakes: orderItems.filter(
+                  (it) => it.type === "custom_cake",
+                ),
                 cardMessage: apiOrder.cardMessage
                   ? (() => {
                       try {
@@ -1110,20 +1162,28 @@ export default function BakeryOrdersPage() {
                           // Determine item type and get image
                           const itemType = item.type || "addon";
                           const isCustomCake = itemType === "custom_cake";
+                          const isAddon = itemType === "addon";
                           const itemData = item.data as Record<string, unknown>;
 
                           // Get image from different sources based on item type
-                          const imageUrl = isCustomCake
-                            ? (typeof itemData?.snapshotFront === "string" &&
-                                itemData.snapshotFront) ||
-                              (typeof itemData?.snapshotTop === "string" &&
-                                itemData.snapshotTop) ||
-                              ""
-                            : (Array.isArray(itemData?.images) &&
-                                (itemData.images[0] as string)) ||
-                              (typeof itemData?.thumbnailUrl === "string" &&
-                                itemData.thumbnailUrl) ||
-                              "";
+                          // For add-ons with selectedOptions, use the option image
+                          const imageUrl =
+                            isAddon &&
+                            Array.isArray(item.selectedOptions) &&
+                            item.selectedOptions.length > 0
+                              ? item.selectedOptions[0].imageUrl
+                              : isCustomCake
+                                ? (typeof itemData?.snapshotFront ===
+                                    "string" &&
+                                    itemData.snapshotFront) ||
+                                  (typeof itemData?.snapshotTop === "string" &&
+                                    itemData.snapshotTop) ||
+                                  ""
+                                : (Array.isArray(itemData?.images) &&
+                                    (itemData.images[0] as string)) ||
+                                  (typeof itemData?.thumbnailUrl === "string" &&
+                                    itemData.thumbnailUrl) ||
+                                  "";
 
                           const itemName = isCustomCake
                             ? "Custom Cake"
@@ -1346,7 +1406,10 @@ export default function BakeryOrdersPage() {
                         </span>
                         <p className="text-sm font-medium">
                           {format(
-                            new Date(selectedOrder.deliverDay),
+                            new Date(
+                              selectedOrder.orderedAt ||
+                                selectedOrder.deliverDay,
+                            ),
                             "EEEE, MMMM d, yyyy",
                           )}
                         </p>

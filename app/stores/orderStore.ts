@@ -11,7 +11,7 @@
  */
 
 import { create } from "zustand";
-import { ORDERS_DATA, type Order } from "@/data/orders";
+import { ORDERS_DATA, type Order, type OrderItem } from "@/data/orders";
 import {
   orderApi,
   type OrderResponse,
@@ -64,13 +64,61 @@ const ORDER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
  * Convert API response to internal Order format
  */
 function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
-  // Combine all items from different categories
+  // Helper to normalize selectedOptions coming from API
+  function parseSelectedOptions(value: unknown): OrderItem["selectedOptions"] {
+    if (!value) return undefined;
+    try {
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
+      if (!Array.isArray(parsed)) return undefined;
+
+      return parsed.map((opt: any) => ({
+        type: String(opt.type ?? ""),
+        label: String(opt.label ?? ""),
+        value: String(opt.value ?? ""),
+        imageUrl: String(opt.imageUrl ?? opt.image ?? ""),
+        optionId: String(opt.optionId ?? opt.id ?? ""),
+      }));
+    } catch (e) {
+      return undefined;
+    }
+  }
+  // Combine and normalize items from different categories
   const orderItems = [
-    ...(apiOrder.addons || []),
-    ...(apiOrder.sweets || []),
-    ...(apiOrder.featuredCakes || []),
-    ...(apiOrder.predesignedCakes || []),
-    ...(apiOrder.customCakes || []),
+    ...(apiOrder.addons || []).map((it) => ({
+      ...it,
+      type: "addon" as const,
+      selectedOptions: parseSelectedOptions(
+        (it as any).selectedOptions ?? (it as any).selected_options,
+      ),
+    })),
+    ...(apiOrder.sweets || []).map((it) => ({
+      ...it,
+      type: "sweet" as const,
+      selectedOptions: parseSelectedOptions(
+        (it as any).selectedOptions ?? (it as any).selected_options,
+      ),
+    })),
+    ...(apiOrder.featuredCakes || []).map((it) => ({
+      ...it,
+      type: "featured_cake" as const,
+      selectedOptions: parseSelectedOptions(
+        (it as any).selectedOptions ?? (it as any).selected_options,
+      ),
+    })),
+    ...(apiOrder.predesignedCakes || []).map((it) => ({
+      ...it,
+      type: "predesigned_cake" as const,
+      selectedOptions: parseSelectedOptions(
+        (it as any).selectedOptions ?? (it as any).selected_options,
+      ),
+    })),
+    ...(apiOrder.customCakes || []).map((it) => ({
+      ...it,
+      type: "custom_cake" as const,
+      selectedOptions: parseSelectedOptions(
+        (it as any).selectedOptions ?? (it as any).selected_options,
+      ),
+    })),
   ];
 
   // Get first featured cake image safely
@@ -109,13 +157,20 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
     keepAnonymous: apiOrder.keepAnonymous,
     deliveryLatitude: apiOrder.locationData?.latitude,
     deliveryLongitude: apiOrder.locationData?.longitude,
-    // Include all order items with type casting
-    orderItems: orderItems as any,
-    addons: apiOrder.addons as any,
-    sweets: apiOrder.sweets as any,
-    featuredCakes: apiOrder.featuredCakes as any,
-    predesignedCakes: apiOrder.predesignedCakes as any,
-    customCakes: apiOrder.customCakes as any,
+    // Include all order items
+    orderItems: orderItems as OrderItem[],
+    // Derive typed category lists from normalized orderItems
+    addons: orderItems.filter((it) => it.type === "addon") as OrderItem[],
+    sweets: orderItems.filter((it) => it.type === "sweet") as OrderItem[],
+    featuredCakes: orderItems.filter(
+      (it) => it.type === "featured_cake",
+    ) as OrderItem[],
+    predesignedCakes: orderItems.filter(
+      (it) => it.type === "predesigned_cake",
+    ) as OrderItem[],
+    customCakes: orderItems.filter(
+      (it) => it.type === "custom_cake",
+    ) as OrderItem[],
     // Card details - parse from JSON strings
     cardMessage: apiOrder.cardMessage
       ? (() => {
@@ -242,99 +297,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (response.success && response.data) {
         // Convert API responses to internal Order format
-        const bakeryOrdersList = response.data.map(
-          (apiOrder: OrderResponse) => {
-            const orderItems = [
-              ...(apiOrder.addons || []),
-              ...(apiOrder.sweets || []),
-              ...(apiOrder.featuredCakes || []),
-              ...(apiOrder.predesignedCakes || []),
-              ...(apiOrder.customCakes || []),
-            ];
-
-            const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
-              ? apiOrder.featuredCakes
-              : [];
-            const firstFeaturedImage =
-              featuredCakesArray.length > 0 &&
-              featuredCakesArray[0]?.data?.images
-                ? (featuredCakesArray[0].data.images as string[])[0]
-                : "";
-
-            return {
-              id: apiOrder.id,
-              referenceNumber: apiOrder.referenceNumber,
-              customerName:
-                apiOrder.userData?.firstName +
-                " " +
-                apiOrder.userData?.lastName,
-              customerPhone: apiOrder.userData?.phoneNumber,
-              customerEmail: apiOrder.userData?.email,
-              type:
-                (apiOrder.cartType as
-                  | "basket_cakes"
-                  | "midume"
-                  | "small_cakes"
-                  | "large_cakes"
-                  | "custom") || "basket_cakes",
-              productName: apiOrder.cartType || "Custom Order",
-              productImage: firstFeaturedImage || "",
-              basePrice: apiOrder.totalPrice,
-              totalPrice: apiOrder.finalPrice,
-              deliveryLocation: apiOrder.locationData?.description || "",
-              region: apiOrder.regionName,
-              deliverDay: apiOrder.willDeliverAt,
-              orderedAt: apiOrder.createdAt,
-              status: apiOrder.orderStatus as any,
-              capacitySlots: apiOrder.totalCapacity,
-              assignedBakeryId: apiOrder.bakeryId || undefined,
-              specialRequests: apiOrder.deliveryNote || undefined,
-              deliveryNote: apiOrder.deliveryNote || undefined,
-              keepAnonymous: apiOrder.keepAnonymous,
-              deliveryLatitude: apiOrder.locationData?.latitude,
-              deliveryLongitude: apiOrder.locationData?.longitude,
-              orderItems,
-              addons: apiOrder.addons,
-              sweets: apiOrder.sweets,
-              featuredCakes: apiOrder.featuredCakes,
-              predesignedCakes: apiOrder.predesignedCakes,
-              customCakes: apiOrder.customCakes,
-              cardMessage: apiOrder.cardMessage
-                ? (() => {
-                    try {
-                      const parsed =
-                        typeof apiOrder.cardMessage === "string"
-                          ? JSON.parse(apiOrder.cardMessage)
-                          : apiOrder.cardMessage;
-                      return {
-                        to: parsed.to,
-                        from: parsed.from,
-                        message: parsed.message,
-                      };
-                    } catch {
-                      return undefined;
-                    }
-                  })()
-                : undefined,
-              recipientData: apiOrder.recipientData
-                ? (() => {
-                    try {
-                      const parsed =
-                        typeof apiOrder.recipientData === "string"
-                          ? JSON.parse(apiOrder.recipientData)
-                          : apiOrder.recipientData;
-                      return {
-                        name: parsed.name,
-                        email: parsed.email,
-                        phoneNumber: parsed.phoneNumber,
-                      };
-                    } catch {
-                      return undefined;
-                    }
-                  })()
-                : undefined,
-            } as Order;
-          },
+        const bakeryOrdersList = response.data.map((apiOrder: OrderResponse) =>
+          convertApiResponseToOrder(apiOrder),
         );
 
         // Cache the bakery orders

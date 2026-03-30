@@ -61,6 +61,13 @@ interface CartItem {
   price: number;
   quantity: number;
   name?: string;
+  selectedOptions?: Array<{
+    type: string;
+    label: string;
+    value: string;
+    imageUrl: string;
+    optionId: string;
+  }>;
 }
 
 interface ExtraLayer {
@@ -195,6 +202,7 @@ function cartItemToOrderItem(
           : undefined,
     type: itemType,
     data: (cartItem.data || {}) as Record<string, unknown>,
+    selectedOptions: cartItem.selectedOptions,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -881,7 +889,11 @@ export default function OrderDetailPage() {
                     {order.addons.map((item: CartItem, index: number) => {
                       const itemName =
                         (item.data?.name as string | undefined) || "Add on";
-                      const imageUrl = getFirstImage(item.data) ?? "";
+                      // Use selectedOptions image if available (for add-ons with options)
+                      const imageUrl =
+                        item.selectedOptions && item.selectedOptions.length > 0
+                          ? item.selectedOptions[0].imageUrl
+                          : (getFirstImage(item.data) ?? "");
 
                       return (
                         <div key={item.id} className="border rounded-lg p-4">

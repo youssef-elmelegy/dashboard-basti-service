@@ -40,7 +40,13 @@ export type OrderItem = {
   size?: string | null;
   flavor?: string | null;
   price: number;
-  selectedOptions?: unknown;
+  selectedOptions?: Array<{
+    type: string;
+    label: string;
+    value: string;
+    imageUrl: string;
+    optionId: string;
+  }>;
   createdAt: string;
   updatedAt: string;
   type?: OrderItemType;

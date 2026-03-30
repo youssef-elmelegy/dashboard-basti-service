@@ -4,6 +4,7 @@ import { ArrowLeft, Package, Palette, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageSlider } from "@/components/ImageSlider";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,26 @@ function getCakeSliderImages(item: OrderItem): {
 } {
   const itemData = item.data as Record<string, unknown>;
   const itemType = item.type;
+
+  // For add-ons with selectedOptions, use the option images
+  if (itemType === "addon") {
+    const selectedOptions = Array.isArray(item.selectedOptions)
+      ? item.selectedOptions
+      : undefined;
+    const images: string[] = [];
+    const labels: string[] = [];
+
+    selectedOptions?.forEach((option) => {
+      if (option.imageUrl) {
+        images.push(option.imageUrl);
+        labels.push(`${option.type}: ${option.label}`);
+      }
+    });
+
+    if (images.length > 0) {
+      return { images, labels };
+    }
+  }
 
   // For predesigned cakes, compile all configuration images
   if (itemType === "predesigned_cake" && Array.isArray(itemData.configs)) {
@@ -128,6 +149,9 @@ export default function ItemDetailPage() {
 
   const itemData = item.data as Record<string, unknown>;
   const category = getItemCategory(item);
+  const selectedOptions = Array.isArray(item.selectedOptions)
+    ? item.selectedOptions
+    : undefined;
 
   const handleBackClick = () => {
     if (bakeryId && selectedOrderId) {
@@ -211,7 +235,7 @@ export default function ItemDetailPage() {
                     Order Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1 bg-muted p-4 rounded-lg">
                       <p className="text-xs text-muted-foreground uppercase font-medium">
@@ -242,6 +266,47 @@ export default function ItemDetailPage() {
                       <p className="text-2xl font-bold">${item.price}</p>
                     </div>
                   </div>
+
+                  {/* Selected Options in Order Details */}
+                  {selectedOptions && selectedOptions.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">
+                          Selected Options
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedOptions.map((option) => (
+                            <div
+                              key={option.optionId}
+                              className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-muted-foreground uppercase font-medium">
+                                  {option.type}
+                                </p>
+                                <p className="text-sm font-medium">
+                                  {option.label}
+                                </p>
+                                {option.value && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Value: {option.value}
+                                  </p>
+                                )}
+                              </div>
+                              {option.imageUrl && (
+                                <img
+                                  src={option.imageUrl}
+                                  alt={option.label}
+                                  className="w-12 h-12 rounded ml-3 object-cover border shrink-0"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -327,6 +392,40 @@ export default function ItemDetailPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Add-On Selected Options */}
+              {item.type === "addon" &&
+                selectedOptions &&
+                selectedOptions.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        Selected Options
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {selectedOptions.map((option, idx) => (
+                        <div key={option.optionId}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-muted-foreground uppercase font-medium">
+                              {option.type}
+                            </span>
+                            <Badge variant="secondary">{option.label}</Badge>
+                          </div>
+                          {option.value && (
+                            <div className="text-xs text-muted-foreground mb-2">
+                              Value: {option.value}
+                            </div>
+                          )}
+                          {idx < selectedOptions.length - 1 && (
+                            <Separator className="mt-3" />
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
             </div>
 
             {/* Right Column - Item Images or Custom Cake */}
