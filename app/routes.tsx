@@ -16,6 +16,7 @@ import ChefsPage from "@/routes/management/chefs";
 import AdminsPage from "@/routes/management/admins";
 import SliderImagesPage from "@/routes/management/slider-images";
 import AppConfigPage from "@/routes/management/app-config";
+import TagsPage from "@/routes/management/tags";
 import FeaturedCakesPage from "@/routes/products/featured-cakes";
 import AddOnsPage from "@/routes/products/add-ons";
 import SweetsPage from "@/routes/sweets";
@@ -145,6 +146,10 @@ export const router = createBrowserRouter([
       {
         path: "management/slider-images",
         element: <SliderImagesPage />,
+      },
+      {
+        path: "management/tags",
+        element: <TagsPage />,
       },
       {
         path: "management/app-config",

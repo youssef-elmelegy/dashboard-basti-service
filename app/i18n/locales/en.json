@@ -38,6 +38,8 @@
     "descriptionPlaceholder": "Enter description",
     "add": "Add",
     "update": "Update",
+    "create": "Create",
+    "save": "Save",
     "edit": "Edit",
     "deactivate": "Deactivate",
     "activate": "Activate",
@@ -146,6 +148,18 @@
     "filterByRegion": "Filter by Region",
     "allRegions": "All Regions",
     "sortByTime": "Sort by Time",
+    "sort": {
+      "normal": "Normal",
+      "asc": "Oldest First",
+      "desc": "Newest First"
+    },
+    "filterByType": "Filter by Type",
+    "allTypes": "All Types",
+    "type": {
+      "big_cakes": "Big Cakes",
+      "small_cakes": "Small Cakes",
+      "others": "Others"
+    },
     "filterByDate": "Filter by Date",
     "searchByReference": "Search by Reference",
     "enterReference": "Enter reference number",
@@ -153,7 +167,7 @@
     "used": "used",
     "available": "available",
     "status": "Status",
-    "type": "Type",
+    "typeLabel": "Type",
     "deliveryDate": "Delivery Date",
     "slots": "slots"
   },
@@ -176,6 +190,8 @@
     "orders": "Orders",
     "noOrdersAssigned": "No orders assigned to this bakery",
     "selectOrderDetails": "Select an order to view details",
+    "searchByReference": "Search by Reference",
+    "enterReference": "Enter reference number",
     "productInformation": "Product Information",
     "customerInformation": "Customer",
     "deliveryDetails": "Delivery Details",
@@ -302,6 +318,7 @@
     "namePlaceholder": "e.g., Birthday Card",
     "descriptionPlaceholder": "Describe your add-on...",
     "category": "Category",
+    "selectCategory": "Select category",
     "active": "Active",
     "activeDescription": "Make this add-on available for selection",
     "createAddOn": "Create Add-on",
@@ -554,6 +571,7 @@
     "admins": "Admins",
     "chefs": "Chefs",
     "sliderImages": "Slider Images",
+    "tags": "Tags",
     "appConfig": "App Configuration",
     "featuredCakes": "Featured Cakes",
     "readyCakes": "Ready Cakes",
@@ -661,6 +679,13 @@
     "addFlavor": "Add Flavor",
     "addPalette": "Add Palette",
     "uploadingImage": "Uploading image..."
+  },
+  "tags": {
+    "title": "Tags",
+    "list": "Available Tags",
+    "name": "Name",
+    "displayOrder": "Display Order",
+    "displayOrderExists": "Display order already in use"
   },
   "customCakes": {
     "title": "Custom Cakes",

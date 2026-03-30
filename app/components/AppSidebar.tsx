@@ -11,6 +11,7 @@ import {
   Shapes,
   Flower,
   Film,
+  Tag,
   Settings,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -68,6 +69,11 @@ const AppSidebar = () => {
       title: t("sidebar.sliderImages"),
       url: "/management/slider-images",
       icon: Film,
+    },
+    {
+      title: t("sidebar.tags"),
+      url: "/management/tags",
+      icon: Tag,
     },
     {
       title: t("sidebar.appConfig"),

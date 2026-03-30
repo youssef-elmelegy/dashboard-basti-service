@@ -1,0 +1,280 @@
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Trash2, Edit, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useTagsStore } from "@/stores/tagsStore";
+import { useDeleteDialog } from "@/components/useDeleteDialog";
+
+const formSchema = z.object({
+  name: z.string().min(2).max(100),
+  displayOrder: z.number().int().min(0),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function TagsManagementPage() {
+  const { t } = useTranslation();
+  const tags = useTagsStore((s) => s.tags);
+  const isLoading = useTagsStore((s) => s.isLoading);
+  const isSaving = useTagsStore((s) => s.isSaving);
+  const error = useTagsStore((s) => s.error);
+  const fetchTags = useTagsStore((s) => s.fetchTags);
+  const createTag = useTagsStore((s) => s.createTag);
+  const updateTag = useTagsStore((s) => s.updateTag);
+  const deleteTag = useTagsStore((s) => s.deleteTag);
+  const clearError = useTagsStore((s) => s.clearError);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      displayOrder: 0,
+    },
+  });
+
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  useEffect(() => {
+    if (editingId) {
+      const tag = tags.find((t) => t.id === editingId);
+      if (tag) {
+        form.reset({ name: tag.name, displayOrder: tag.displayOrder });
+      }
+    } else {
+      form.reset({ name: "", displayOrder: 0 });
+    }
+  }, [editingId]);
+
+  // Validate that displayOrder is unique among tags (exclude current editing tag)
+  const watchedDisplayOrder = form.watch("displayOrder");
+  useEffect(() => {
+    const value = watchedDisplayOrder;
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      form.clearErrors("displayOrder");
+      return;
+    }
+
+    const conflict = tags.some(
+      (t) => t.displayOrder === value && t.id !== editingId,
+    );
+    if (conflict) {
+      form.setError("displayOrder", {
+        type: "manual",
+        message: t("tags.displayOrderExists") || "Display order already in use",
+      });
+    } else {
+      form.clearErrors("displayOrder");
+    }
+  }, [watchedDisplayOrder, tags, editingId]);
+
+  const onSubmit = async (values: FormValues) => {
+    if (editingId) {
+      await updateTag(editingId, values);
+      setEditingId(null);
+    } else {
+      await createTag(values);
+    }
+
+    form.reset({ name: "", displayOrder: 0 });
+  };
+
+  const handleEdit = (id: string) => {
+    setEditingId(id);
+  };
+
+  const { openDeleteDialog } = useDeleteDialog();
+
+  const handleDelete = (tag: { id: string; name: string }) => {
+    openDeleteDialog(
+      {
+        title: t("tags.deleteTitle") || "Delete tag",
+        description: (
+          <>
+            {t("tags.deleteDescription")} <strong>{tag.name}</strong>?{" "}
+            {t("common.cannotBeUndone")}
+          </>
+        ),
+        recordName: tag.name,
+        recordType: t("tags.recordType") || "tag",
+      },
+      async () => {
+        try {
+          await deleteTag(tag.id);
+        } catch (err) {
+          console.error("Failed to delete tag:", err);
+        }
+      },
+    );
+  };
+
+  return (
+    <div className="h-full flex flex-col gap-6 w-full">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{t("tags.title") || "Tags"}</h1>
+      </div>
+
+      {error && (
+        <div className="rounded-lg p-4 flex items-start gap-3">
+          <div className="flex-1">
+            <h3 className="font-semibold text-destructive">
+              {t("common.error")}
+            </h3>
+            <p className="text-sm text-destructive/80 mt-1">{error}</p>
+            <button onClick={clearError} className="text-sm underline mt-2">
+              {t("common.dismiss")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg p-6 flex-1 flex flex-col">
+        <div className="grid md:grid-cols-3 gap-6 h-full">
+          <div className="md:col-span-1 h-full">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 h-full"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("tags.name") || "Name"}</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="displayOrder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("tags.displayOrder") || "Display Order"}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="submit"
+                    className="gap-2"
+                    disabled={
+                      isLoading ||
+                      isSaving ||
+                      !!form.formState.errors.displayOrder
+                    }
+                  >
+                    <Save className="w-4 h-4" />{" "}
+                    {editingId ? t("common.save") : t("common.create")}
+                  </Button>
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </Form>
+          </div>
+
+          <div className="md:col-span-2 h-full">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">
+                  {t("tags.list") || "Available Tags"}
+                </h2>
+                <div className="text-sm text-muted-foreground">
+                  {tags.length} items
+                </div>
+              </div>
+
+              <div className="rounded-lg p-2 h-full overflow-y-auto">
+                {isLoading ? (
+                  <div className="p-4 text-sm text-muted-foreground">
+                    Loading...
+                  </div>
+                ) : tags.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground">
+                    No tags
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {tags
+                      .slice()
+                      .sort((a, b) => a.displayOrder - b.displayOrder)
+                      .map((tag) => (
+                        <li
+                          key={tag.id}
+                          className="flex items-center justify-between p-2 rounded"
+                        >
+                          <div>
+                            <div className="font-medium">{tag.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              Order: {tag.displayOrder}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(tag.id)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(tag)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

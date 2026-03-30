@@ -10,6 +10,20 @@ import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import type { Order, OrderItem } from "@/data/orders";
 import { orderApi, type OrderResponse } from "@/lib/services/order.service";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import {
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -638,6 +652,10 @@ export default function BakeryOrdersPage() {
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const autoConfirmedOrders = useRef(new Set<string>());
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sortDir, setSortDir] = useState<"normal" | "asc" | "desc">("normal");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [copiedReference, setCopiedReference] = useState<boolean>(false);
 
   // Fetch bakery details on mount or when id changes
   useEffect(() => {
@@ -1143,12 +1161,36 @@ export default function BakeryOrdersPage() {
                     <CardTitle className="flex items-center gap-2">
                       <Package className="w-5 h-5" />
                       Order Items
-                      {selectedOrder.orderItems &&
-                        selectedOrder.orderItems.length > 0 && (
-                          <Badge variant="secondary" className="ml-auto">
-                            {selectedOrder.orderItems.length}
-                          </Badge>
-                        )}
+                      <div className="ml-auto flex items-center gap-2">
+                        {selectedOrder.orderItems &&
+                          selectedOrder.orderItems.length > 0 && (
+                            <Badge variant="secondary">
+                              {selectedOrder.orderItems.length}
+                            </Badge>
+                          )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const ref =
+                                selectedOrder?.referenceNumber ||
+                                selectedOrder?.id ||
+                                "";
+                              if (!ref) return;
+                              await navigator.clipboard.writeText(String(ref));
+                              setCopiedReference(true);
+                              setTimeout(() => setCopiedReference(false), 2000);
+                            } catch (err) {
+                              console.error("Failed to copy reference:", err);
+                            }
+                          }}
+                          title={copiedReference ? "Copied" : "Copy reference"}
+                        >
+                          {copiedReference ? "Copied" : "Copy Ref"}
+                        </Button>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1761,17 +1803,84 @@ export default function BakeryOrdersPage() {
             : "fixed top-16 right-0 translate-x-full",
         )}
       >
-        <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between">
-          <h2 className="font-semibold text-lg">
-            {t("bakeryOrders.orders")} ({bakeryOrders.length})
-          </h2>
-          <button
-            className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="shrink-0 border-b px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-lg">
+              {t("bakeryOrders.orders")} ({bakeryOrders.length})
+            </h2>
+            <div>
+              <button
+                className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Filters row placed below the orders header */}
+          <div className="mt-3 hidden lg:flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 flex items-center justify-center"
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">
+                    {t("bakeryOrders.searchByReference")}
+                  </label>
+                  <Input
+                    placeholder={t("bakeryOrders.enterReference")}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-8 text-xs"
+                    autoFocus
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue placeholder={t("orders.filterByType")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("orders.allTypes")}</SelectItem>
+                <SelectItem value="big_cakes">
+                  {t("orders.type.big_cakes")}
+                </SelectItem>
+                <SelectItem value="small_cakes">
+                  {t("orders.type.small_cakes")}
+                </SelectItem>
+                <SelectItem value="others">
+                  {t("orders.type.others")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={sortDir}
+              onValueChange={(v) => setSortDir(v as "normal" | "asc" | "desc")}
+            >
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue placeholder={t("orders.sortByTime")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">
+                  {t("orders.sort.normal")}
+                </SelectItem>
+                <SelectItem value="asc">{t("orders.sort.asc")}</SelectItem>
+                <SelectItem value="desc">{t("orders.sort.desc")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <ScrollArea className="flex-1 min-h-0">
           <div className="space-y-2 p-4">
@@ -1789,21 +1898,57 @@ export default function BakeryOrdersPage() {
                 {t("bakeryOrders.noOrdersAssigned")}
               </div>
             ) : (
-              bakeryOrders.map((order) => (
-                <MemoizedOrderSidebarCard
-                  key={order.id}
-                  order={order}
-                  isSelected={selectedOrderId === order.id}
-                  onSelect={() => {
-                    setSelectedOrderId(order.id);
-                    if (window.innerWidth < 1024) {
-                      setIsSidebarOpen(false);
-                    }
-                  }}
-                  onConfirm={() => handleConfirm(order.id)}
-                  onDecline={(reason) => handleDecline(order.id, reason)}
-                />
-              ))
+              (() => {
+                // Apply search/type filters and sorting similar to OrdersSidebarRight
+                let filtered = bakeryOrders.slice();
+                if (searchTerm.trim()) {
+                  const s = searchTerm.toLowerCase();
+                  filtered = filtered.filter((o) =>
+                    (o.referenceNumber || o.id).toLowerCase().includes(s),
+                  );
+                }
+                if (typeFilter !== "all") {
+                  filtered = filtered.filter((o) => o.type === typeFilter);
+                }
+                const sorted =
+                  sortDir === "normal"
+                    ? filtered
+                    : filtered.slice().sort((a, b) => {
+                        const aTime = new Date(
+                          a.orderedAt || a.deliverDay,
+                        ).getTime();
+                        const bTime = new Date(
+                          b.orderedAt || b.deliverDay,
+                        ).getTime();
+                        return sortDir === "asc"
+                          ? aTime - bTime
+                          : bTime - aTime;
+                      });
+
+                if (sorted.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      {t("bakeryOrders.noOrdersAssigned")}
+                    </div>
+                  );
+                }
+
+                return sorted.map((order) => (
+                  <MemoizedOrderSidebarCard
+                    key={order.id}
+                    order={order}
+                    isSelected={selectedOrderId === order.id}
+                    onSelect={() => {
+                      setSelectedOrderId(order.id);
+                      if (window.innerWidth < 1024) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
+                    onConfirm={() => handleConfirm(order.id)}
+                    onDecline={(reason) => handleDecline(order.id, reason)}
+                  />
+                ));
+              })()
             )}
           </div>
           <ScrollBar orientation="vertical" />

@@ -38,10 +38,10 @@ const addOnSchema = z.object({
     .max(500, "Description must be less than 500 characters"),
   images: z.array(z.string()).min(1, "At least one image is required"),
   category: z.enum([
-    "card",
-    "balloon",
-    "candle",
-    "decoration",
+    "cards",
+    "balloons",
+    "candles",
+    "decorations",
     "sweets",
     "other",
   ]),
@@ -57,13 +57,33 @@ interface AddOnFormProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  card: "Cards",
-  balloon: "Balloons",
-  candle: "Candles",
-  decoration: "Decorations",
+  cards: "Cards",
+  balloons: "Balloons",
+  candles: "Candles",
+  decorations: "Decorations",
   sweets: "Sweets",
   other: "Other",
 };
+
+const pluralToSingular: Record<AddOnFormValues["category"], AddOn["category"]> =
+  {
+    cards: "card",
+    balloons: "balloon",
+    candles: "candle",
+    decorations: "decoration",
+    sweets: "sweets",
+    other: "other",
+  };
+
+const singularToPlural: Record<AddOn["category"], AddOnFormValues["category"]> =
+  {
+    card: "cards",
+    balloon: "balloons",
+    candle: "candles",
+    decoration: "decorations",
+    sweets: "sweets",
+    other: "other",
+  };
 
 export function AddOnForm({
   initialAddOn,
@@ -83,14 +103,9 @@ export function AddOnForm({
       name: initialAddOn?.name || "",
       description: initialAddOn?.description || "",
       images: initialAddOn?.images || [],
-      category:
-        (initialAddOn?.category as
-          | "card"
-          | "balloon"
-          | "candle"
-          | "decoration"
-          | "sweets"
-          | "other") || "decoration",
+      category: initialAddOn?.category
+        ? singularToPlural[initialAddOn.category]
+        : "decorations",
       isActive: initialAddOn?.isActive ?? true,
     },
   });
@@ -158,7 +173,9 @@ export function AddOnForm({
     const finalValues = {
       ...values,
       images: uploadedImageUrls.length > 0 ? uploadedImageUrls : values.images,
-    };
+      // map plural UI category to singular backend category
+      category: pluralToSingular[values.category],
+    } as Omit<AddOn, "id">;
     console.log("finalValues to submit:", finalValues);
 
     onSubmit(finalValues);
@@ -234,12 +251,19 @@ export function AddOnForm({
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue
+                        placeholder={
+                          t("addOns.selectCategory") || "Select category"
+                        }
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="balloons">
                       {categoryLabels["balloons"]}
+                    </SelectItem>
+                    <SelectItem value="sweets">
+                      {categoryLabels["sweets"]}
                     </SelectItem>
                     <SelectItem value="cards">
                       {categoryLabels["cards"]}

@@ -38,6 +38,8 @@
     "descriptionPlaceholder": "أدخل الوصف",
     "add": "إضافة",
     "update": "تحديث",
+    "create": "إنشاء",
+    "save": "حفظ",
     "edit": "تعديل",
     "deactivate": "تعطيل",
     "activate": "تفعيل",
@@ -146,6 +148,18 @@
     "filterByRegion": "التصفية حسب المنطقة",
     "allRegions": "جميع المناطق",
     "sortByTime": "الترتيب حسب الوقت",
+    "sort": {
+      "normal": "عادي",
+      "asc": "الأقدم أولاً",
+      "desc": "الأحدث أولاً"
+    },
+    "filterByType": "التصفية حسب النوع",
+    "allTypes": "جميع الأنواع",
+    "type": {
+      "big_cakes": "كيكات كبيرة",
+      "small_cakes": "كيكات صغيرة",
+      "others": "أخرى"
+    },
     "filterByDate": "التصفية حسب التاريخ",
     "searchByReference": "البحث برقم المرجع",
     "enterReference": "أدخل رقم المرجع",
@@ -153,7 +167,7 @@
     "used": "مستخدم",
     "available": "متاح",
     "status": "الحالة",
-    "type": "النوع",
+    "typeLabel": "النوع",
     "deliveryDate": "تاريخ التسليم",
     "slots": "فتحات"
   },
@@ -176,6 +190,8 @@
     "orders": "الطلبات",
     "noOrdersAssigned": "لا توجد طلبات معينة لهذا المخبز",
     "selectOrderDetails": "حدد طلباً لعرض التفاصيل",
+    "searchByReference": "البحث برقم المرجع",
+    "enterReference": "أدخل رقم المرجع",
     "productInformation": "معلومات المنتج",
     "customerInformation": "العميل",
     "deliveryDetails": "تفاصيل التسليم",
@@ -302,6 +318,7 @@
     "namePlaceholder": "مثال: بطاقة عيد الميلاد",
     "descriptionPlaceholder": "صف إضافتك...",
     "category": "الفئة",
+    "selectCategory": "اختر الفئة",
     "active": "نشط",
     "activeDescription": "اجعل هذه الإضافة متاحة للاختيار",
     "createAddOn": "إنشاء إضافة",
@@ -554,6 +571,7 @@
     "admins": "المسؤولون",
     "chefs": "الطهاة",
     "sliderImages": "صور السلايدر",
+    "tags": "الوسوم",
     "appConfig": "إعدادات التطبيق",
     "featuredCakes": "الكعكات المميزة",
     "readyCakes": "الكعكات الجاهزة",
@@ -661,6 +679,13 @@
     "addFlavor": "إضافة نكهة",
     "addPalette": "إضافة لوحة",
     "uploadingImage": "جاري تحميل الصورة..."
+  },
+  "tags": {
+    "title": "الوسوم",
+    "list": "الوسوم المتاحة",
+    "name": "الاسم",
+    "displayOrder": "ترتيب العرض",
+    "displayOrderExists": "ترتيب العرض مستخدم بالفعل"
   },
   "customCakes": {
     "title": "الكعكات المخصصة",

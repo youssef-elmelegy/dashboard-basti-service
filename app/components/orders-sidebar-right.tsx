@@ -13,16 +13,8 @@ import {
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useOrderStore } from "@/stores/orderStore";
-import { useRegionStore } from "@/stores/regionStore";
 import { type Order } from "@/data/orders";
-import {
-  CalendarIcon,
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
-  X,
-  Search,
-} from "lucide-react";
+import { CalendarIcon, X, Search } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Select } from "@/components/ui/select";
 import {
@@ -140,8 +132,11 @@ export function OrdersSidebarRight({
   const isRTL = i18n.language === "ar";
   const orders = useOrderStore((state) => state.orders);
   const isLoading = useOrderStore((state) => state.isLoading);
-  const [sortDir, setSortDir] = React.useState<"asc" | "desc" | null>(null);
-  const [regionFilter, setRegionFilter] = React.useState<string>("all");
+  const [sortDir, setSortDir] = React.useState<"normal" | "asc" | "desc">(
+    "normal",
+  );
+  const [regionFilter] = React.useState<string>("all");
+  const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [dateFilter, setDateFilter] = React.useState<Date | undefined>(
     undefined,
   );
@@ -149,8 +144,8 @@ export function OrdersSidebarRight({
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
-  // Get regions from the region store
-  const regions = useRegionStore((state) => state.regions);
+  // Regions list intentionally not used while UI is hidden
+  // const regions = useRegionStore((state) => state.regions);
 
   // Filter by region and unassigned orders only
   const filteredOrders = React.useMemo(() => {
@@ -179,12 +174,17 @@ export function OrdersSidebarRight({
       );
     }
 
+    // Apply type filter
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((order) => order.type === typeFilter);
+    }
+
     return filtered;
-  }, [orders, regionFilter, dateFilter, searchTerm]);
+  }, [orders, regionFilter, dateFilter, searchTerm, typeFilter]);
 
   // Sort orders by deliverDay or show original
   const sortedOrders = React.useMemo(() => {
-    if (!sortDir) return filteredOrders;
+    if (sortDir === "normal") return filteredOrders;
     return [...filteredOrders].sort((a, b) => {
       // Sort by order creation time (API's createdAt mapped to `orderedAt`)
       const aTime = new Date(a.orderedAt || a.deliverDay).getTime();
@@ -241,6 +241,8 @@ export function OrdersSidebarRight({
       </SidebarHeader>
       <SidebarContent className="p-4 flex flex-col h-full overflow-hidden">
         <div className="flex items-center gap-2 mb-2">
+          {/* Region filter hidden temporarily; re-enable by uncommenting the Select below */}
+          {/**
           <Select value={regionFilter} onValueChange={setRegionFilter}>
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue placeholder={t("orders.filterByRegion")} />
@@ -252,6 +254,23 @@ export function OrdersSidebarRight({
                   {region.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          */}
+
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-40 h-8 text-xs ml-2">
+              <SelectValue placeholder={t("orders.filterByType")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("orders.allTypes")}</SelectItem>
+              <SelectItem value="big_cakes">
+                {t("orders.type.big_cakes")}
+              </SelectItem>
+              <SelectItem value="small_cakes">
+                {t("orders.type.small_cakes")}
+              </SelectItem>
+              <SelectItem value="others">{t("orders.type.others")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -298,31 +317,25 @@ export function OrdersSidebarRight({
           </Popover>
 
           <div className="flex-1" />
-          <button
-            type="button"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition px-2 py-1 rounded focus:outline-none"
-            onClick={() =>
-              setSortDir((d) =>
-                d === null ? "asc" : d === "asc" ? "desc" : null,
-              )
-            }
-            title={
-              sortDir === "asc"
-                ? `${t("orders.sortByTime")} (${t("common.loading")})`
-                : sortDir === "desc"
-                  ? `${t("orders.sortByTime")} (${t("common.loading")})`
-                  : `${t("common.loading")} ${t("orders.sortByTime")}`
-            }
+          <Select
+            value={sortDir}
+            onValueChange={(v) => setSortDir(v as "normal" | "asc" | "desc")}
           >
-            <span>{t("orders.sortByTime")}</span>
-            {sortDir === "asc" ? (
-              <ChevronUp className="w-4 h-4 ml-1" />
-            ) : sortDir === "desc" ? (
-              <ChevronDown className="w-4 h-4 ml-1" />
-            ) : (
-              <ChevronsUpDown className="w-4 h-4 ml-1 text-muted-foreground opacity-50" />
-            )}
-          </button>
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <SelectValue placeholder={t("orders.sortByTime")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="normal">
+                {t("orders.sort.normal") || "Normal"}
+              </SelectItem>
+              <SelectItem value="asc">
+                {t("orders.sort.asc") || "Oldest First"}
+              </SelectItem>
+              <SelectItem value="desc">
+                {t("orders.sort.desc") || "Newest First"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <ScrollArea className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 mb-2">
           {isLoading ? (
@@ -336,7 +349,7 @@ export function OrdersSidebarRight({
             </div>
           ) : (
             <div
-              key={sortDir + regionFilter}
+              key={sortDir + regionFilter + typeFilter}
               className="flex flex-col gap-2 transition-opacity duration-200 animate-fadein"
             >
               {sortedOrders.length === 0 ? (

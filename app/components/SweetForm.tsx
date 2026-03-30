@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,6 +17,8 @@ import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useTranslation } from "react-i18next";
 import type { Sweet } from "@/lib/services/sweet.service";
 import { useSweetStore } from "@/stores/sweetStore";
+import { useTagsStore } from "@/stores/tagsStore";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { convertToWebP } from "@/lib/image-utils";
 import { X, Plus } from "lucide-react";
 
@@ -28,6 +30,7 @@ const sweetSchema = z.object({
     .max(1000),
   images: z.array(z.string()).min(1, "At least one image is required"),
   sizes: z.array(z.string()).min(1, "At least one size is required"),
+  tagId: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -47,6 +50,8 @@ export function SweetForm({
   const { t } = useTranslation();
   const isEditMode = !!initialSweet;
   const uploadSweetImage = useSweetStore((state) => state.uploadSweetImage);
+  const tags = useTagsStore((s) => s.tags);
+  const fetchTags = useTagsStore((s) => s.fetchTags);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const form = useForm<SweetFormValues>({
@@ -56,9 +61,15 @@ export function SweetForm({
       description: initialSweet?.description || "",
       images: initialSweet?.images || [],
       sizes: initialSweet?.sizes || [],
+      tagId: initialSweet?.tagId || undefined,
       isActive: initialSweet?.isActive ?? true,
     },
   });
+
+  // fetch tags for the select dropdown
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
 
   const handleImagesChange = async (images: string[]) => {
     form.setValue("images", images, { shouldValidate: true });
@@ -94,7 +105,11 @@ export function SweetForm({
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit((values) => {
+          // normalize empty tagId to undefined
+          const payload = { ...values, tagId: values.tagId || undefined };
+          return onSubmit(payload);
+        })}
         className="space-y-6 mt-6 px-6"
       >
         {/* Name */}
@@ -212,6 +227,31 @@ export function SweetForm({
         />
 
         {/* Active Status */}
+        {/* Tag */}
+        <FormField
+          control={form.control}
+          name="tagId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("common.selectTag")}</FormLabel>
+              <FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("common.selectTag") || "Select tag"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="isActive"
