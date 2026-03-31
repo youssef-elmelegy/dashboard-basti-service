@@ -685,7 +685,11 @@
     "list": "Available Tags",
     "name": "Name",
     "displayOrder": "Display Order",
-    "displayOrderExists": "Display order already in use"
+    "displayOrderExists": "Display order already in use",
+    "types": "Types",
+    "recordType": "tag",
+    "deleteTitle": "Delete tag",
+    "deleteDescription": "Are you sure you want to delete"
   },
   "customCakes": {
     "title": "Custom Cakes",

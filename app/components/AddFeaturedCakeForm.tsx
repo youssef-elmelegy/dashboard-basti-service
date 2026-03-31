@@ -43,11 +43,17 @@ function TagSelectField({ value, onChange }: TagSelectFieldProps) {
         <SelectValue placeholder="Select a tag" />
       </SelectTrigger>
       <SelectContent>
-        {tags.map((tag) => (
-          <SelectItem key={tag.id} value={tag.id}>
-            {tag.name}
-          </SelectItem>
-        ))}
+        {tags
+          .filter(
+            (tag) =>
+              Array.isArray(tag.types) &&
+              tag.types.includes("predesigned-cakes"),
+          )
+          .map((tag) => (
+            <SelectItem key={tag.id} value={tag.id}>
+              {tag.name}
+            </SelectItem>
+          ))}
       </SelectContent>
     </Select>
   );

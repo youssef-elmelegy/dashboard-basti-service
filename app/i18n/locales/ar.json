@@ -685,7 +685,11 @@
     "list": "الوسوم المتاحة",
     "name": "الاسم",
     "displayOrder": "ترتيب العرض",
-    "displayOrderExists": "ترتيب العرض مستخدم بالفعل"
+    "displayOrderExists": "ترتيب العرض مستخدم بالفعل",
+    "types": "الأنواع",
+    "recordType": "وسم",
+    "deleteTitle": "حذف الوسم",
+    "deleteDescription": "هل أنت متأكد من رغبتك في حذف"
   },
   "customCakes": {
     "title": "الكعكات المخصصة",

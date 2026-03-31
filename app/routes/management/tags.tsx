@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Trash2, Edit, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -14,12 +15,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
+import { TAG_TYPES, type TagType } from "@/lib/services/tags.service";
 
 const formSchema = z.object({
   name: z.string().min(2).max(100),
-  displayOrder: z.number().int().min(0),
+  displayOrder: z.coerce
+    .number()
+    .int()
+    .min(0, "Display order must be a valid number"),
+  types: z
+    .array(z.enum(["sweets", "decorations", "predesigned-cakes"]))
+    .min(1, "Select at least one type"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -39,10 +48,11 @@ export default function TagsManagementPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<FormValues, unknown>,
     defaultValues: {
       name: "",
       displayOrder: 0,
+      types: [],
     },
   });
 
@@ -54,10 +64,14 @@ export default function TagsManagementPage() {
     if (editingId) {
       const tag = tags.find((t) => t.id === editingId);
       if (tag) {
-        form.reset({ name: tag.name, displayOrder: tag.displayOrder });
+        form.reset({
+          name: tag.name,
+          displayOrder: tag.displayOrder,
+          types: tag.types || [],
+        });
       }
     } else {
-      form.reset({ name: "", displayOrder: 0 });
+      form.reset({ name: "", displayOrder: 0, types: [] });
     }
   }, [editingId]);
 
@@ -84,14 +98,39 @@ export default function TagsManagementPage() {
   }, [watchedDisplayOrder, tags, editingId]);
 
   const onSubmit = async (values: FormValues) => {
-    if (editingId) {
-      await updateTag(editingId, values);
-      setEditingId(null);
-    } else {
-      await createTag(values);
-    }
+    try {
+      if (editingId) {
+        const updated = await updateTag(editingId, values);
+        if (!updated) {
+          // read latest store error (may contain API message)
+          const storeErr = useTagsStore.getState().error;
+          form.setError("name", {
+            type: "manual",
+            message: storeErr || t("tags.saveFailed") || "Failed to update tag",
+          });
+          return;
+        }
+        setEditingId(null);
+      } else {
+        const created = await createTag(values);
+        if (!created) {
+          const storeErr = useTagsStore.getState().error;
+          form.setError("name", {
+            type: "manual",
+            message:
+              storeErr || t("tags.createFailed") || "Failed to create tag",
+          });
+          return;
+        }
+      }
 
-    form.reset({ name: "", displayOrder: 0 });
+      // clear any previous errors and reset form on success
+      clearError();
+      form.reset({ name: "", displayOrder: 0, types: [] });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      form.setError("name", { type: "manual", message: msg });
+    }
   };
 
   const handleEdit = (id: string) => {
@@ -151,7 +190,7 @@ export default function TagsManagementPage() {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4 h-full"
               >
-                <FormField
+                <FormField<FormValues, "name">
                   control={form.control}
                   name="name"
                   render={({ field }) => (
@@ -165,7 +204,7 @@ export default function TagsManagementPage() {
                   )}
                 />
 
-                <FormField
+                <FormField<FormValues, "displayOrder">
                   control={form.control}
                   name="displayOrder"
                   render={({ field }) => (
@@ -176,12 +215,64 @@ export default function TagsManagementPage() {
                       <FormControl>
                         <Input
                           type="number"
+                          placeholder="Enter display order"
                           {...field}
+                          value={field.value === 0 ? "" : field.value}
                           onChange={(e) =>
-                            field.onChange(parseInt(e.target.value))
+                            field.onChange(
+                              e.target.value ? parseInt(e.target.value, 10) : 0,
+                            )
                           }
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField<FormValues, "types">
+                  control={form.control}
+                  name="types"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>{t("tags.types") || "Types"}</FormLabel>
+                      <div className="space-y-2">
+                        {TAG_TYPES.map((type) => (
+                          <FormField<FormValues, "types">
+                            key={type}
+                            control={form.control}
+                            name="types"
+                            render={({ field }) => (
+                              <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={
+                                      Array.isArray(field.value) &&
+                                      field.value.includes(type as TagType)
+                                    }
+                                    onCheckedChange={(checked) => {
+                                      const currentValue = Array.isArray(
+                                        field.value,
+                                      )
+                                        ? field.value
+                                        : [];
+                                      const updated = checked
+                                        ? [...currentValue, type as TagType]
+                                        : currentValue.filter(
+                                            (v) => v !== type,
+                                          );
+                                      field.onChange(updated);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal capitalize cursor-pointer">
+                                  {type.replace(/-/g, " ")}
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -249,6 +340,16 @@ export default function TagsManagementPage() {
                             <div className="text-xs text-muted-foreground">
                               Order: {tag.displayOrder}
                             </div>
+                            {Array.isArray(tag.types) &&
+                              tag.types.length > 0 && (
+                                <div className="flex gap-1 flex-wrap mt-2">
+                                  {tag.types.map((type) => (
+                                    <Badge key={type} variant="secondary">
+                                      {type.replace(/-/g, " ")}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Button

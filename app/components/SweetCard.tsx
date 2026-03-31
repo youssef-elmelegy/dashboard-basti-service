@@ -1,4 +1,5 @@
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -24,17 +25,66 @@ export function SweetCard({
   onToggleActive,
 }: SweetCardProps) {
   const { t } = useTranslation();
+  const [index, setIndex] = useState(0);
+
+  const images = Array.isArray(sweet.images) ? sweet.images : [];
+  const hasMultiple = images.length > 1;
+
+  const prev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIndex((i) => (i - 1 + images.length) % images.length);
+  };
+
+  const next = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIndex((i) => (i + 1) % images.length);
+  };
+
+  useEffect(() => {
+    setIndex(0);
+  }, [images.length]);
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
       <div className="relative h-48 bg-muted overflow-hidden flex-shrink-0">
-        {sweet.images && sweet.images.length > 0 ? (
-          <img
-            src={sweet.images[0]}
-            alt={sweet.name}
-            className="w-full h-full object-cover"
-          />
+        {images.length > 0 ? (
+          <>
+            <img
+              src={images[index]}
+              alt={`${sweet.name} ${index + 1}`}
+              className="w-full h-full object-cover"
+            />
+
+            {hasMultiple && (
+              <>
+                <button
+                  onClick={prev}
+                  aria-label="Previous image"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={next}
+                  aria-label="Next image"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-2 flex gap-1">
+                  {images.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`w-2 h-2 rounded-full ${i === index ? "bg-white" : "bg-white/50"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             {t("common.noImage")}

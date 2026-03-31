@@ -79,24 +79,27 @@ export function DecorationForm({
   // Fetch existing variant images when editing
   useEffect(() => {
     if (decoration?.id) {
-      decorationApi.getVariantImages(decoration.id).then((res) => {
-        if (res.success && res.data) {
-          const loaded: DecorationVariantImageData[] = res.data.map((v) => ({
-            shapeId: v.shapeId,
-            slicedViewUrl: v.slicedViewUrl,
-            frontViewUrl: v.frontViewUrl,
-            topViewUrl: v.topViewUrl,
-          }));
-          setVariantImages(loaded);
-          if (withVariantImages) {
-            form.setValue("variantImages", loaded, { shouldValidate: false });
+      decorationApi
+        .getVariantImages(decoration.id)
+        .then((res) => {
+          if (res.success && res.data) {
+            const loaded: DecorationVariantImageData[] = res.data.map((v) => ({
+              shapeId: v.shapeId,
+              slicedViewUrl: v.slicedViewUrl,
+              frontViewUrl: v.frontViewUrl,
+              topViewUrl: v.topViewUrl,
+            }));
+            setVariantImages(loaded);
+            if (withVariantImages) {
+              form.setValue("variantImages", loaded, { shouldValidate: false });
+            }
           }
-        }
-      }).catch(() => {
-        // silently ignore — form is still usable without pre-loaded images
-      });
+        })
+        .catch(() => {
+          // silently ignore — form is still usable without pre-loaded images
+        });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decoration?.id]);
 
   useEffect(() => {
@@ -274,11 +277,17 @@ export function DecorationForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      {tag.name}
-                    </SelectItem>
-                  ))}
+                  {tags
+                    .filter(
+                      (tag) =>
+                        Array.isArray(tag.types) &&
+                        tag.types.includes("decorations"),
+                    )
+                    .map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <FormMessage />

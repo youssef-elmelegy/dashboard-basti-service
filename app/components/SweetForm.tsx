@@ -18,7 +18,13 @@ import { useTranslation } from "react-i18next";
 import type { Sweet } from "@/lib/services/sweet.service";
 import { useSweetStore } from "@/stores/sweetStore";
 import { useTagsStore } from "@/stores/tagsStore";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { convertToWebP } from "@/lib/image-utils";
 import { X, Plus } from "lucide-react";
 
@@ -235,16 +241,27 @@ export function SweetForm({
             <FormItem>
               <FormLabel>{t("common.selectTag")}</FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("common.selectTag") || "Select tag"} />
+                    <SelectValue
+                      placeholder={t("common.selectTag") || "Select tag"}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {tags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id}>
-                        {tag.name}
-                      </SelectItem>
-                    ))}
+                    {tags
+                      .filter(
+                        (tag) =>
+                          Array.isArray(tag.types) &&
+                          tag.types.includes("sweets"),
+                      )
+                      .map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </FormControl>

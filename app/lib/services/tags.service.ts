@@ -13,9 +13,14 @@ export interface Tag {
   id: string;
   name: string;
   displayOrder: number;
+  types?: TagType[];
   createdAt: string;
   updatedAt: string;
 }
+
+export type TagType = "sweets" | "decorations" | "predesigned-cakes";
+
+export const TAG_TYPES: TagType[] = ["sweets", "decorations", "predesigned-cakes"];
 
 /**
  * Tags API service with methods
@@ -52,9 +57,11 @@ export const tagsApi = {
 export interface CreateTagRequest {
   name: string;
   displayOrder: number;
+  types: TagType[];
 }
 
 export interface UpdateTagRequest {
   name: string;
   displayOrder: number;
+  types: TagType[];
 }
