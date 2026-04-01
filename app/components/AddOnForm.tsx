@@ -255,7 +255,8 @@ export function AddOnForm({
       category: values.category,
       isActive: values.isActive,
       ...(values.tagId && { tagId: values.tagId }),
-      ...(watchedOptions && watchedOptions.length > 0 && { options: watchedOptions }),
+      ...(watchedOptions &&
+        watchedOptions.length > 0 && { options: watchedOptions }),
     };
     console.log("finalValues to submit:", finalValues);
 
