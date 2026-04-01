@@ -14,7 +14,7 @@ export interface AddOn {
   name: string;
   description: string;
   images: string[];
-  category: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
+  category: "balloons" | "cards" | "candles" | "decorations" | "other";
   price?: number;
   tags?: string[];
   tagId?: string;
@@ -31,9 +31,9 @@ export interface CreateAddOnRequest {
   name: string;
   description: string;
   images: string[];
-  category: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
+  category: "balloons" | "cards" | "candles" | "decorations" | "other";
   price?: number;
-  tags?: string[];
+  tagId?: string;
   isActive?: boolean;
 }
 
@@ -44,9 +44,9 @@ export interface UpdateAddOnRequest {
   name?: string;
   description?: string;
   images?: string[];
-  category?: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
+  category?: "balloons" | "cards" | "candles" | "decorations" | "other";
   price?: number;
-  tags?: string[];
+  tagId?: string;
   isActive?: boolean;
 }
 
