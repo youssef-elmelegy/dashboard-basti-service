@@ -20,6 +20,13 @@ export interface AddOn {
   tagId?: string;
   tagName?: string;
   isActive: boolean;
+  options?: Array<{
+    id?: string;
+    type: "color" | "number" | "letter" | "text";
+    label: string;
+    value: string;
+    imageUrl?: string;
+  }>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -35,6 +42,12 @@ export interface CreateAddOnRequest {
   price?: number;
   tagId?: string;
   isActive?: boolean;
+  options?: Array<{
+    type: "color" | "number" | "letter" | "text";
+    label: string;
+    value: string;
+    imageUrl?: string;
+  }>;
 }
 
 /**
@@ -48,6 +61,12 @@ export interface UpdateAddOnRequest {
   price?: number;
   tagId?: string;
   isActive?: boolean;
+  options?: Array<{
+    type: "color" | "number" | "letter" | "text";
+    label: string;
+    value: string;
+    imageUrl?: string;
+  }>;
 }
 
 /**

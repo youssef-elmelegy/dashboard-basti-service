@@ -36,6 +36,7 @@ function convertServiceAddOnToUI(serviceAddOn: ServiceAddOn): AddOn {
     tagId: serviceAddOn.tagId,
     tagName: serviceAddOn.tagName,
     isActive: serviceAddOn.isActive,
+    options: serviceAddOn.options,
     createdAt: serviceAddOn.createdAt,
     updatedAt: serviceAddOn.updatedAt,
   };
