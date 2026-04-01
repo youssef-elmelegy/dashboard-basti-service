@@ -77,15 +77,6 @@ const categoryLabels: Record<string, string> = {
   other: "Other",
 };
 
-// Map from form plural categories to API singular categories
-const pluralToSingularCategory: Record<string, string> = {
-  balloons: "balloon",
-  cards: "card",
-  candles: "candle",
-  decorations: "decoration",
-  other: "other",
-};
-
 const optionTypes = ["color", "number", "letter", "text"] as const;
 
 export function AddOnForm({
@@ -256,23 +247,14 @@ export function AddOnForm({
     console.log("AddOnForm.handleSubmit called with values:", values);
     console.log("uploadedImageUrls:", uploadedImageUrls);
 
-    // Convert plural category to singular for API
-    const singularCategory = pluralToSingularCategory[values.category] as
-      | "card"
-      | "balloon"
-      | "candle"
-      | "decoration"
-      | "sweets"
-      | "other";
-
     // Use uploaded URLs instead of data URLs
     const finalValues: CreateAddOnRequest | UpdateAddOnRequest = {
       name: values.name,
       description: values.description,
       images: uploadedImageUrls.length > 0 ? uploadedImageUrls : values.images,
-      category: singularCategory,
+      category: values.category,
       isActive: values.isActive,
-      ...(values.tagId && { tags: [values.tagId] }),
+      ...(values.tagId && { tagId: values.tagId }),
     };
     console.log("finalValues to submit:", finalValues);
 
