@@ -19,6 +19,10 @@ import { ProductFilter } from "@/components/ProductFilter";
 import { useAddOnStore } from "@/stores/addOnStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import type { AddOn } from "@/data/products";
+import type {
+  CreateAddOnRequest,
+  UpdateAddOnRequest,
+} from "@/lib/services/addOn.service";
 import { Plus } from "lucide-react";
 
 export default function AddOnsPage() {
@@ -53,35 +57,30 @@ export default function AddOnsPage() {
     return true;
   });
 
-  const handleAddAddOn = async (
-    formData: Omit<AddOn, "id" | "createdAt" | "updatedAt">,
+  const handleSubmitAddOn = async (
+    formData: CreateAddOnRequest | UpdateAddOnRequest,
   ) => {
-    console.log("handleAddAddOn called with formData:", formData);
+    console.log("handleSubmitAddOn called with formData:", formData);
     try {
-      console.log("Calling addAddOn...");
-      await addAddOn(formData);
-      console.log("addAddOn completed successfully");
+      if (editingAddOn) {
+        console.log("Updating add-on...");
+        await updateAddOn(editingAddOn.id, formData as UpdateAddOnRequest);
+        console.log("updateAddOn completed successfully");
+        setEditingAddOn(null);
+      } else {
+        console.log("Creating add-on...");
+        await addAddOn(formData as CreateAddOnRequest);
+        console.log("addAddOn completed successfully");
+      }
       setIsAddOpen(false);
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : "Failed to create add-on";
-      console.error("Failed to create add-on:", errorMsg, err);
-    }
-  };
-
-  const handleUpdateAddOn = async (
-    formData: Omit<AddOn, "id" | "createdAt" | "updatedAt">,
-  ) => {
-    if (editingAddOn) {
-      try {
-        await updateAddOn(editingAddOn.id, formData);
-        setEditingAddOn(null);
-        setIsAddOpen(false);
-      } catch (err) {
-        const errorMsg =
-          err instanceof Error ? err.message : "Failed to update add-on";
-        console.error("Failed to update add-on:", errorMsg, err);
-      }
+        err instanceof Error
+          ? err.message
+          : editingAddOn
+            ? "Failed to update add-on"
+            : "Failed to create add-on";
+      console.error(errorMsg, err);
     }
   };
 
@@ -199,7 +198,7 @@ export default function AddOnsPage() {
           <div className="mt-6">
             <AddOnForm
               initialAddOn={editingAddOn || undefined}
-              onSubmit={editingAddOn ? handleUpdateAddOn : handleAddAddOn}
+              onSubmit={handleSubmitAddOn}
               isLoading={isLoading}
             />
           </div>

@@ -27,7 +27,7 @@ const formSchema = z.object({
     .int()
     .min(0, "Display order must be a valid number"),
   types: z
-    .array(z.enum(["sweets", "decorations", "predesigned-cakes"]))
+    .array(z.enum(["sweets", "decorations", "predesigned-cakes", "addons"]))
     .min(1, "Select at least one type"),
 });
 

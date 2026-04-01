@@ -81,14 +81,14 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
             typeof o.imageUrl === "string"
               ? o.imageUrl
               : typeof o.image === "string"
-              ? o.image
-              : "",
+                ? o.image
+                : "",
           optionId:
             typeof o.optionId === "string"
               ? o.optionId
               : typeof o.id === "string"
-              ? o.id
-              : "",
+                ? o.id
+                : "",
         };
       });
     } catch (e) {
@@ -96,31 +96,37 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
     }
   }
   // Combine and normalize items from different categories
-    const normalizeItem = (it: Record<string, unknown>, type: OrderItem["type"]) => ({
-      ...(it as Record<string, unknown>),
-      type,
-      selectedOptions: parseSelectedOptions(
-        (it["selectedOptions"] ?? it["selected_options"] ?? undefined),
-      ),
-    });
+  const normalizeItem = (
+    it: Record<string, unknown>,
+    type: OrderItem["type"],
+  ) => ({
+    ...(it as Record<string, unknown>),
+    type,
+    selectedOptions: parseSelectedOptions(
+      it["selectedOptions"] ?? it["selected_options"] ?? undefined,
+    ),
+  });
 
-    const orderItems = [
-      ...(apiOrder.addons || []).map((it) =>
-        normalizeItem(it as unknown as Record<string, unknown>, "addon"),
+  const orderItems = [
+    ...(apiOrder.addons || []).map((it) =>
+      normalizeItem(it as unknown as Record<string, unknown>, "addon"),
+    ),
+    ...(apiOrder.sweets || []).map((it) =>
+      normalizeItem(it as unknown as Record<string, unknown>, "sweet"),
+    ),
+    ...(apiOrder.featuredCakes || []).map((it) =>
+      normalizeItem(it as unknown as Record<string, unknown>, "featured_cake"),
+    ),
+    ...(apiOrder.predesignedCakes || []).map((it) =>
+      normalizeItem(
+        it as unknown as Record<string, unknown>,
+        "predesigned_cake",
       ),
-      ...(apiOrder.sweets || []).map((it) =>
-        normalizeItem(it as unknown as Record<string, unknown>, "sweet"),
-      ),
-      ...(apiOrder.featuredCakes || []).map((it) =>
-        normalizeItem(it as unknown as Record<string, unknown>, "featured_cake"),
-      ),
-      ...(apiOrder.predesignedCakes || []).map((it) =>
-        normalizeItem(it as unknown as Record<string, unknown>, "predesigned_cake"),
-      ),
-      ...(apiOrder.customCakes || []).map((it) =>
-        normalizeItem(it as unknown as Record<string, unknown>, "custom_cake"),
-      ),
-    ];
+    ),
+    ...(apiOrder.customCakes || []).map((it) =>
+      normalizeItem(it as unknown as Record<string, unknown>, "custom_cake"),
+    ),
+  ];
 
   // Get first featured cake image safely
   const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
@@ -137,11 +143,11 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
   // Map cartType to local Order.type union
   const allowedTypes = ["big_cakes", "small_cakes", "others"] as const;
   const cartType = (apiOrder.cartType || "basket_cakes").toString();
-  const mappedType = (allowedTypes.includes(
-    cartType as unknown as (typeof allowedTypes)[number],
-  )
-    ? (cartType as (typeof allowedTypes)[number])
-    : "big_cakes") as Order["type"];
+  const mappedType = (
+    allowedTypes.includes(cartType as unknown as (typeof allowedTypes)[number])
+      ? (cartType as (typeof allowedTypes)[number])
+      : "big_cakes"
+  ) as Order["type"];
 
   // Map orderStatus to local Order.status union
   const allowedStatuses: Order["status"][] = [

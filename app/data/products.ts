@@ -16,12 +16,19 @@ export type AddOn = {
   name: string;
   description: string;
   images: string[]; // Multiple images support
-  category: "card" | "balloon" | "candle" | "decoration" | "sweets" | "other";
+  category: "balloons" | "cards" | "candles" | "decorations" | "other";
   price?: number;
   tags?: string[];
   tagId?: string;
   tagName?: string;
   isActive: boolean;
+  options?: Array<{
+    id?: string;
+    type: "color" | "number" | "letter" | "text";
+    label: string;
+    value: string;
+    imageUrl?: string;
+  }>;
   createdAt?: Date;
   updatedAt?: Date;
 };

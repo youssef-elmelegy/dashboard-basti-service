@@ -18,9 +18,14 @@ export interface Tag {
   updatedAt: string;
 }
 
-export type TagType = "sweets" | "decorations" | "predesigned-cakes";
+export type TagType = "sweets" | "decorations" | "predesigned-cakes" | "addons";
 
-export const TAG_TYPES: TagType[] = ["sweets", "decorations", "predesigned-cakes"];
+export const TAG_TYPES: TagType[] = [
+  "sweets",
+  "decorations",
+  "predesigned-cakes",
+  "addons",
+];
 
 /**
  * Tags API service with methods

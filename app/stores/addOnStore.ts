@@ -1,16 +1,45 @@
 import { create } from "zustand";
 import {
   addOnApi,
-  type AddOn,
+  type AddOn as ServiceAddOn,
   type CreateAddOnRequest,
   type UpdateAddOnRequest,
 } from "@/lib/services/addOn.service";
+import type { AddOn } from "@/data/products";
 import {
   uploadImage,
   deleteImages,
   type CloudinaryUploadResult,
   type DeleteImageResult,
 } from "@/lib/api/addOn.api";
+
+// Convert service AddOn (singular categories) to UI AddOn (plural categories)
+function convertServiceAddOnToUI(serviceAddOn: ServiceAddOn): AddOn {
+  const singularToPluralCategory: Record<string, string> = {
+    balloon: "balloons",
+    card: "cards",
+    candle: "candles",
+    decoration: "decorations",
+    sweets: "sweets",
+    other: "other",
+  };
+
+  return {
+    id: serviceAddOn.id,
+    name: serviceAddOn.name,
+    description: serviceAddOn.description,
+    images: serviceAddOn.images,
+    category: (singularToPluralCategory[serviceAddOn.category] ||
+      serviceAddOn.category) as AddOn["category"],
+    price: serviceAddOn.price,
+    tags: serviceAddOn.tags,
+    tagId: serviceAddOn.tagId,
+    tagName: serviceAddOn.tagName,
+    isActive: serviceAddOn.isActive,
+    createdAt: serviceAddOn.createdAt,
+    updatedAt: serviceAddOn.updatedAt,
+  };
+}
 
 interface AddOnStore {
   // Data
@@ -48,7 +77,7 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
       if (response.success && response.data) {
         console.log("AddOnStore: Add-ons fetched successfully:", response.data);
         set({
-          addOns: response.data.items,
+          addOns: response.data.items.map(convertServiceAddOnToUI),
           isLoading: false,
         });
       } else {
@@ -75,11 +104,12 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
 
       if (response.success && response.data) {
         console.log("AddOnStore: Add-on created successfully:", response.data);
+        const convertedAddOn = convertServiceAddOnToUI(response.data);
         set((state) => ({
-          addOns: [...state.addOns, response.data] as AddOn[],
+          addOns: [...state.addOns, convertedAddOn],
           isLoading: false,
         }));
-        return response.data;
+        return convertedAddOn;
       } else {
         throw new Error(response.message || "Failed to create add-on");
       }
@@ -102,14 +132,12 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
 
       if (response.success && response.data) {
         console.log("AddOnStore: Add-on updated successfully:", response.data);
-        const updatedAddOn = response.data;
+        const convertedAddOn = convertServiceAddOnToUI(response.data);
         set((state) => ({
-          addOns: state.addOns.map((a: AddOn) =>
-            a.id === id ? updatedAddOn : a,
-          ) as AddOn[],
+          addOns: state.addOns.map((a) => (a.id === id ? convertedAddOn : a)),
           isLoading: false,
         }));
-        return updatedAddOn;
+        return convertedAddOn;
       } else {
         throw new Error(response.message || "Failed to update add-on");
       }
@@ -161,14 +189,12 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
           "AddOnStore: Add-on status toggled successfully:",
           response.data,
         );
-        const toggledAddOn = response.data;
+        const convertedAddOn = convertServiceAddOnToUI(response.data);
         set((state) => ({
-          addOns: state.addOns.map((a: AddOn) =>
-            a.id === id ? toggledAddOn : a,
-          ) as AddOn[],
+          addOns: state.addOns.map((a) => (a.id === id ? convertedAddOn : a)),
           isLoading: false,
         }));
-        return toggledAddOn;
+        return convertedAddOn;
       } else {
         throw new Error(response.message || "Failed to toggle add-on status");
       }
