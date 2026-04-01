@@ -61,7 +61,10 @@
     "reset": "Reset",
     "copy": "Copy",
     "copied": "Copied",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "refresh": "Refresh",
+    "sortByDate": "Sort by Date",
+    "sortByStatus": "Sort by Status"
   },
   "orderDetail": {
     "reference": "Reference",
@@ -169,8 +172,12 @@
     "status": "Status",
     "typeLabel": "Type",
     "deliveryDate": "Delivery Date",
-    "slots": "slots"
+    "slots": "slots",
+    "referenceNumber": "Reference",
+    "customer": "Customer",
+    "totalPrice": "Total Price"
   },
+
   "bakeries": {
     "title": "Bakeries",
     "addBakery": "Add Bakery",
@@ -224,7 +231,9 @@
     "cancelDescription": "Please provide a reason for canceling this order:",
     "enterReason": "Enter cancellation reason...",
     "keepOrder": "Keep Order",
-    "confirm": "Cancel Order"
+    "confirm": "Cancel Order",
+    "finalProductImage": "Final Product Image",
+    "finalImageTaken": "Image taken on"
   },
   "products": {
     "title": "Products",
@@ -344,6 +353,12 @@
     "confirmed": "Confirmed",
     "preparing": "Preparing",
     "ready": "Ready",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "orderStatus": {
+    "ready": "Ready",
+    "outForDelivery": "Out for Delivery",
     "delivered": "Delivered",
     "cancelled": "Cancelled"
   },
@@ -583,6 +598,7 @@
     "shapes": "Shapes",
     "decorations": "Decorations",
     "predesignedCakes": "Predesigned Cakes",
+    "completedOrders": "Completed Orders",
     "account": "Account",
     "setting": "Setting",
     "signOut": "Sign out"
@@ -852,6 +868,12 @@
     "noHolidaysSelected": "No holidays selected",
     "save": "Save",
     "saving": "Saving..."
+  },
+  "completedOrders": {
+    "title": "Completed Orders",
+    "description": "View all orders that are ready, out for delivery, delivered, or cancelled",
+    "noOrders": "No completed orders",
+    "noOrdersDescription": "There are no orders in completed states (ready, out for delivery, delivered, or cancelled)"
   },
   "messages": {
     "confirmDelete": "Are you sure you want to delete this? This action cannot be undone."

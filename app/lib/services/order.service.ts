@@ -7,7 +7,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse } from "@/lib/api-client";
 
 /**
- * Order Item type definition
+ * Order item type definition
  */
 export interface OrderItem {
   id: string;
@@ -25,6 +25,14 @@ export interface OrderItem {
   createdAt: string;
   updatedAt: string;
   data?: Record<string, unknown>;
+}
+
+/**
+ * Order QA data type definition
+ */
+export interface OrderQA {
+  notes: string[];
+  finalImages: string[];
 }
 
 /**
@@ -78,6 +86,7 @@ export interface OrderResponse {
   deliveredAt: string | null;
   createdAt: string;
   updatedAt: string;
+  qa?: OrderQA;
   addons: OrderItem[];
   sweets: OrderItem[];
   featuredCakes: OrderItem[];
@@ -204,5 +213,17 @@ export const orderApi = {
   ): Promise<ApiResponse<{ id: string; status: string }>> => {
     const url = `/orders/${orderId}/status`;
     return apiClient.patch(url, { status });
+  },
+
+  /**
+   * Finalize order with QA data (final images)
+   */
+  finalizeOrderQA: (
+    orderId: string,
+    bakeryId: string,
+    finalImages: string[],
+  ): Promise<ApiResponse<{ id: string; finalImages: string[] }>> => {
+    const url = `/orders/${orderId}/qa`;
+    return apiClient.patch(url, { bakeryId, finalImages, notes: [] });
   },
 };

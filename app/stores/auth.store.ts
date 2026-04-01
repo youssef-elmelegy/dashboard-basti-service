@@ -3,6 +3,18 @@ import { persist } from "zustand/middleware";
 import { authApi } from "@/lib/api/auth.api";
 import type { AdminLoginRequest } from "@/lib/api/auth.api";
 
+// Utility to extract human-friendly message from unknown errors
+function extractErrorMessage(err: unknown, fallback = "An error occurred") {
+  if (!err) return fallback;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object" && err !== null) {
+    const e = err as Record<string, unknown>;
+    if (typeof e.message === "string") return e.message;
+    if (Array.isArray(e.details)) return e.details.join("; ");
+  }
+  return fallback;
+}
+
 export interface Admin {
   id: string;
   email: string;
@@ -45,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
+      // Helper to extract message from various error shapes
       login: async (credentials: AdminLoginRequest) => {
         set({ isLoading: true, error: null });
         try {
@@ -59,28 +72,20 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "Login failed");
           }
         } catch (error) {
-          let errorMessage = "Login failed";
-          if (error && typeof error === "object") {
-            // ApiClient throws ApiError objects with a `message` string and optional `details`
-            if (
-              "message" in error &&
-              typeof (error as any).message === "string"
-            ) {
-              errorMessage = (error as any).message;
-            } else if (
-              "details" in error &&
-              Array.isArray((error as any).details)
-            ) {
-              errorMessage = (error as any).details.join("; ");
+          const extractErrorMessage = (err: unknown, fallback = "Login failed") => {
+            if (!err) return fallback;
+            if (err instanceof Error) return err.message;
+            if (typeof err === "object" && err !== null) {
+              const e = err as Record<string, unknown>;
+              if (typeof e.message === "string") return e.message;
+              if (Array.isArray(e.details)) return e.details.join("; ");
             }
-          } else if (error instanceof Error) {
-            errorMessage = error.message;
-          }
+            return fallback;
+          };
 
-          set({
-            error: errorMessage,
-            isLoading: false,
-          });
+          const errorMessage = extractErrorMessage(error, "Login failed");
+
+          set({ error: errorMessage, isLoading: false });
           throw error;
         }
       },
@@ -109,27 +114,8 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          let errorMessage = "Failed to send OTP";
-          if (error && typeof error === "object") {
-            if (
-              "message" in error &&
-              typeof (error as any).message === "string"
-            ) {
-              errorMessage = (error as any).message;
-            } else if (
-              "details" in error &&
-              Array.isArray((error as any).details)
-            ) {
-              errorMessage = (error as any).details.join("; ");
-            }
-          } else if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-
-          set({
-            error: errorMessage,
-            isLoading: false,
-          });
+          const errorMessage = extractErrorMessage(error, "Failed to send OTP");
+          set({ error: errorMessage, isLoading: false });
           throw error;
         }
       },
@@ -145,27 +131,8 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "OTP verification failed");
           }
         } catch (error) {
-          let errorMessage = "OTP verification failed";
-          if (error && typeof error === "object") {
-            if (
-              "message" in error &&
-              typeof (error as any).message === "string"
-            ) {
-              errorMessage = (error as any).message;
-            } else if (
-              "details" in error &&
-              Array.isArray((error as any).details)
-            ) {
-              errorMessage = (error as any).details.join("; ");
-            }
-          } else if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-
-          set({
-            error: errorMessage,
-            isLoading: false,
-          });
+          const errorMessage = extractErrorMessage(error, "OTP verification failed");
+          set({ error: errorMessage, isLoading: false });
           throw error;
         }
       },
@@ -182,27 +149,8 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          let errorMessage = "Password reset failed";
-          if (error && typeof error === "object") {
-            if (
-              "message" in error &&
-              typeof (error as any).message === "string"
-            ) {
-              errorMessage = (error as any).message;
-            } else if (
-              "details" in error &&
-              Array.isArray((error as any).details)
-            ) {
-              errorMessage = (error as any).details.join("; ");
-            }
-          } else if (error instanceof Error) {
-            errorMessage = error.message;
-          }
-
-          set({
-            error: errorMessage,
-            isLoading: false,
-          });
+          const errorMessage = extractErrorMessage(error, "Password reset failed");
+          set({ error: errorMessage, isLoading: false });
           throw error;
         }
       },

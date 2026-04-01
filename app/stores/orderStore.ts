@@ -71,55 +71,56 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
       const parsed = typeof value === "string" ? JSON.parse(value) : value;
       if (!Array.isArray(parsed)) return undefined;
 
-      return parsed.map((opt: any) => ({
-        type: String(opt.type ?? ""),
-        label: String(opt.label ?? ""),
-        value: String(opt.value ?? ""),
-        imageUrl: String(opt.imageUrl ?? opt.image ?? ""),
-        optionId: String(opt.optionId ?? opt.id ?? ""),
-      }));
+      return parsed.map((opt) => {
+        const o = opt as Record<string, unknown>;
+        return {
+          type: typeof o.type === "string" ? o.type : "",
+          label: typeof o.label === "string" ? o.label : "",
+          value: typeof o.value === "string" ? o.value : "",
+          imageUrl:
+            typeof o.imageUrl === "string"
+              ? o.imageUrl
+              : typeof o.image === "string"
+              ? o.image
+              : "",
+          optionId:
+            typeof o.optionId === "string"
+              ? o.optionId
+              : typeof o.id === "string"
+              ? o.id
+              : "",
+        };
+      });
     } catch (e) {
       return undefined;
     }
   }
   // Combine and normalize items from different categories
-  const orderItems = [
-    ...(apiOrder.addons || []).map((it) => ({
-      ...it,
-      type: "addon" as const,
+    const normalizeItem = (it: Record<string, unknown>, type: OrderItem["type"]) => ({
+      ...(it as Record<string, unknown>),
+      type,
       selectedOptions: parseSelectedOptions(
-        (it as any).selectedOptions ?? (it as any).selected_options,
+        (it["selectedOptions"] ?? it["selected_options"] ?? undefined),
       ),
-    })),
-    ...(apiOrder.sweets || []).map((it) => ({
-      ...it,
-      type: "sweet" as const,
-      selectedOptions: parseSelectedOptions(
-        (it as any).selectedOptions ?? (it as any).selected_options,
+    });
+
+    const orderItems = [
+      ...(apiOrder.addons || []).map((it) =>
+        normalizeItem(it as Record<string, unknown>, "addon"),
       ),
-    })),
-    ...(apiOrder.featuredCakes || []).map((it) => ({
-      ...it,
-      type: "featured_cake" as const,
-      selectedOptions: parseSelectedOptions(
-        (it as any).selectedOptions ?? (it as any).selected_options,
+      ...(apiOrder.sweets || []).map((it) =>
+        normalizeItem(it as Record<string, unknown>, "sweet"),
       ),
-    })),
-    ...(apiOrder.predesignedCakes || []).map((it) => ({
-      ...it,
-      type: "predesigned_cake" as const,
-      selectedOptions: parseSelectedOptions(
-        (it as any).selectedOptions ?? (it as any).selected_options,
+      ...(apiOrder.featuredCakes || []).map((it) =>
+        normalizeItem(it as Record<string, unknown>, "featured_cake"),
       ),
-    })),
-    ...(apiOrder.customCakes || []).map((it) => ({
-      ...it,
-      type: "custom_cake" as const,
-      selectedOptions: parseSelectedOptions(
-        (it as any).selectedOptions ?? (it as any).selected_options,
+      ...(apiOrder.predesignedCakes || []).map((it) =>
+        normalizeItem(it as Record<string, unknown>, "predesigned_cake"),
       ),
-    })),
-  ];
+      ...(apiOrder.customCakes || []).map((it) =>
+        normalizeItem(it as Record<string, unknown>, "custom_cake"),
+      ),
+    ];
 
   // Get first featured cake image safely
   const featuredCakesArray = Array.isArray(apiOrder.featuredCakes)
@@ -133,6 +134,32 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
       ? (featuredCakesArray[0].data.images[0] as string)
       : "";
 
+  // Map cartType to local Order.type union
+  const allowedTypes = ["big_cakes", "small_cakes", "others"] as const;
+  const cartType = (apiOrder.cartType || "basket_cakes").toString();
+  const mappedType = (allowedTypes.includes(
+    cartType as unknown as (typeof allowedTypes)[number],
+  )
+    ? (cartType as (typeof allowedTypes)[number])
+    : "big_cakes") as Order["type"];
+
+  // Map orderStatus to local Order.status union
+  const allowedStatuses: Order["status"][] = [
+    "pending",
+    "confirmed",
+    "preparing",
+    "ready",
+    "out_for_delivery",
+    "delivered",
+    "cancelled",
+  ];
+  const statusStr = (apiOrder.orderStatus || "pending").toString();
+  const mappedStatus = allowedStatuses.includes(
+    statusStr as unknown as (typeof allowedStatuses)[number],
+  )
+    ? (statusStr as Order["status"])
+    : ("pending" as Order["status"]);
+
   return {
     id: apiOrder.id,
     referenceNumber: apiOrder.referenceNumber,
@@ -140,7 +167,7 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
       apiOrder.userData?.firstName + " " + apiOrder.userData?.lastName,
     customerPhone: apiOrder.userData?.phoneNumber,
     customerEmail: apiOrder.userData?.email,
-    type: (apiOrder.cartType as any) || "basket_cakes",
+    type: mappedType,
     productName: apiOrder.cartType || "Custom Order",
     productImage: firstFeaturedImage,
     basePrice: apiOrder.totalPrice,
@@ -149,7 +176,7 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
     region: apiOrder.regionName,
     deliverDay: apiOrder.willDeliverAt,
     orderedAt: apiOrder.createdAt,
-    status: apiOrder.orderStatus as any,
+    status: mappedStatus,
     capacitySlots: apiOrder.totalCapacity,
     assignedBakeryId: apiOrder.bakeryId || undefined,
     specialRequests: apiOrder.deliveryNote || undefined,

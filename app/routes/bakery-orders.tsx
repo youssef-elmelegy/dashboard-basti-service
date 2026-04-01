@@ -9,6 +9,7 @@ import { LocationMap } from "@/components/location-map";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import type { Order, OrderItem } from "@/data/orders";
 import { orderApi, type OrderResponse } from "@/lib/services/order.service";
+import { uploadImage } from "@/lib/api/cake.api";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -42,6 +43,7 @@ import {
   ChevronLeft,
   RotateCw,
   Download,
+  Upload,
   FileText,
   MessageSquare,
   Menu,
@@ -564,7 +566,7 @@ function OrderSidebarCard({
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {(() => {
-                  const dateStr = (order as any).orderedAt || order.deliverDay;
+                  const dateStr = order.orderedAt || order.deliverDay;
                   try {
                     return format(new Date(dateStr), "MMM d");
                   } catch {
@@ -643,14 +645,12 @@ export default function BakeryOrdersPage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
     location.state?.selectedOrderId || null,
   );
-  // const [qualityChecks, setQualityChecks] = useState<Record<string, boolean>>(
-  //   {},
-  // );
-  // const [uploadedImage, setUploadedImage] = useState<string>("");
   const [bakeryOrders, setBakeryOrdersLocal] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const autoConfirmedOrders = useRef(new Set<string>());
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [sortDir, setSortDir] = useState<"normal" | "asc" | "desc">("normal");
@@ -665,6 +665,11 @@ export default function BakeryOrdersPage() {
       });
     }
   }, [id, getBakeryById]);
+
+  // Clear image preview when order changes
+  useEffect(() => {
+    setImagePreview("");
+  }, [selectedOrderId]);
 
   // Fetch bakery-specific orders
   useEffect(() => {
@@ -705,40 +710,49 @@ export default function BakeryOrdersPage() {
                   ...item,
                   type: "addon" as const,
                   selectedOptions: parseSelectedOptions(
-                    (item as any).selectedOptions ??
-                      (item as any).selected_options,
+                    item.selectedOptions ??
+                      (item as unknown as Record<string, unknown>)
+                        .selected_options,
                   ),
                 })),
                 ...(apiOrder.sweets || []).map((item) => ({
                   ...item,
                   type: "sweet" as const,
                   selectedOptions: parseSelectedOptions(
-                    (item as any).selectedOptions ??
-                      (item as any).selected_options,
+                    (item as unknown as Record<string, unknown>)
+                      .selectedOptions ??
+                      (item as unknown as Record<string, unknown>)
+                        .selected_options,
                   ),
                 })),
                 ...(apiOrder.featuredCakes || []).map((item) => ({
                   ...item,
                   type: "featured_cake" as const,
                   selectedOptions: parseSelectedOptions(
-                    (item as any).selectedOptions ??
-                      (item as any).selected_options,
+                    (item as unknown as Record<string, unknown>)
+                      .selectedOptions ??
+                      (item as unknown as Record<string, unknown>)
+                        .selected_options,
                   ),
                 })),
                 ...(apiOrder.predesignedCakes || []).map((item) => ({
                   ...item,
                   type: "predesigned_cake" as const,
                   selectedOptions: parseSelectedOptions(
-                    (item as any).selectedOptions ??
-                      (item as any).selected_options,
+                    (item as unknown as Record<string, unknown>)
+                      .selectedOptions ??
+                      (item as unknown as Record<string, unknown>)
+                        .selected_options,
                   ),
                 })),
                 ...(apiOrder.customCakes || []).map((item) => ({
                   ...item,
                   type: "custom_cake" as const,
                   selectedOptions: parseSelectedOptions(
-                    (item as any).selectedOptions ??
-                      (item as any).selected_options,
+                    (item as unknown as Record<string, unknown>)
+                      .selectedOptions ??
+                      (item as unknown as Record<string, unknown>)
+                        .selected_options,
                   ),
                 })),
               ];
@@ -838,6 +852,10 @@ export default function BakeryOrdersPage() {
                       }
                     })()
                   : undefined,
+                finalImage:
+                  apiOrder.qa?.finalImages && apiOrder.qa.finalImages.length > 0
+                    ? apiOrder.qa.finalImages[0]
+                    : undefined,
               } as Order;
             },
           );
@@ -955,6 +973,12 @@ export default function BakeryOrdersPage() {
   ) => {
     if (!selectedOrderId) return;
 
+    // Check if trying to change to "ready" without uploading an image
+    if (newStatus === "ready" && !selectedOrder?.finalImage) {
+      alert("Please upload a final image before marking the order as ready.");
+      return;
+    }
+
     try {
       setIsChangingStatus(true);
 
@@ -983,6 +1007,74 @@ export default function BakeryOrdersPage() {
       console.error("Failed to change order status:", error);
     } finally {
       setIsChangingStatus(false);
+    }
+  };
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedOrder) return;
+
+    try {
+      setIsUploadingImage(true);
+
+      // Step 1: Upload image to get URL
+      const uploadResponse = await uploadImage(file, "basti/orders");
+
+      if (!uploadResponse.success || !uploadResponse.data) {
+        throw new Error(uploadResponse.message || "Failed to upload image");
+      }
+
+      const imageUrl = uploadResponse.data.secure_url;
+      setImagePreview(imageUrl);
+
+      try {
+        // Step 2: Call the QA finalize endpoint with the URL
+        if (!currentBakery?.id) {
+          throw new Error("Bakery ID not found");
+        }
+
+        const response = await orderApi.finalizeOrderQA(
+          selectedOrder.id,
+          currentBakery.id,
+          [imageUrl],
+        );
+
+        if (response.success) {
+          // Update the local order with the final image URL
+          const updatedOrders = bakeryOrders.map((order) =>
+            order.id === selectedOrderId
+              ? {
+                  ...order,
+                  finalImage: imageUrl,
+                  finalImageUploadedAt: new Date().toISOString(),
+                }
+              : order,
+          ) as Order[];
+
+          setBakeryOrdersLocal(updatedOrders);
+          if (id) setBakeryOrders(id, updatedOrders);
+          if (selectedOrderId) {
+            updateOrder(selectedOrderId, {
+              finalImage: imageUrl,
+              finalImageUploadedAt: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to finalize QA:", error);
+        alert("Failed to finalize image. Please try again.");
+        setImagePreview("");
+      } finally {
+        setIsUploadingImage(false);
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to upload image";
+      alert(errorMsg);
+      setIsUploadingImage(false);
     }
   };
 
@@ -1585,22 +1677,140 @@ export default function BakeryOrdersPage() {
                           )}
                         </Button>
                       )}
+                      {/* Image Upload Section - Only during preparing */}
                       {selectedOrder.status === "preparing" && (
-                        <Button
-                          className="flex-1"
-                          disabled={isChangingStatus}
-                          onClick={() => handleStatusChange("ready")}
-                        >
-                          {isChangingStatus ? (
-                            <>
-                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            "Mark as Ready"
-                          )}
-                        </Button>
+                        <div className="space-y-4">
+                          <Card className="border-dashed">
+                            <CardHeader>
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                <Upload className="w-4 h-4" />
+                                Upload Final Image
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {!selectedOrder.finalImage && !imagePreview ? (
+                                <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                                    <p className="text-sm font-medium text-center">
+                                      Click to upload final image
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      PNG, JPG up to 10MB
+                                    </p>
+                                  </div>
+                                  <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    disabled={isUploadingImage}
+                                  />
+                                </label>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="relative w-full rounded-lg overflow-hidden border bg-muted">
+                                    <img
+                                      src={
+                                        imagePreview || selectedOrder.finalImage
+                                      }
+                                      alt="Final Order Image"
+                                      className="w-full h-48 object-contain"
+                                    />
+                                  </div>
+                                  <label className="flex w-full px-3 py-2 border border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors justify-center items-center gap-2">
+                                    <RotateCw className="w-4 h-4" />
+                                    <span className="text-sm">
+                                      Replace Image
+                                    </span>
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept="image/*"
+                                      onChange={handleImageUpload}
+                                      disabled={isUploadingImage}
+                                    />
+                                  </label>
+                                  {selectedOrder.finalImageUploadedAt && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Uploaded:{" "}
+                                      {format(
+                                        new Date(
+                                          selectedOrder.finalImageUploadedAt,
+                                        ),
+                                        "MMM d, yyyy HH:mm",
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              {isUploadingImage && (
+                                <div className="flex items-center justify-center gap-2">
+                                  <RotateCw className="w-4 h-4 animate-spin" />
+                                  <span className="text-sm">
+                                    Uploading image...
+                                  </span>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                          <Button
+                            className="flex-1"
+                            disabled={
+                              isChangingStatus ||
+                              isUploadingImage ||
+                              !selectedOrder.finalImage
+                            }
+                            onClick={() => handleStatusChange("ready")}
+                          >
+                            {isChangingStatus ? (
+                              <>
+                                <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : !selectedOrder.finalImage ? (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload image first
+                              </>
+                            ) : (
+                              "Mark as Ready"
+                            )}
+                          </Button>
+                        </div>
                       )}
+                      {/* Final Image Display - Show in all statuses when image exists */}
+                      {selectedOrder.finalImage &&
+                        selectedOrder.status !== "preparing" && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                <Package className="w-4 h-4" />
+                                Final Image
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              <div className="relative w-full rounded-lg overflow-hidden border bg-muted">
+                                <img
+                                  src={selectedOrder.finalImage}
+                                  alt="Final Order Image"
+                                  className="w-full h-48 object-contain"
+                                />
+                              </div>
+                              {selectedOrder.finalImageUploadedAt && (
+                                <p className="text-xs text-muted-foreground">
+                                  Uploaded:{" "}
+                                  {format(
+                                    new Date(
+                                      selectedOrder.finalImageUploadedAt,
+                                    ),
+                                    "MMM d, yyyy HH:mm",
+                                  )}
+                                </p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
                       {selectedOrder.status === "ready" && (
                         <Button
                           className="flex-1"

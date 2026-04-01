@@ -61,7 +61,10 @@
     "reset": "إعادة تعيين",
     "copy": "نسخ",
     "copied": "تم النسخ",
-    "viewDetails": "عرض التفاصيل"
+    "viewDetails": "عرض التفاصيل",
+    "refresh": "تحديث",
+    "sortByDate": "ترتيب حسب التاريخ",
+    "sortByStatus": "ترتيب حسب الحالة"
   },
   "orderDetail": {
     "reference": "رقم المرجع",
@@ -169,8 +172,12 @@
     "status": "الحالة",
     "typeLabel": "النوع",
     "deliveryDate": "تاريخ التسليم",
-    "slots": "فتحات"
+    "slots": "فتحات",
+    "referenceNumber": "رقم المرجع",
+    "customer": "العميل",
+    "totalPrice": "السعر الإجمالي"
   },
+
   "bakeries": {
     "title": "المخابز",
     "addBakery": "إضافة مخبز",
@@ -224,7 +231,9 @@
     "cancelDescription": "يرجى تقديم سبب إلغاء هذا الطلب:",
     "enterReason": "أدخل سبب الإلغاء...",
     "keepOrder": "الاحتفاظ بالطلب",
-    "confirm": "إلغاء الطلب"
+    "confirm": "إلغاء الطلب",
+    "finalProductImage": "صورة المنتج النهائية",
+    "finalImageTaken": "تم التقاط الصورة في"
   },
   "products": {
     "title": "المنتجات",
@@ -344,6 +353,12 @@
     "confirmed": "مؤكد",
     "preparing": "قيد التحضير",
     "ready": "جاهز",
+    "delivered": "مسلم",
+    "cancelled": "ملغى"
+  },
+  "orderStatus": {
+    "ready": "جاهز",
+    "outForDelivery": "قيد التسليم",
     "delivered": "مسلم",
     "cancelled": "ملغى"
   },
@@ -583,6 +598,7 @@
     "shapes": "الأشكال",
     "decorations": "الزينة",
     "predesignedCakes": "الكعكات المصممة مسبقاً",
+    "completedOrders": "الطلبات المكتملة",
     "account": "الحساب",
     "setting": "الإعدادات",
     "signOut": "تسجيل الخروج"
@@ -852,6 +868,12 @@
     "noHolidaysSelected": "لم يتم اختيار أي إجازات",
     "save": "حفظ",
     "saving": "جاري الحفظ..."
+  },
+  "completedOrders": {
+    "title": "الطلبات المكتملة",
+    "description": "اعرض جميع الطلبات التي تكون جاهزة أو قيد التسليم أو مسلمة أو ملغاة",
+    "noOrders": "لا توجد طلبات مكتملة",
+    "noOrdersDescription": "لا توجد طلبات في الحالات المكتملة (جاهزة أو قيد التسليم أو مسلمة أو ملغاة)"
   },
   "messages": {
     "confirmDelete": "هل أنت متأكد من أنك تريد حذف هذا؟ لا يمكن التراجع عن هذا الإجراء."

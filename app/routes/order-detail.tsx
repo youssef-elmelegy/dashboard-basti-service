@@ -385,8 +385,17 @@ export default function OrderDetailPage() {
 
         const data = await response.json();
         if (data.data) {
-          setFetchedOrder(data.data);
-          cacheDetailedOrder(id, data.data);
+          // Map QA finalImages to finalImage field
+          const apiOrder = data.data;
+          const mappedOrder = {
+            ...apiOrder,
+            finalImage:
+              apiOrder.qa?.finalImages && apiOrder.qa.finalImages.length > 0
+                ? apiOrder.qa.finalImages[0]
+                : apiOrder.finalImage,
+          };
+          setFetchedOrder(mappedOrder);
+          cacheDetailedOrder(id, mappedOrder);
         }
       } catch (err) {
         const errorMessage =
@@ -1518,11 +1527,11 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
-                <div className="rounded-lg overflow-hidden border">
+                <div className="rounded-lg overflow-hidden border bg-muted">
                   <img
                     src={order.finalImage}
                     alt="Final Product"
-                    className="w-full h-auto max-h-96 object-cover"
+                    className="w-full h-auto max-h-96 object-contain"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">

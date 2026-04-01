@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import Root from "@/root";
 import ManagerDashboard from "@/routes/manager-dashboard";
 import Orders from "@/routes/orders";
+import CompletedOrders from "@/routes/completed-orders";
 import BakeryOrders from "@/routes/bakery-orders";
 import Customers from "@/routes/customers";
 import CustomerDetail from "@/routes/customer-detail";
@@ -86,6 +87,10 @@ export const router = createBrowserRouter([
       {
         path: "orders",
         element: <Orders />,
+      },
+      {
+        path: "completed-orders",
+        element: <CompletedOrders />,
       },
       {
         path: "orders/:id",

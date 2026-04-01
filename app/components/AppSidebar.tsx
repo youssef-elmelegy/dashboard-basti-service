@@ -139,6 +139,11 @@ const AppSidebar = () => {
       url: "/orders",
       icon: Package,
     },
+    {
+      title: t("sidebar.completedOrders"),
+      url: "/completed-orders",
+      icon: Package,
+    },
   ];
 
   return (

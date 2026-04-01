@@ -140,6 +140,7 @@ export type Order = {
   assignedBakeryName?: string;
   assignedAt?: string; // ISO timestamp when assigned to bakery
   assigningDate?: string; // ISO timestamp for pending order timer (1 hour from this time)
+  deliveredAt?: string; // ISO timestamp when order was delivered
 
   // Cancellation
   cancellationReason?: string;
