@@ -106,19 +106,19 @@ function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
 
     const orderItems = [
       ...(apiOrder.addons || []).map((it) =>
-        normalizeItem(it as Record<string, unknown>, "addon"),
+        normalizeItem(it as unknown as Record<string, unknown>, "addon"),
       ),
       ...(apiOrder.sweets || []).map((it) =>
-        normalizeItem(it as Record<string, unknown>, "sweet"),
+        normalizeItem(it as unknown as Record<string, unknown>, "sweet"),
       ),
       ...(apiOrder.featuredCakes || []).map((it) =>
-        normalizeItem(it as Record<string, unknown>, "featured_cake"),
+        normalizeItem(it as unknown as Record<string, unknown>, "featured_cake"),
       ),
       ...(apiOrder.predesignedCakes || []).map((it) =>
-        normalizeItem(it as Record<string, unknown>, "predesigned_cake"),
+        normalizeItem(it as unknown as Record<string, unknown>, "predesigned_cake"),
       ),
       ...(apiOrder.customCakes || []).map((it) =>
-        normalizeItem(it as Record<string, unknown>, "custom_cake"),
+        normalizeItem(it as unknown as Record<string, unknown>, "custom_cake"),
       ),
     ];
 
