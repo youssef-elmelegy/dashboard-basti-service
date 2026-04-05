@@ -54,6 +54,12 @@ export const tagsApi = {
    */
   delete: (id: string): Promise<ApiResponse<Record<string, unknown>>> =>
     apiClient.delete(`/tags/${id}`),
+
+  /**
+   * Change tag order
+   */
+  changeOrder: (id: string, order: number): Promise<ApiResponse<Tag[]>> =>
+    apiClient.patch<Tag[]>(`/tags/${id}/order`, { order }),
 };
 
 /**

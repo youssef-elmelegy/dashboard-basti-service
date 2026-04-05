@@ -31,13 +31,18 @@ export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
           <p className="text-sm text-muted-foreground line-clamp-2">
             {shape.description}
           </p>
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="secondary" className="text-xs capitalize">
               {shape.size}
             </Badge>
             <Badge variant="outline" className="text-xs">
               {shape.capacity} servings
             </Badge>
+            {shape.minPrepHours && (
+              <Badge variant="outline" className="text-xs">
+                {shape.minPrepHours}h prep
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             {new Date(shape.createdAt).toLocaleDateString()}

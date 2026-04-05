@@ -63,6 +63,7 @@ export const createShapeSchema = z.object({
     message: "Size must be small, medium, or large",
   }),
   capacity: z.number().int().positive("Capacity must be greater than 0"),
+  minPrepHours: z.number().positive().optional(),
 });
 
 export const updateShapeSchema = z.object({
@@ -87,6 +88,7 @@ export const updateShapeSchema = z.object({
     .int()
     .positive("Capacity must be greater than 0")
     .optional(),
+  minPrepHours: z.number().positive().optional(),
 });
 
 export type CreateShapeFormValues = z.infer<typeof createShapeSchema>;
@@ -100,6 +102,8 @@ export const createDecorationSchema = z.object({
     .max(1000),
   decorationUrl: z.string().url("Must be a valid URL"),
   tagId: z.string().optional(),
+  capacity: z.number().int().positive("Capacity must be greater than 0"),
+  minPrepHours: z.number().positive().optional(),
 });
 
 export const updateDecorationSchema = z.object({
@@ -115,6 +119,12 @@ export const updateDecorationSchema = z.object({
     .optional(),
   decorationUrl: z.string().url("Must be a valid URL").optional(),
   tagId: z.string().optional(),
+  capacity: z
+    .number()
+    .int()
+    .positive("Capacity must be greater than 0")
+    .optional(),
+  minPrepHours: z.number().positive().optional(),
 });
 
 export type CreateDecorationFormValues = z.infer<typeof createDecorationSchema>;
@@ -135,6 +145,8 @@ export const createDecorationWithVariantImagesSchema = z.object({
     .max(1000),
   decorationUrl: z.string().url("Must be a valid URL"),
   tagId: z.string().optional(),
+  capacity: z.number().int().positive("Capacity must be greater than 0"),
+  minPrepHours: z.number().positive().optional(),
   variantImages: z
     .array(decorationVariantImageSchema)
     .min(1, "At least one shape variant is required"),

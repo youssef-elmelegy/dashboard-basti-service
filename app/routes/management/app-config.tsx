@@ -346,15 +346,15 @@ export default function AppConfigPage() {
 
                 <div className="w-full lg:flex-1 space-y-3">
                   <p className="text-sm font-medium">
-                    {t("appConfig.selectedHolidays")} ({selectedDates.length})
+                    {t("appConfig.selectedHolidays")} ({selectedDates.filter((date) => date >= new Date(new Date().setHours(0, 0, 0, 0))).length})
                   </p>
                   <div className="border border-border rounded-lg p-4 bg-muted max-h-96 overflow-y-auto space-y-2">
-                    {selectedDates.length === 0 ? (
+                    {selectedDates.filter((date) => date >= new Date(new Date().setHours(0, 0, 0, 0))).length === 0 ? (
                       <p className="text-sm text-muted-foreground">
                         {t("appConfig.noHolidaysSelected")}
                       </p>
                     ) : (
-                      selectedDates.sort().map((date) => {
+                      selectedDates.filter((date) => date >= new Date(new Date().setHours(0, 0, 0, 0))).sort().map((date) => {
                         const dateStr = format(date, "yyyy-MM-dd");
                         const displayStr = format(date, "EEEE, MMMM d, yyyy");
                         return (

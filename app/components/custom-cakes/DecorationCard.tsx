@@ -42,6 +42,16 @@ export function DecorationCard({
               </Badge>
             </div>
           )}
+          <div className="mt-2 flex gap-2 flex-wrap">
+            <Badge variant="outline" className="text-xs">
+              {decoration.capacity} servings
+            </Badge>
+            {decoration.minPrepHours && (
+              <Badge variant="outline" className="text-xs">
+                {decoration.minPrepHours}h prep
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-2">
             {new Date(decoration.createdAt).toLocaleDateString()}
           </p>

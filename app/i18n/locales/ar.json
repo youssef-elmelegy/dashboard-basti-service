@@ -783,6 +783,8 @@
     "shapeDescription": "وصف الشكل",
     "enterShapeDescription": "أدخل وصف الشكل",
     "enterCapacity": "أدخل السعة بعدد الحصص",
+    "minPrepHours": "ساعات التحضير الدنيا",
+    "enterMinPrepHours": "أدخل ساعات التحضير الدنيا",
     "failedToUpdateFlavor": "فشل تحديث النكهة",
     "failedToUpdateDecoration": "فشل تحديث الزينة",
     "predesignedCakes": {

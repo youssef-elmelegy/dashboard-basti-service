@@ -62,6 +62,7 @@ export function ShapeForm({
       shapeUrl: "",
       size: "medium",
       capacity: 0,
+      minPrepHours: undefined,
     },
   });
 
@@ -213,6 +214,36 @@ export function ShapeForm({
                   }
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="minPrepHours"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("customCakes.minPrepHours")}</FormLabel>
+              <Select
+                value={field.value ? field.value.toString() : ""}
+                onValueChange={(value) =>
+                  field.onChange(value ? parseFloat(value) : undefined)
+                }
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("customCakes.enterMinPrepHours")}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="24">24 hours</SelectItem>
+                  <SelectItem value="48">48 hours</SelectItem>
+                  <SelectItem value="72">72 hours</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

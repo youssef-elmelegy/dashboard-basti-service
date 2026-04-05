@@ -18,6 +18,7 @@ interface TagsState {
   createTag: (data: CreateTagRequest) => Promise<Tag | null>;
   updateTag: (id: string, data: UpdateTagRequest) => Promise<Tag | null>;
   deleteTag: (id: string) => Promise<boolean>;
+  changeTagOrder: (id: string, newOrder: number) => Promise<void>;
   addTag: (tag: Tag) => void;
   removeTag: (tagId: string) => void;
   setTags: (tags: Tag[]) => void;
@@ -126,6 +127,65 @@ export const useTagsStore = create<TagsState>((set, get) => ({
         err instanceof Error ? err.message : "Failed to delete tag";
       set({ error: errorMessage, isSaving: false });
       return false;
+    }
+  },
+
+  // Change tag order
+  changeTagOrder: async (id: string, newOrder: number) => {
+    // Optimistic update: apply new order locally immediately, call API, rollback on error
+    set({ error: null });
+
+    const prevTags = get().tags;
+
+    // Build a new ordered array based on current tags and desired position
+    const currentOrdered = [...prevTags].sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+
+    const movingIndex = currentOrdered.findIndex((t) => t.id === id);
+    if (movingIndex === -1) return;
+
+    const movingTag = currentOrdered[movingIndex];
+
+    // Remove the moving tag
+    currentOrdered.splice(movingIndex, 1);
+
+    // Insert at target index (convert to 0-based)
+    const targetIndex = Math.max(
+      0,
+      Math.min(newOrder - 1, currentOrdered.length),
+    );
+    currentOrdered.splice(targetIndex, 0, movingTag);
+
+    // Reassign continuous order numbers starting from 1
+    const optimisticTags = currentOrdered.map((t, idx) => ({
+      ...t,
+      displayOrder: idx + 1,
+    }));
+
+    // Apply optimistic update immediately
+    set({ tags: optimisticTags });
+
+    try {
+      const response = await tagsApi.changeOrder(id, newOrder);
+
+      if (response.success && response.data) {
+        // Success: update with server response
+        set({ tags: response.data, error: null });
+      } else {
+        // Rollback to previous state on failure
+        set({
+          tags: prevTags,
+          error: response.message || "Failed to change tag order",
+        });
+        throw new Error(response.message || "Failed to change tag order");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to change tag order";
+      // Rollback to previous tags
+      set({ tags: prevTags, error: errorMessage });
+      throw error;
     }
   },
 

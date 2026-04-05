@@ -783,6 +783,8 @@
     "shapeDescription": "Shape Description",
     "enterShapeDescription": "Enter shape description",
     "enterCapacity": "Enter capacity in servings",
+    "minPrepHours": "Minimum Preparation Hours",
+    "enterMinPrepHours": "Enter minimum preparation hours",
     "failedToUpdateFlavor": "Failed to update flavor",
     "failedToUpdateDecoration": "Failed to update decoration",
     "predesignedCakes": {

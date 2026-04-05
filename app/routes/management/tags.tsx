@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { TAG_TYPES, type TagType } from "@/lib/services/tags.service";
+import type { Tag } from "@/lib/services/tags.service";
 
 const formSchema = z.object({
   name: z.string().min(2).max(100),
@@ -43,9 +44,12 @@ export default function TagsManagementPage() {
   const createTag = useTagsStore((s) => s.createTag);
   const updateTag = useTagsStore((s) => s.updateTag);
   const deleteTag = useTagsStore((s) => s.deleteTag);
+  const changeTagOrder = useTagsStore((s) => s.changeTagOrder);
   const clearError = useTagsStore((s) => s.clearError);
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [draggedTag, setDraggedTag] = useState<Tag | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues, unknown>,
@@ -161,6 +165,52 @@ export default function TagsManagementPage() {
       },
     );
   };
+
+  const handleDragStart = (tag: Tag) => {
+    setDraggedTag(tag);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTag(null);
+    setDragOverId(null);
+  };
+
+  const handleDrop = async (targetTag: Tag) => {
+    if (!draggedTag || draggedTag.id === targetTag.id) {
+      setDraggedTag(null);
+      return;
+    }
+
+    // Find positions
+    const displayedTags = [...tags].sort((a, b) => a.displayOrder - b.displayOrder);
+    const draggedIndex = displayedTags.findIndex((t) => t.id === draggedTag.id);
+    const targetIndex = displayedTags.findIndex((t) => t.id === targetTag.id);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedTag(null);
+      return;
+    }
+
+    // Calculate new order (1-indexed)
+    const newOrder = targetIndex + 1;
+
+    // Send request to update backend (fire-and-forget).
+    // The store performs an optimistic update immediately and will rollback on error.
+    changeTagOrder(draggedTag.id, newOrder).catch((error) => {
+      console.error("Failed to change tag order:", error);
+    });
+
+    // Clear drag state immediately so UI is responsive
+    setDraggedTag(null);
+  };
+
+  // Compute displayed tags sorted by order
+  const displayedTags = [...tags].sort((a, b) => a.displayOrder - b.displayOrder);
 
   return (
     <div className="h-full flex flex-col gap-6 w-full">
@@ -327,48 +377,63 @@ export default function TagsManagementPage() {
                   </div>
                 ) : (
                   <ul className="space-y-2">
-                    {tags
-                      .slice()
-                      .sort((a, b) => a.displayOrder - b.displayOrder)
-                      .map((tag) => (
-                        <li
-                          key={tag.id}
-                          className="flex items-center justify-between p-2 rounded"
-                        >
-                          <div>
-                            <div className="font-medium">{tag.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Order: {tag.displayOrder}
-                            </div>
-                            {Array.isArray(tag.types) &&
-                              tag.types.length > 0 && (
-                                <div className="flex gap-1 flex-wrap mt-2">
-                                  {tag.types.map((type) => (
-                                    <Badge key={type} variant="secondary">
-                                      {type.replace(/-/g, " ")}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
+                    {displayedTags.map((tag) => (
+                      <li
+                        key={tag.id}
+                        draggable
+                        onDragStart={() => handleDragStart(tag)}
+                        onDragOver={handleDragOver}
+                        onDragEnd={handleDragEnd}
+                        onDragEnter={() => setDragOverId(tag.id)}
+                        onDragLeave={() => setDragOverId(null)}
+                        onDrop={() => handleDrop(tag)}
+                        className={`
+                          cursor-grab active:cursor-grabbing transition-all flex items-center justify-between p-3 rounded bg-slate-100 dark:bg-slate-800
+                          ${draggedTag?.id === tag.id 
+                            ? "opacity-50 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-500" 
+                            : ""}
+                          ${dragOverId === tag.id && draggedTag?.id !== tag.id
+                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500"
+                            : ""}
+                          ${draggedTag?.id !== tag.id && dragOverId !== tag.id
+                            ? "hover:bg-slate-200 dark:hover:bg-slate-700"
+                            : ""}
+                        `}
+                      >
+                        <div>
+                          <div className="font-medium">{tag.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Order: {tag.displayOrder}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(tag.id)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDelete(tag)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
+                          {Array.isArray(tag.types) &&
+                            tag.types.length > 0 && (
+                              <div className="flex gap-1 flex-wrap mt-2">
+                                {tag.types.map((type) => (
+                                  <Badge key={type} variant="secondary">
+                                    {type.replace(/-/g, " ")}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(tag.id)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(tag)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </div>

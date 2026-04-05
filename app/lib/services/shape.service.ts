@@ -8,6 +8,7 @@ export interface Shape {
   shapeUrl: string;
   size: "small" | "medium" | "large";
   capacity: number;
+  minPrepHours?: number;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -19,6 +20,7 @@ export interface CreateShapeRequest {
   shapeUrl: string;
   size: "small" | "medium" | "large";
   capacity: number;
+  minPrepHours?: number;
   order?: number;
 }
 
@@ -28,6 +30,7 @@ export interface UpdateShapeRequest {
   shapeUrl?: string;
   size?: "small" | "medium" | "large";
   capacity?: number;
+  minPrepHours?: number;
   order?: number;
 }
 

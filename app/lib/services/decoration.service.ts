@@ -8,6 +8,8 @@ export interface Decoration {
   decorationUrl: string;
   tagId?: string;
   tagName?: string;
+  capacity: number;
+  minPrepHours?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +19,8 @@ export interface CreateDecorationRequest {
   description: string;
   decorationUrl: string;
   tagId?: string;
+  capacity: number;
+  minPrepHours?: number;
 }
 
 export interface UpdateDecorationRequest {
@@ -24,6 +28,8 @@ export interface UpdateDecorationRequest {
   description?: string;
   decorationUrl?: string;
   tagId?: string;
+  capacity?: number;
+  minPrepHours?: number;
 }
 
 export interface PaginatedResponse<T> {

@@ -126,6 +126,8 @@ export function DecorationForm({
           description: decoration?.description || "",
           decorationUrl: decoration?.decorationUrl || "",
           tagId: undefined,
+          capacity: decoration?.capacity || 0,
+          minPrepHours: decoration?.minPrepHours,
           variantImages: [],
         }
       : decoration || {
@@ -133,6 +135,8 @@ export function DecorationForm({
           description: "",
           decorationUrl: "",
           tagId: undefined,
+          capacity: 0,
+          minPrepHours: undefined,
         },
   });
 
@@ -197,6 +201,8 @@ export function DecorationForm({
         description: variantData.description,
         decorationUrl: uploadedImageUrl || variantData.decorationUrl,
         tagId: variantData.tagId,
+        capacity: variantData.capacity,
+        minPrepHours: variantData.minPrepHours,
         variantImages: filteredVariants,
       };
 
@@ -288,6 +294,58 @@ export function DecorationForm({
                         {tag.name}
                       </SelectItem>
                     ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="capacity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("customCakes.capacity")}</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder={t("customCakes.enterCapacity")}
+                  {...field}
+                  onChange={(e) =>
+                    field.onChange(parseInt(e.target.value, 10) || 0)
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="minPrepHours"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("customCakes.minPrepHours")}</FormLabel>
+              <Select
+                value={field.value ? field.value.toString() : ""}
+                onValueChange={(value) =>
+                  field.onChange(value ? parseFloat(value) : undefined)
+                }
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("customCakes.enterMinPrepHours")}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="24">24 hours</SelectItem>
+                  <SelectItem value="48">48 hours</SelectItem>
+                  <SelectItem value="72">72 hours</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
