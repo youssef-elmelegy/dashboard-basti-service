@@ -2,6 +2,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi } from "@/lib/api/auth.api";
 import type { AdminLoginRequest } from "@/lib/api/auth.api";
+import {
+  registerFcmWithBackend,
+  resetFcmRegistrationCache,
+  clearFcmRegistration,
+} from "@/lib/services/fcm.service";
 
 // Utility to extract human-friendly message from unknown errors
 function extractErrorMessage(err: unknown, fallback = "An error occurred") {
@@ -68,6 +73,11 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             });
+
+            // Register an FCM push token for this admin so the backend can
+            // deliver real-time notifications. Fire-and-forget — login must
+            // not block on browser push permission.
+            void registerFcmWithBackend();
           } else {
             throw new Error(response.message || "Login failed");
           }
@@ -92,11 +102,17 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         set({ isLoading: true });
+        // Clear FCM registration BEFORE logout so the DELETE call still
+        // has a valid auth cookie. Server-side stops targeting this admin
+        // and the browser push subscription is unsubscribed so the next
+        // login mints a fresh token.
+        await clearFcmRegistration();
         try {
           await authApi.logout();
         } catch (error) {
           console.error("Logout error:", error);
         } finally {
+          resetFcmRegistrationCache();
           set({
             admin: null,
             isAuthenticated: false,
@@ -169,6 +185,10 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               isLoading: false,
             });
+
+            // Re-register the FCM token for the restored session so a
+            // browser-restart admin still gets push delivery.
+            void registerFcmWithBackend();
           } else {
             set({
               admin: null,

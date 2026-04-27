@@ -1,0 +1,102 @@
+import { apiClient, type ApiResponse } from "../api-client";
+
+export const NOTIFICATION_TYPES = [
+  "order_update",
+  "order_status",
+  "promotion",
+  "system",
+  "review",
+  "new_order",
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export interface NotificationData {
+  id: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+  userId: string | null;
+  adminId: string | null;
+  redirectId: string | null;
+  isRead: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationPagination {
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
+export interface PaginatedNotifications {
+  items: NotificationData[];
+  pagination: NotificationPagination;
+}
+
+export interface ListNotificationsParams {
+  page?: number;
+  limit?: number;
+  isRead?: boolean;
+  type?: NotificationType;
+}
+
+function buildQuery(params: ListNotificationsParams): string {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) search.set("page", String(params.page));
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
+  if (params.isRead !== undefined) search.set("isRead", String(params.isRead));
+  if (params.type !== undefined) search.set("type", params.type);
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+class NotificationApi {
+  registerToken(fcmToken: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.post<{ message: string }>("/notifications/register-token", {
+      fcmToken,
+    });
+  }
+
+  clearToken(): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>(
+      "/notifications/register-token",
+    );
+  }
+
+  list(
+    params: ListNotificationsParams = {},
+  ): Promise<ApiResponse<PaginatedNotifications>> {
+    return apiClient.get<PaginatedNotifications>(
+      `/notifications${buildQuery(params)}`,
+    );
+  }
+
+  unreadCount(): Promise<ApiResponse<{ unreadCount: number }>> {
+    return apiClient.get<{ unreadCount: number }>(
+      "/notifications/unread-count",
+    );
+  }
+
+  markAsRead(id: string): Promise<ApiResponse<NotificationData>> {
+    return apiClient.patch<NotificationData>(
+      `/notifications/${id}/read`,
+      {},
+    );
+  }
+
+  markAllAsRead(): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.patch<{ message: string }>(
+      "/notifications/read-all",
+      {},
+    );
+  }
+
+  remove(id: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.delete<{ message: string }>(`/notifications/${id}`);
+  }
+}
+
+export const notificationApi = new NotificationApi();

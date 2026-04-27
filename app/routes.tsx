@@ -32,6 +32,7 @@ import OTPVerifyPage from "@/routes/auth/otp-verify";
 import ResetPasswordPage from "@/routes/auth/reset-password";
 import OrderDetailPage from "@/routes/order-detail";
 import ItemDetailPage from "@/routes/item-detail";
+import NotificationsPage from "@/routes/notifications";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -115,6 +116,10 @@ export const router = createBrowserRouter([
       {
         path: "settings",
         element: <Settings />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationsPage />,
       },
       {
         path: "support",

@@ -1,0 +1,117 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { subscribeToForegroundMessages } from "@/config/firebase";
+import { type NotificationType } from "@/lib/api/notification.api";
+import { useNotificationStore } from "@/stores/notificationStore";
+import { useAuthStore } from "@/stores/auth.store";
+import { registerFcmWithBackend } from "@/lib/services/fcm.service";
+import { playNotificationSound } from "@/lib/notification-sound";
+
+function resolveNavigationPath(
+  type: NotificationType | undefined,
+  redirectId: string | null | undefined,
+): string | null {
+  if (!type) return null;
+
+  switch (type) {
+    case "new_order":
+    case "order_update":
+    case "order_status":
+      return redirectId ? `/orders/${redirectId}` : "/orders";
+    case "review":
+      return redirectId ? `/customers/${redirectId}` : "/customers";
+    case "promotion":
+    case "system":
+    default:
+      return null;
+  }
+}
+
+export function getNotificationNavigationPath(
+  type: NotificationType | undefined,
+  redirectId: string | null | undefined,
+): string | null {
+  return resolveNavigationPath(type, redirectId);
+}
+
+export function useNotifications() {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const adminId = useAuthStore((state) => state.admin?.id);
+
+  const refreshAll = useNotificationStore((state) => state.refreshAll);
+  const refreshUnreadCount = useNotificationStore(
+    (state) => state.refreshUnreadCount,
+  );
+  const reset = useNotificationStore((state) => state.reset);
+
+  useEffect(() => {
+    if (!isAuthenticated || !adminId) {
+      reset();
+      return;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        await refreshAll();
+
+        // Safety net: re-register on mount in case the auth store didn't
+        // (e.g., persisted session restored before fcm.service hook-in).
+        // The helper dedupes via its own cache so it's a no-op when
+        // login already registered.
+        void registerFcmWithBackend();
+
+        unsubscribe = await subscribeToForegroundMessages((payload) => {
+          console.log("[FCM] Foreground message received:", payload);
+          if (!cancelled) {
+            playNotificationSound();
+            void refreshAll();
+          }
+        });
+      } catch (error) {
+        console.error("[FCM] Notification setup failed:", error);
+      }
+    };
+
+    void init();
+
+    const handleSwMessage = (event: MessageEvent) => {
+      const messageType = event.data?.type;
+
+      if (messageType === "NOTIFICATION_RECEIVED") {
+        console.log("[FCM] Background message broadcast received");
+        playNotificationSound();
+        void refreshAll();
+        return;
+      }
+
+      if (messageType === "NOTIFICATION_CLICK") {
+        const data = event.data.data as Record<string, string> | undefined;
+        const path = resolveNavigationPath(
+          data?.type as NotificationType | undefined,
+          data?.redirectId,
+        );
+        if (path) navigate(path);
+        void refreshUnreadCount();
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleSwMessage);
+    }
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener(
+          "message",
+          handleSwMessage,
+        );
+      }
+    };
+  }, [isAuthenticated, adminId, refreshAll, refreshUnreadCount, reset, navigate]);
+}

@@ -879,5 +879,28 @@
   },
   "messages": {
     "confirmDelete": "هل أنت متأكد من أنك تريد حذف هذا؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات جديدة",
+    "markAsRead": "تعليم كمقروء",
+    "markAllRead": "تعليم الكل كمقروء",
+    "unread": "غير مقروء",
+    "viewAll": "عرض كل الإشعارات",
+    "totalCount": "الإجمالي {{count}}",
+    "filter": {
+      "all": "الكل",
+      "unread": "غير المقروء",
+      "read": "المقروء"
+    },
+    "types": {
+      "all": "كل الأنواع",
+      "order_update": "تحديث طلب",
+      "order_status": "حالة طلب",
+      "promotion": "عرض ترويجي",
+      "system": "نظام",
+      "review": "تقييم",
+      "new_order": "طلب جديد"
+    }
   }
 }

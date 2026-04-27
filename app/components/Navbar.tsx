@@ -1,5 +1,5 @@
 import { AvatarImage, Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Settings, User, Bell } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,18 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "./ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageToggle } from "./LanguageToggle";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { admin, logout } = useAuth();
   const { t } = useTranslation();
-  const [hasNotifications] = useState(false); // TODO: Connect to real notifications
+
+  useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -36,20 +37,7 @@ const Navbar = () => {
     <nav className="p-4 flex items-center justify-between">
       <SidebarTrigger />
       <div className="flex items-center gap-4">
-        {/* Notification Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-10 w-10 rounded-full hover:bg-accent"
-          onClick={() => {
-            // TODO: Open notifications panel
-          }}
-        >
-          <Bell className="h-[1.2rem] w-[1.2rem]" />
-          {hasNotifications && (
-            <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full" />
-          )}
-        </Button>
+        <NotificationsDropdown />
 
         <LanguageToggle />
         <ThemeToggle />
