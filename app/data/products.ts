@@ -22,6 +22,7 @@ export type AddOn = {
   tagId?: string;
   tagName?: string;
   isActive: boolean;
+  isFeatured?: boolean;
   options?: Array<{
     id?: string;
     type: "color" | "number" | "letter" | "text";

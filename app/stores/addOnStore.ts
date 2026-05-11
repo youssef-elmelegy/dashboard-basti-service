@@ -36,6 +36,7 @@ function convertServiceAddOnToUI(serviceAddOn: ServiceAddOn): AddOn {
     tagId: serviceAddOn.tagId,
     tagName: serviceAddOn.tagName,
     isActive: serviceAddOn.isActive,
+    isFeatured: serviceAddOn.isFeatured,
     options: serviceAddOn.options,
     createdAt: serviceAddOn.createdAt,
     updatedAt: serviceAddOn.updatedAt,
@@ -54,6 +55,7 @@ interface AddOnStore {
   updateAddOn: (id: string, addOn: UpdateAddOnRequest) => Promise<AddOn>;
   deleteAddOn: (id: string) => Promise<void>;
   toggleAddOnActive: (id: string) => Promise<AddOn>;
+  toggleAddOnFeatured: (id: string) => Promise<void>;
   uploadAddOnImage: (file: File) => Promise<CloudinaryUploadResult>;
   deleteAddOnImages: (urls: string[]) => Promise<DeleteImageResult>;
   clearError: () => void;
@@ -206,6 +208,26 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
           : "Failed to toggle add-on status";
       console.error("AddOnStore: Toggle status failed:", errorMessage);
       set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Toggle "best seller" flag (isFeatured)
+  toggleAddOnFeatured: async (id: string) => {
+    try {
+      const response = await addOnApi.toggleFeatured(id);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set((state) => ({
+        addOns: state.addOns.map((a) =>
+          a.id === id ? { ...a, isFeatured: !a.isFeatured } : a,
+        ),
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to toggle best seller";
+      set({ error: errorMessage });
       throw error;
     }
   },

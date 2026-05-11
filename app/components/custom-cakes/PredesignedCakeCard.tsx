@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Star, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,18 +10,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BestSellerBadge } from "@/components/BestSellerBadge";
 import type { PredesignedCake } from "@/lib/services/predesigned-cake.service";
 
 interface PredesignedCakeCardProps {
   cake: PredesignedCake;
   onDelete: (cake: PredesignedCake) => void;
   onToggleActive: (id: string) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 export function PredesignedCakeCard({
   cake,
   onDelete,
   onToggleActive,
+  onToggleFeatured,
 }: PredesignedCakeCardProps) {
   const { t } = useTranslation();
 
@@ -42,8 +45,11 @@ export function PredesignedCakeCard({
             </span>
           </div>
         )}
+        {/* Best Seller Badge */}
+        {cake.isFeatured && <BestSellerBadge className="top-3 start-3" />}
+
         {/* Action Menu */}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 end-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -55,6 +61,10 @@ export function PredesignedCakeCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onToggleFeatured(cake.id)}>
+                <Star className="mr-2 h-4 w-4" />
+                {t("common.toggleBestSeller")}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(cake)}
                 className="text-destructive focus:text-destructive"

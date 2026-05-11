@@ -17,6 +17,28 @@ export interface ChangeRegionOrderRequest {
   order: number;
 }
 
+export type RegionalProductType =
+  | "featured-cakes"
+  | "addons"
+  | "flavors"
+  | "shapes"
+  | "decorations"
+  | "sweets"
+  | "predesigned-cakes";
+
+export interface RegionalProduct {
+  id: string;
+  name?: string;
+  title?: string;
+  type: RegionalProductType;
+  [key: string]: unknown;
+}
+
+export interface RegionalProductsResponse {
+  items: RegionalProduct[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
 export const regionApi = {
   /**
    * Get all regions
@@ -61,5 +83,20 @@ export const regionApi = {
    */
   async changeOrder(id: string, order: number): Promise<ApiResponse<Region[]>> {
     return apiClient.patch<Region[]>(`/regions/${id}/order`, { order });
+  },
+
+  /**
+   * Get all items priced for a specific region
+   */
+  async getRegionalProducts(
+    regionId: string,
+    types?: RegionalProductType[],
+    limit = 1000,
+  ): Promise<ApiResponse<RegionalProductsResponse>> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (types && types.length > 0) params.set("types", types.join(","));
+    return apiClient.get<RegionalProductsResponse>(
+      `/regions/${regionId}/products?${params.toString()}`,
+    );
   },
 };

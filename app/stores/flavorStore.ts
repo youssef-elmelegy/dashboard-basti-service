@@ -36,6 +36,7 @@ interface FlavorState {
   deleteFlavor: (id: string) => Promise<void>;
   forceDeleteFlavor: (id: string) => Promise<void>;
   changeFlavorOrder: (id: string, newOrder: number) => Promise<void>;
+  toggleFlavorFeatured: (id: string) => Promise<void>;
   clearConflict: () => void;
   clearError: () => void;
 }
@@ -294,6 +295,26 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
           ? error.message
           : "Failed to change flavor order";
       set({ flavors: prevFlavors, error: errorMsg });
+      throw error;
+    }
+  },
+
+  toggleFlavorFeatured: async (id) => {
+    set({ error: null });
+    try {
+      const response = await flavorApi.toggleFeatured(id);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set((state) => ({
+        flavors: state.flavors.map((f) =>
+          f.id === id ? { ...f, isFeatured: !f.isFeatured } : f,
+        ),
+      }));
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to toggle best seller";
+      set({ error: errorMsg });
       throw error;
     }
   },

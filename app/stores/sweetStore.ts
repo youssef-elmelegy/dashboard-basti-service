@@ -22,6 +22,7 @@ interface SweetStore {
   updateSweet: (id: string, sweet: SweetInput) => Promise<void>;
   deleteSweet: (id: string) => Promise<void>;
   toggleSweetStatus: (id: string) => Promise<void>;
+  toggleSweetFeatured: (id: string) => Promise<void>;
   uploadSweetImage: (file: File) => Promise<CloudinaryUploadResult>;
 }
 
@@ -130,6 +131,26 @@ export const useSweetStore = create<SweetStore>((set, get) => ({
       throw error instanceof Error
         ? error
         : new Error("Failed to toggle sweet status");
+    }
+  },
+
+  toggleSweetFeatured: async (id) => {
+    set({ error: null });
+    try {
+      const response = await sweetService.toggleFeatured(id);
+      if (!response.success) {
+        set({ error: "Failed to toggle best seller" });
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set({
+        sweets: get().sweets.map((s) =>
+          s.id === id ? { ...s, isFeatured: !s.isFeatured } : s,
+        ),
+      });
+    } catch (error) {
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to toggle best seller");
     }
   },
 

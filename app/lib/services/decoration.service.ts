@@ -10,6 +10,7 @@ export interface Decoration {
   tagName?: string;
   capacity: number;
   minPrepHours?: number;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -130,6 +131,16 @@ export const decorationApi = {
   ): Promise<ApiResponse<DecorationVariantImage[]>> => {
     return apiClient.get<DecorationVariantImage[]>(
       `/custom-cakes/decorations/${id}/variant-images`,
+    );
+  },
+
+  /**
+   * Toggle decoration "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/custom-cakes/decorations/${id}/toggle-featured`,
+      {},
     );
   },
 };

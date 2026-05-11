@@ -13,6 +13,7 @@ import {
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useOrderStore } from "@/stores/orderStore";
+import { useRegionStore } from "@/stores/regionStore";
 import { type Order } from "@/data/orders";
 import { CalendarIcon, X, Search } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -34,9 +35,33 @@ import { Input } from "@/components/ui/input";
 type DraggableOrderCardProps = {
   order: Order;
   onNavigate: (id: string) => void;
+  t: (key: string) => string;
 };
 
-function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
+function formatBakeryType(
+  type: string,
+  t: (key: string) => string,
+): string {
+  const key = `orders.type.${type}`;
+  const translated = t(key);
+  return translated === key ? type : translated;
+}
+
+function formatProductName(
+  productName: string,
+  t: (key: string) => string,
+): string {
+  if (productName === "Custom Order") return t("orders.customOrder");
+  const key = `orders.type.${productName}`;
+  const translated = t(key);
+  return translated === key ? productName : translated;
+}
+
+function DraggableOrderCard({
+  order,
+  onNavigate,
+  t,
+}: DraggableOrderCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: order.id,
@@ -82,20 +107,20 @@ function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
             onNavigate(order.id);
           }}
           className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-          title={`Click to view order ${order.referenceNumber || order.id}`}
+          title={`${t("common.viewDetails")} ${order.referenceNumber || order.id}`}
         >
           {order.referenceNumber || `#${order.id}`}
         </button>
         <div className="flex-1 min-w-0">
           <CardTitle className="text-sm font-semibold truncate">
-            {order.productName}
+            {formatProductName(order.productName, t)}
           </CardTitle>
           <p className="text-xs text-muted-foreground truncate mb-0.5">
             {order.customerName}
           </p>
           <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground flex-wrap">
-            <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/80 capitalize">
-              {order.type}
+            <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/80">
+              {formatBakeryType(order.type, t)}
             </span>
             <span className="flex items-center gap-1">
               <CalendarIcon className="w-3 h-3" />
@@ -113,7 +138,7 @@ function DraggableOrderCard({ order, onNavigate }: DraggableOrderCardProps) {
           <div /> {/* Spacer */}
           <span
             className={`inline-flex items-center justify-center min-w-8 px-3 py-1 rounded-lg font-bold text-xs shadow-sm ${slotBg} text-black dark:text-white`}
-            title="Capacity Slots"
+            title={t("orderDetail.capacitySlots")}
           >
             {order.capacitySlots}
           </span>
@@ -135,7 +160,7 @@ export function OrdersSidebarRight({
   const [sortDir, setSortDir] = React.useState<"normal" | "asc" | "desc">(
     "normal",
   );
-  const [regionFilter] = React.useState<string>("all");
+  const [regionFilter, setRegionFilter] = React.useState<string>("all");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [dateFilter, setDateFilter] = React.useState<Date | undefined>(
     undefined,
@@ -144,8 +169,16 @@ export function OrdersSidebarRight({
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
-  // Regions list intentionally not used while UI is hidden
-  // const regions = useRegionStore((state) => state.regions);
+  const regions = useRegionStore((state) => state.regions);
+  const fetchRegions = useRegionStore((state) => state.fetchRegions);
+
+  React.useEffect(() => {
+    if (regions.length === 0) {
+      fetchRegions().catch((err) =>
+        console.error("Failed to fetch regions:", err),
+      );
+    }
+  }, [regions.length, fetchRegions]);
 
   // Filter by region and unassigned orders only
   const filteredOrders = React.useMemo(() => {
@@ -213,9 +246,9 @@ export function OrdersSidebarRight({
       className="flex flex-col h-full w-full bg-sidebar"
       {...props}
     >
-      <SidebarHeader className="border-sidebar-border h-16 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
+      <SidebarHeader className="border-sidebar-border border-b">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
             <span className="font-semibold text-lg">
               {t("orders.unassignedOrders")}
             </span>
@@ -223,43 +256,49 @@ export function OrdersSidebarRight({
               {t("orders.dragToAssign")}
             </p>
           </div>
-          {/* Close button for mobile */}
-          {onClose && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-              className="lg:hidden shrink-0 p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
-              title={t("common.close")}
+          <div className="flex items-center gap-2 shrink-0">
+            <Select
+              value={regionFilter}
+              onValueChange={setRegionFilter}
+              dir={isRTL ? "rtl" : "ltr"}
             >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+              <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectValue placeholder={t("orders.filterByRegion")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("orders.allRegions")}</SelectItem>
+                {regions.map((region) => (
+                  <SelectItem key={region.id} value={region.name}>
+                    {region.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Close button for mobile */}
+            {onClose && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+                className="lg:hidden p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
+                title={t("buttons.close")}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-4 flex flex-col h-full overflow-hidden">
         <div className="flex items-center gap-2 mb-2">
-          {/* Region filter hidden temporarily; re-enable by uncommenting the Select below */}
-          {/**
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue placeholder={t("orders.filterByRegion")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("orders.allRegions")}</SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region.id} value={region.name}>
-                  {region.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          */}
-
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs ml-2">
+          <Select
+            value={typeFilter}
+            onValueChange={setTypeFilter}
+            dir={isRTL ? "rtl" : "ltr"}
+          >
+            <SelectTrigger className="flex-1 min-w-0 h-8 text-xs">
               <SelectValue placeholder={t("orders.filterByType")} />
             </SelectTrigger>
             <SelectContent>
@@ -280,7 +319,7 @@ export function OrdersSidebarRight({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 flex items-center justify-center"
+                className="h-8 w-8 p-0 shrink-0 flex items-center justify-center"
                 title={t("orders.searchByReference") || "Search by reference"}
               >
                 <Search className="w-4 h-4" />
@@ -316,12 +355,12 @@ export function OrdersSidebarRight({
             </PopoverContent>
           </Popover>
 
-          <div className="flex-1" />
           <Select
             value={sortDir}
             onValueChange={(v) => setSortDir(v as "normal" | "asc" | "desc")}
+            dir={isRTL ? "rtl" : "ltr"}
           >
-            <SelectTrigger className="w-40 h-8 text-xs">
+            <SelectTrigger className="flex-1 min-w-0 h-8 text-xs">
               <SelectValue placeholder={t("orders.sortByTime")} />
             </SelectTrigger>
             <SelectContent>
@@ -362,6 +401,7 @@ export function OrdersSidebarRight({
                     key={order.id}
                     order={order}
                     onNavigate={handleOrderClick}
+                    t={t}
                   />
                 ))
               )}

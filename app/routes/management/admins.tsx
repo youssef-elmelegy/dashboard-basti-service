@@ -1,4 +1,4 @@
-import { Plus, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit2, Lock, LockOpen } from "lucide-react";
 
 export default function AdminsPage() {
@@ -50,6 +51,7 @@ export default function AdminsPage() {
   const addAdmin = useAdminStore((state) => state.addAdmin);
   const updateAdmin = useAdminStore((state) => state.updateAdmin);
   const blockAdmin = useAdminStore((state) => state.blockAdmin);
+  const deleteAdmin = useAdminStore((state) => state.deleteAdmin);
   const clearError = useAdminStore((state) => state.clearError);
 
   const bakeries = useBakeryStore((state) => state.bakeries);
@@ -97,6 +99,25 @@ export default function AdminsPage() {
           await blockAdmin(admin.id, blockPayload);
         } catch (error) {
           console.error("Failed to block/unblock admin:", error);
+        }
+      },
+    );
+  };
+
+  const handleDeleteAdmin = (admin: Admin) => {
+    openDeleteDialog(
+      {
+        recordName: admin.email,
+        recordType: t("admins.breadcrumbAdmins"),
+        title: t("admins.deleteConfirm"),
+        description: `${t("admins.deleteMessage")} ${admin.email}? ${t("common.cannotBeUndone")}`,
+        actionType: "delete",
+      },
+      async () => {
+        try {
+          await deleteAdmin(admin.id);
+        } catch (error) {
+          console.error("Failed to delete admin:", error);
         }
       },
     );
@@ -213,6 +234,7 @@ export default function AdminsPage() {
                       {t("adminTable.actions")}
                     </TableHead>
                   )}
+                  <TableHead className="w-12" />
                   <TableHead className={isRTL ? "text-right" : "text-left"}>
                     {t("adminTable.email")}
                   </TableHead>
@@ -235,6 +257,12 @@ export default function AdminsPage() {
               <TableBody>
                 {admins.map((admin) => {
                   const bakery = bakeries.find((b) => b.id === admin.bakeryId);
+                  const roleKeyMap: Record<typeof admin.role, string> = {
+                    super_admin: "adminTable.superAdmin",
+                    admin: "adminTable.admin",
+                    manager: "adminTable.manager",
+                  };
+                  const roleLabel = t(roleKeyMap[admin.role]);
                   return (
                     <TableRow key={admin.id}>
                       {isRTL && (
@@ -251,24 +279,44 @@ export default function AdminsPage() {
                               onClick={() => handleBlockAdmin(admin)}
                               className={`p-2 rounded-lg transition-colors ${
                                 admin.isBlocked
-                                  ? "hover:bg-green-100"
-                                  : "hover:bg-orange-100"
+                                  ? "hover:bg-orange-100"
+                                  : "hover:bg-green-100"
                               }`}
                               title={admin.isBlocked ? "Unblock" : "Block"}
                             >
                               {admin.isBlocked ? (
-                                <LockOpen className="w-4 h-4 text-green-600" />
-                              ) : (
                                 <Lock className="w-4 h-4 text-orange-600" />
+                              ) : (
+                                <LockOpen className="w-4 h-4 text-green-600" />
                               )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAdmin(admin)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
                             </button>
                           </div>
                         </TableCell>
                       )}
+                      <TableCell>
+                        <Avatar key={admin.profileImage ?? admin.id} className="size-9">
+                          {admin.profileImage && (
+                            <AvatarImage
+                              src={admin.profileImage}
+                              alt={admin.email}
+                            />
+                          )}
+                          <AvatarFallback className="text-sm font-medium">
+                            {admin.email.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TableCell>
                       <TableCell className="font-medium">
                         {admin.email}
                       </TableCell>
-                      <TableCell>{admin.role}</TableCell>
+                      <TableCell>{roleLabel}</TableCell>
                       <TableCell>{bakery?.name || "—"}</TableCell>
                       <TableCell>
                         {admin.isBlocked
@@ -289,16 +337,23 @@ export default function AdminsPage() {
                               onClick={() => handleBlockAdmin(admin)}
                               className={`p-2 rounded-lg transition-colors ${
                                 admin.isBlocked
-                                  ? "hover:bg-green-100"
-                                  : "hover:bg-orange-100"
+                                  ? "hover:bg-orange-100"
+                                  : "hover:bg-green-100"
                               }`}
                               title={admin.isBlocked ? "Unblock" : "Block"}
                             >
                               {admin.isBlocked ? (
-                                <LockOpen className="w-4 h-4 text-green-600" />
-                              ) : (
                                 <Lock className="w-4 h-4 text-orange-600" />
+                              ) : (
+                                <LockOpen className="w-4 h-4 text-green-600" />
                               )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAdmin(admin)}
+                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
                             </button>
                           </div>
                         </TableCell>

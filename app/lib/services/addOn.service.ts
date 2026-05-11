@@ -20,6 +20,7 @@ export interface AddOn {
   tagId?: string;
   tagName?: string;
   isActive: boolean;
+  isFeatured?: boolean;
   options?: Array<{
     id?: string;
     type: "color" | "number" | "letter" | "text";
@@ -150,5 +151,15 @@ export const addOnApi = {
    */
   toggleStatus: (id: string): Promise<ApiResponse<AddOn>> => {
     return apiClient.patch<AddOn>(`/addons/${id}/toggle-status`, {});
+  },
+
+  /**
+   * Toggle add-on "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/addons/${id}/toggle-featured`,
+      {},
+    );
   },
 };

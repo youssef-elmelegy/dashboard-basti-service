@@ -12,23 +12,38 @@ import {
 } from "@/components/ui/select";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import type { CreateAdminPayload } from "@/lib/services/admin.service";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, X } from "lucide-react";
+import { SingleImageUploader } from "@/components/SingleImageUploader";
+import { uploadImage } from "@/lib/api/chef.api";
+import { convertToWebP } from "@/lib/image-utils";
 
 interface AddAdminProps {
   onSubmit: (data: CreateAdminPayload) => Promise<void>;
 }
+
+const PASSWORD_RULES = [
+  { key: "minLength", test: (p: string) => p.length >= 8 },
+  { key: "lowercase", test: (p: string) => /[a-z]/.test(p) },
+  { key: "uppercase", test: (p: string) => /[A-Z]/.test(p) },
+  { key: "digit", test: (p: string) => /\d/.test(p) },
+] as const;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AddAdmin({ onSubmit }: AddAdminProps) {
   const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
+    undefined,
+  );
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     role: "admin" as "super_admin" | "admin" | "manager",
     bakeryId: "",
-    profileImage: "",
   });
 
   const handleChange = (
@@ -55,8 +70,44 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
     }));
   };
 
+  const handleProfileImageChange = async (imageUrl: string | undefined) => {
+    if (!imageUrl) {
+      setProfileImageUrl(undefined);
+      return;
+    }
+
+    if (imageUrl.startsWith("data:") || imageUrl.startsWith("blob:")) {
+      try {
+        setUploadingImage(true);
+        const webpBlob = await convertToWebP(imageUrl);
+        const file = new File([webpBlob], "admin-profile.webp", {
+          type: "image/webp",
+        });
+        const response = await uploadImage(file, "basti/admins");
+        setProfileImageUrl(response.data?.secure_url);
+      } catch (error) {
+        console.error("Error uploading admin profile image:", error);
+        setProfileImageUrl(undefined);
+      } finally {
+        setUploadingImage(false);
+      }
+    } else {
+      setProfileImageUrl(imageUrl);
+    }
+  };
+
+  const passwordChecks = PASSWORD_RULES.map((rule) => ({
+    key: rule.key,
+    ok: rule.test(formData.password),
+  }));
+  const isPasswordValid = passwordChecks.every((c) => c.ok);
+  const isEmailValid = EMAIL_REGEX.test(formData.email);
+  const canSubmit =
+    isEmailValid && isPasswordValid && !isLoading && !uploadingImage;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
     setIsLoading(true);
 
     try {
@@ -65,7 +116,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
         password: formData.password,
         role: formData.role,
         bakeryId: formData.bakeryId || undefined,
-        profileImage: formData.profileImage || undefined,
+        profileImage: profileImageUrl,
       });
 
       setFormData({
@@ -73,8 +124,8 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
         password: "",
         role: "admin",
         bakeryId: "",
-        profileImage: "",
       });
+      setProfileImageUrl(undefined);
     } catch (error) {
       console.error("Failed to add admin:", error);
     } finally {
@@ -109,8 +160,11 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="At least 8 characters with uppercase, lowercase, and numbers"
+              placeholder={t("admins.passwordPlaceholder")}
               required
+              aria-invalid={
+                formData.password.length > 0 && !isPasswordValid
+              }
             />
             <button
               type="button"
@@ -125,6 +179,23 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
               )}
             </button>
           </div>
+          <ul className="space-y-1 text-xs">
+            {passwordChecks.map((check) => (
+              <li
+                key={check.key}
+                className={`flex items-center gap-2 ${
+                  check.ok ? "text-green-600" : "text-muted-foreground"
+                }`}
+              >
+                {check.ok ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  <X className="w-3.5 h-3.5" />
+                )}
+                <span>{t(`admins.passwordRules.${check.key}`)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="space-y-2">
@@ -170,22 +241,24 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            {t("admins.profileImage")} ({t("adminTable.optional")})
-          </label>
-          <Input
-            type="url"
-            name="profileImage"
-            value={formData.profileImage}
-            onChange={handleChange}
-            placeholder="https://example.com/image.jpg"
-          />
-        </div>
+        <SingleImageUploader
+          label={`${t("admins.profileImage")} (${t("adminTable.optional")})`}
+          imageUrl={profileImageUrl}
+          onImageChange={handleProfileImageChange}
+          isLoading={uploadingImage}
+        />
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" disabled={isLoading} className="flex-1">
-            {isLoading ? t("adminTable.creating") : t("admins.create")}
+          <Button
+            type="submit"
+            disabled={!canSubmit}
+            className="flex-1"
+          >
+            {isLoading
+              ? t("adminTable.creating")
+              : uploadingImage
+                ? t("common.loading")
+                : t("admins.create")}
           </Button>
         </div>
       </form>

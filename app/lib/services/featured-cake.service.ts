@@ -20,6 +20,7 @@ export interface FeaturedCake {
   tagId: string;
   tagName: string | null;
   isActive: boolean;
+  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,6 +138,16 @@ export const featuredCakeApi = {
   toggleStatus: (id: string): Promise<ApiResponse<FeaturedCake>> => {
     return apiClient.patch<FeaturedCake>(
       `/featured-cakes/${id}/toggle-status`,
+      {},
+    );
+  },
+
+  /**
+   * Toggle featured cake "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/featured-cakes/${id}/toggle-featured`,
       {},
     );
   },

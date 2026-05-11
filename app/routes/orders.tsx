@@ -62,8 +62,13 @@ function getOrderTypeStyle(orderType?: string): string {
   return orderTypeColors[orderType] || "bg-teal-500/10";
 }
 
-// Sortable Order Card within column
-function SortableOrderCard({ order }: { order: Order }) {
+function SortableOrderCard({
+  order,
+  t,
+}: {
+  order: Order;
+  t: (key: string) => string;
+}) {
   const navigate = useNavigate();
   const [isDragActive, setIsDragActive] = useState(false);
   const {
@@ -124,7 +129,7 @@ function SortableOrderCard({ order }: { order: Order }) {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm truncate">
-                  {order.productName}
+                  {formatProductName(order.productName, t)}
                 </h4>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <User className="w-3 h-3" />
@@ -132,17 +137,14 @@ function SortableOrderCard({ order }: { order: Order }) {
                 </div>
               </div>
               <div className="flex flex-col gap-1 items-end shrink-0">
-                <Badge variant="outline" className="capitalize text-xs">
-                  {order.type}
+                <Badge variant="outline" className="text-xs">
+                  {formatBakeryType(order.type, t)}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "capitalize text-xs",
-                    statusColors[order.status],
-                  )}
+                  className={cn("text-xs", statusColors[order.status])}
                 >
-                  {order.status}
+                  {formatOrderStatus(order.status, t)}
                 </Badge>
               </div>
             </div>
@@ -163,7 +165,9 @@ function SortableOrderCard({ order }: { order: Order }) {
               </div>
               <div className="flex items-center gap-1">
                 <Package className="w-3 h-3" />
-                <span>{order.capacitySlots} slots</span>
+                <span>
+                  {order.capacitySlots} {t("orders.slots")}
+                </span>
               </div>
             </div>
 
@@ -172,7 +176,7 @@ function SortableOrderCard({ order }: { order: Order }) {
                 {order.region}
               </span>
               <span className="text-sm font-semibold">
-                {order.totalPrice} EGP
+                {order.totalPrice} {t("common.currency")}
               </span>
             </div>
           </div>
@@ -189,14 +193,32 @@ function getCapacityColor(percentage: number) {
   return "bg-red-500";
 }
 
-// Format bakery type for display
-function formatBakeryType(type: string): string {
-  const typeMap: Record<string, string> = {
-    big_cakes: "Big Cakes",
-    small_cakes: "Small Cakes",
-    others: "Others",
-  };
-  return typeMap[type] || type;
+function formatBakeryType(
+  type: string,
+  t: (key: string) => string,
+): string {
+  const key = `orders.type.${type}`;
+  const translated = t(key);
+  return translated === key ? type : translated;
+}
+
+function formatOrderStatus(
+  status: string,
+  t: (key: string) => string,
+): string {
+  const key = `statuses.${status}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
+}
+
+function formatProductName(
+  productName: string,
+  t: (key: string) => string,
+): string {
+  if (productName === "Custom Order") return t("orders.customOrder");
+  const key = `orders.type.${productName}`;
+  const translated = t(key);
+  return translated === key ? productName : translated;
 }
 
 // Droppable Column Component
@@ -321,7 +343,7 @@ function BakeryColumn({
                         "opacity-50",
                     )}
                   >
-                    {formatBakeryType(type)}
+                    {formatBakeryType(type, t)}
                   </Badge>
                 ))}
               </div>
@@ -390,7 +412,7 @@ function BakeryColumn({
                 </div>
               ) : (
                 orders.map((order) => (
-                  <SortableOrderCard key={order.id} order={order} />
+                  <SortableOrderCard key={order.id} order={order} t={t} />
                 ))
               )}
             </div>
@@ -828,7 +850,7 @@ const Orders = () => {
                   variant="ghost"
                   onClick={() => setAssignError(null)}
                 >
-                  Dismiss
+                  {t("common.dismiss")}
                 </Button>
               </div>
             )}
@@ -840,7 +862,7 @@ const Orders = () => {
               <div className="flex flex-col items-center gap-4">
                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
                 <p className="text-sm text-muted-foreground">
-                  {t("common.loading") || "Loading orders..."}
+                  {t("orders.loadingOrders")}
                 </p>
               </div>
             </div>
@@ -893,7 +915,7 @@ const Orders = () => {
             isSidebarOpen && "opacity-0 pointer-events-none",
           )}
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          title="Open sidebar"
+          title={t("orders.openSidebar")}
         >
           <Menu className="w-5 h-5" />
         </Button>
@@ -933,7 +955,7 @@ const Orders = () => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm truncate">
-                      {activeOrder.productName}
+                      {formatProductName(activeOrder.productName, t)}
                     </h4>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <User className="w-3 h-3" />
@@ -942,11 +964,8 @@ const Orders = () => {
                       </span>
                     </div>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="capitalize text-xs shrink-0"
-                  >
-                    {activeOrder.type}
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {formatBakeryType(activeOrder.type, t)}
                   </Badge>
                 </div>
 
@@ -967,7 +986,9 @@ const Orders = () => {
                   </div>
                   <div className="flex items-center gap-1">
                     <Package className="w-3 h-3" />
-                    <span>{activeOrder.capacitySlots} slots</span>
+                    <span>
+                      {activeOrder.capacitySlots} {t("orders.slots")}
+                    </span>
                   </div>
                 </div>
 
@@ -976,7 +997,7 @@ const Orders = () => {
                     {activeOrder.region}
                   </span>
                   <span className="text-sm font-semibold">
-                    {activeOrder.totalPrice} EGP
+                    {activeOrder.totalPrice} {t("common.currency")}
                   </span>
                 </div>
               </div>

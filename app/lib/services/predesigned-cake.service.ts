@@ -49,6 +49,7 @@ export interface PredesignedCake {
   tagName?: string;
   configs: DesignedCakeConfig[];
   isActive: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -123,6 +124,13 @@ class PredesignedCakeService {
   async toggleActive(id: string): Promise<ApiResponse<PredesignedCake>> {
     return apiClient.patch(
       `/custom-cakes/predesigned-cakes/${id}/toggle-status`,
+      {},
+    );
+  }
+
+  async toggleFeatured(id: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.patch(
+      `/custom-cakes/predesigned-cakes/${id}/toggle-featured`,
       {},
     );
   }

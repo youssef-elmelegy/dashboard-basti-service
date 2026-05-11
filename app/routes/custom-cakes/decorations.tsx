@@ -72,6 +72,9 @@ export default function DecorationsPage() {
     (state) => state.forceDeleteDecoration,
   );
   const clearConflict = useDecorationStore((state) => state.clearConflict);
+  const toggleDecorationFeatured = useDecorationStore(
+    (state) => state.toggleDecorationFeatured,
+  );
   const { openDeleteDialog } = useDeleteDialog();
 
   useEffect(() => {
@@ -247,6 +250,11 @@ export default function DecorationsPage() {
                 decoration={decoration}
                 onEdit={() => setEditingDecoration(decoration)}
                 onDelete={() => handleDeleteDecoration(decoration)}
+                onToggleFeatured={(id) =>
+                  toggleDecorationFeatured(id).catch((err) =>
+                    console.error("Failed to toggle best seller:", err),
+                  )
+                }
               />
             ))}
           </div>

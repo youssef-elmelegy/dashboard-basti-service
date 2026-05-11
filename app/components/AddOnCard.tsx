@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import type { AddOn } from "@/data/products";
 import { ProductImageCarousel } from "@/components/ProductImageCarousel";
+import { BestSellerBadge } from "@/components/BestSellerBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,7 @@ interface AddOnCardProps {
   onEdit: (addOn: AddOn) => void;
   onDelete: (addOn: AddOn) => void;
   onToggleActive: (id: string) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 export function AddOnCard({
@@ -49,6 +51,7 @@ export function AddOnCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleFeatured,
 }: AddOnCardProps) {
   const { t } = useTranslation();
   // Support both old (image) and new (images) data structures
@@ -62,8 +65,11 @@ export function AddOnCard({
       <div className="p-3 bg-muted/30 relative flex-shrink-0">
         <ProductImageCarousel images={images} name={addOn.name} />
 
+        {/* Best Seller Badge */}
+        {addOn.isFeatured && <BestSellerBadge className="top-5 start-5" />}
+
         {/* Action Menu */}
-        <div className="absolute top-5 right-5">
+        <div className="absolute top-5 end-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -75,6 +81,9 @@ export function AddOnCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onToggleFeatured(addOn.id)}>
+                {t("common.toggleBestSeller")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(addOn)}>
                 {t("addOns.edit")}
               </DropdownMenuItem>

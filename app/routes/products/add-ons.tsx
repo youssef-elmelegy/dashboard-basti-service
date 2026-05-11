@@ -41,6 +41,9 @@ export default function AddOnsPage() {
   const updateAddOn = useAddOnStore((state) => state.updateAddOn);
   const deleteAddOn = useAddOnStore((state) => state.deleteAddOn);
   const toggleAddOnActive = useAddOnStore((state) => state.toggleAddOnActive);
+  const toggleAddOnFeatured = useAddOnStore(
+    (state) => state.toggleAddOnFeatured,
+  );
   const { openDeleteDialog } = useDeleteDialog();
 
   // Fetch add-ons on mount
@@ -119,6 +122,16 @@ export default function AddOnsPage() {
     }
   };
 
+  const handleToggleFeatured = async (id: string) => {
+    try {
+      await toggleAddOnFeatured(id);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to toggle best seller";
+      console.error("Failed to toggle best seller:", errorMsg, err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -182,6 +195,7 @@ export default function AddOnsPage() {
               onEdit={handleEditAddOn}
               onDelete={handleDeleteAddOn}
               onToggleActive={() => handleToggleAddOn(addOn.id)}
+              onToggleFeatured={handleToggleFeatured}
             />
           ))}
         </div>

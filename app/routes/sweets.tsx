@@ -37,6 +37,9 @@ export default function SweetsPage() {
   const updateSweet = useSweetStore((state) => state.updateSweet);
   const deleteSweet = useSweetStore((state) => state.deleteSweet);
   const toggleSweetStatus = useSweetStore((state) => state.toggleSweetStatus);
+  const toggleSweetFeatured = useSweetStore(
+    (state) => state.toggleSweetFeatured,
+  );
   const { openDeleteDialog } = useDeleteDialog();
 
   // Fetch sweets on mount
@@ -113,6 +116,16 @@ export default function SweetsPage() {
     }
   };
 
+  const handleToggleFeatured = async (id: string) => {
+    try {
+      await toggleSweetFeatured(id);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to toggle best seller";
+      console.error("Failed to toggle best seller:", errorMsg, err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -177,6 +190,7 @@ export default function SweetsPage() {
               onEdit={handleEditSweet}
               onDelete={handleDeleteSweet}
               onToggleActive={() => handleToggleSweet(sweet.id)}
+              onToggleFeatured={handleToggleFeatured}
             />
           ))}
         </div>

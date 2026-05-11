@@ -25,6 +25,9 @@ import FlavorsPage from "@/routes/custom-cakes/flavors";
 import ShapesPage from "@/routes/custom-cakes/shapes";
 import DecorationsPage from "@/routes/custom-cakes/decorations";
 import PredesignedCakesPage from "@/routes/custom-cakes/predesigned-cakes";
+import CouponsPage from "@/routes/advertisement/coupons";
+import OffersPage from "@/routes/advertisement/offers";
+import FinanceOrdersPage from "@/routes/finance/orders";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
 import ForgotPasswordPage from "@/routes/auth/forgot-password";
@@ -192,6 +195,18 @@ export const router = createBrowserRouter([
       {
         path: "custom-cakes/predesigned-cakes",
         element: <PredesignedCakesPage />,
+      },
+      {
+        path: "advertisement/coupons",
+        element: <CouponsPage />,
+      },
+      {
+        path: "advertisement/offers",
+        element: <OffersPage />,
+      },
+      {
+        path: "finance/orders",
+        element: <FinanceOrdersPage />,
       },
     ],
   },

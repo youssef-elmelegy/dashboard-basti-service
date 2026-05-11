@@ -10,6 +10,7 @@ export interface Shape {
   capacity: number;
   minPrepHours?: number;
   order: number;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -117,5 +118,15 @@ export const shapeApi = {
     return apiClient.patch<Shape[]>(`/custom-cakes/shapes/${id}/order`, {
       order,
     });
+  },
+
+  /**
+   * Toggle shape "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/custom-cakes/shapes/${id}/toggle-featured`,
+      {},
+    );
   },
 };

@@ -30,6 +30,7 @@ export default function PredesignedCakesPage() {
     updatePredesignedCake,
     deletePredesignedCake,
     togglePredesignedCakeActive,
+    togglePredesignedCakeFeatured,
     clearError,
   } = usePredesignedCakeStore();
   const { openDeleteDialog } = useDeleteDialog();
@@ -122,6 +123,10 @@ export default function PredesignedCakesPage() {
     await togglePredesignedCakeActive(id);
   };
 
+  const handleToggleFeatured = async (id: string) => {
+    await togglePredesignedCakeFeatured(id);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -179,6 +184,7 @@ export default function PredesignedCakesPage() {
                 cake={cake}
                 onDelete={handleDelete}
                 onToggleActive={handleToggleActive}
+                onToggleFeatured={handleToggleFeatured}
               />
             ))}
           </div>

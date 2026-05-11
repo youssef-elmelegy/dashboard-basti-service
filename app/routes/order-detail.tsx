@@ -478,9 +478,15 @@ export default function OrderDetailPage() {
             {order.orderStatus && order.orderStatus !== "pending" && (
               <Badge
                 variant="outline"
-                className={`${statusColors[order.orderStatus as OrderStatus]} capitalize`}
+                className={statusColors[order.orderStatus as OrderStatus]}
               >
-                {order.orderStatus.replace(/_/g, " ")}
+                {(() => {
+                  const key = `statuses.${order.orderStatus}`;
+                  const translated = t(key);
+                  return translated === key
+                    ? order.orderStatus.replace(/_/g, " ")
+                    : translated;
+                })()}
               </Badge>
             )}
             {/* Reference number with copy button */}
@@ -596,7 +602,7 @@ export default function OrderDetailPage() {
                                   </Badge>
                                 </div>
                                 <span className="text-lg font-bold text-primary">
-                                  {item.price} {t("orderDetail.egp")}
+                                  {item.price} {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -630,7 +636,7 @@ export default function OrderDetailPage() {
                                 <span className="text-muted-foreground shrink-0">
                                   {t("orderDetail.total")}:{" "}
                                   {item.quantity * item.price}{" "}
-                                  {t("orderDetail.egp")}
+                                  {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -735,7 +741,7 @@ export default function OrderDetailPage() {
                                     </Badge>
                                   </div>
                                   <span className="text-lg font-bold text-primary">
-                                    {item.price} {t("orderDetail.egp")}
+                                    {item.price} {t("orderDetail.lyd")}
                                   </span>
                                 </div>
 
@@ -755,7 +761,7 @@ export default function OrderDetailPage() {
                                   <span className="text-muted-foreground shrink-0">
                                     {t("orderDetail.total")}:{" "}
                                     {item.quantity * item.price}{" "}
-                                    {t("orderDetail.egp")}
+                                    {t("orderDetail.lyd")}
                                   </span>
                                 </div>
 
@@ -832,7 +838,7 @@ export default function OrderDetailPage() {
                                       </Badge>
                                     </div>
                                     <span className="text-lg font-bold text-primary">
-                                      {item.price} {t("orderDetail.egp")}
+                                      {item.price} {t("orderDetail.lyd")}
                                     </span>
                                   </div>
 
@@ -852,7 +858,7 @@ export default function OrderDetailPage() {
                                     <span className="text-muted-foreground shrink-0">
                                       {t("orderDetail.total")}:{" "}
                                       {item.quantity * item.price}{" "}
-                                      {t("orderDetail.egp")}
+                                      {t("orderDetail.lyd")}
                                     </span>
                                   </div>
 
@@ -928,7 +934,7 @@ export default function OrderDetailPage() {
                                   </Badge>
                                 </div>
                                 <span className="text-lg font-bold text-primary">
-                                  {item.price} {t("orderDetail.egp")}
+                                  {item.price} {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -942,7 +948,7 @@ export default function OrderDetailPage() {
                                 <span className="text-muted-foreground shrink-0">
                                   {t("orderDetail.total")}:{" "}
                                   {item.quantity * item.price}{" "}
-                                  {t("orderDetail.egp")}
+                                  {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -1013,7 +1019,7 @@ export default function OrderDetailPage() {
                                   </Badge>
                                 </div>
                                 <span className="text-lg font-bold text-primary">
-                                  {item.price} {t("orderDetail.egp")}
+                                  {item.price} {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -1027,7 +1033,7 @@ export default function OrderDetailPage() {
                                 <span className="text-muted-foreground shrink-0">
                                   {t("orderDetail.total")}:{" "}
                                   {item.quantity * item.price}{" "}
-                                  {t("orderDetail.egp")}
+                                  {t("orderDetail.lyd")}
                                 </span>
                               </div>
 
@@ -1273,7 +1279,7 @@ export default function OrderDetailPage() {
                     {t("orderDetail.basePrice")}
                   </span>
                   <span className="text-sm font-medium">
-                    {order.basePrice} {t("orderDetail.egp")}
+                    {order.basePrice} {t("orderDetail.lyd")}
                   </span>
                 </div>
                 {order.addOns && order.addOns.length > 0 && (
@@ -1293,7 +1299,7 @@ export default function OrderDetailPage() {
                           </span>
                           <span className="text-sm">
                             {addon.price * addon.quantity}{" "}
-                            {t("orderDetail.egp")}
+                            {t("orderDetail.lyd")}
                           </span>
                         </div>
                       ))}
@@ -1308,7 +1314,7 @@ export default function OrderDetailPage() {
                     Subtotal
                   </span>
                   <span className="text-sm font-medium">
-                    {order.totalPrice} {t("orderDetail.egp")}
+                    {order.totalPrice} {t("orderDetail.lyd")}
                   </span>
                 </div>
                 {(order.discountAmount ?? 0) > 0 && (
@@ -1319,7 +1325,7 @@ export default function OrderDetailPage() {
                         Discount
                       </span>
                       <span className="text-sm font-medium text-red-500">
-                        -{order.discountAmount} {t("orderDetail.egp")}
+                        -{order.discountAmount} {t("orderDetail.lyd")}
                       </span>
                     </div>
                   </>
@@ -1330,7 +1336,7 @@ export default function OrderDetailPage() {
             <div className="flex justify-between font-bold text-lg">
               <span>{t("orderDetail.total")}</span>
               <span>
-                {order.finalPrice || order.totalPrice} {t("orderDetail.egp")}
+                {order.finalPrice || order.totalPrice} {t("orderDetail.lyd")}
               </span>
             </div>
           </CardContent>

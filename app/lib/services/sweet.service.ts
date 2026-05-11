@@ -17,6 +17,7 @@ export interface Sweet {
   price?: number;
   sizesPrices?: Record<string, number>;
   isActive: boolean;
+  isFeatured?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -108,5 +109,15 @@ export const sweetService = {
    */
   toggleStatus: (id: string): Promise<ApiResponse<Sweet>> => {
     return apiClient.patch<Sweet>(`/sweets/${id}/toggle-status`, {});
+  },
+
+  /**
+   * Toggle sweet "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/sweets/${id}/toggle-featured`,
+      {},
+    );
   },
 };

@@ -46,6 +46,7 @@ interface PredesignedCakeState {
   ) => Promise<PredesignedCake | null>;
   deletePredesignedCake: (id: string) => Promise<boolean>;
   togglePredesignedCakeActive: (id: string) => Promise<boolean>;
+  togglePredesignedCakeFeatured: (id: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -267,6 +268,31 @@ export const usePredesignedCakeStore = create<PredesignedCakeState>(
         const errorMsg =
           error instanceof Error ? error.message : "An error occurred";
         set({ error: errorMsg, isLoading: false });
+        return false;
+      }
+    },
+
+    togglePredesignedCakeFeatured: async (id: string) => {
+      try {
+        const response = await predesignedCakeService.toggleFeatured(id);
+        if (!response.success) {
+          set({
+            error: response.message || "Failed to toggle best seller",
+          });
+          return false;
+        }
+        set((state) => ({
+          predesignedCakes: state.predesignedCakes.map((cake) =>
+            cake.id === id
+              ? { ...cake, isFeatured: !cake.isFeatured }
+              : cake,
+          ),
+        }));
+        return true;
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "An error occurred";
+        set({ error: errorMsg });
         return false;
       }
     },

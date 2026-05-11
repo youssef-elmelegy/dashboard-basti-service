@@ -13,6 +13,8 @@ import {
   Film,
   Tag,
   Settings,
+  BadgePercent,
+  ReceiptText,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -80,6 +82,11 @@ const AppSidebar = () => {
       url: "/management/app-config",
       icon: Settings,
     },
+    {
+      title: t("sidebar.finance"),
+      url: "/finance/orders",
+      icon: ReceiptText,
+    },
   ];
 
   const productItems = [
@@ -130,6 +137,19 @@ const AppSidebar = () => {
       title: t("sidebar.predesignedCakes"),
       url: "/custom-cakes/predesigned-cakes",
       icon: Cake,
+    },
+  ];
+
+  const advertisementItems = [
+    {
+      title: t("sidebar.coupons"),
+      url: "/advertisement/coupons",
+      icon: BadgePercent,
+    },
+    {
+      title: t("sidebar.offers"),
+      url: "/advertisement/offers",
+      icon: Tag,
     },
   ];
 
@@ -259,6 +279,27 @@ const AppSidebar = () => {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        {canViewAllContent() && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.advertisement")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {advertisementItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
       </SidebarContent>
     </Sidebar>
   );

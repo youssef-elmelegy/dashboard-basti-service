@@ -52,6 +52,7 @@ interface DecorationState {
   ) => Promise<Decoration>;
   deleteDecoration: (id: string) => Promise<void>;
   forceDeleteDecoration: (id: string) => Promise<void>;
+  toggleDecorationFeatured: (id: string) => Promise<void>;
   decorationConflict: (DecorationConflictData & { decorationId: string }) | null;
   clearConflict: () => void;
   clearError: () => void;
@@ -261,6 +262,26 @@ export const useDecorationStore = create<DecorationState>((set, get) => ({
           ? error.message
           : "Failed to force-delete decoration";
       set({ error: errorMsg, isLoading: false });
+      throw error;
+    }
+  },
+
+  toggleDecorationFeatured: async (id) => {
+    set({ error: null });
+    try {
+      const response = await decorationApi.toggleFeatured(id);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set((state) => ({
+        decorations: state.decorations.map((d) =>
+          d.id === id ? { ...d, isFeatured: !d.isFeatured } : d,
+        ),
+      }));
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to toggle best seller";
+      set({ error: errorMsg });
       throw error;
     }
   },

@@ -43,6 +43,20 @@ export interface ListNotificationsParams {
   type?: NotificationType;
 }
 
+export interface BroadcastNotificationPayload {
+  title: string;
+  body: string;
+  type: NotificationType;
+  redirectId?: string;
+  data?: Record<string, string>;
+}
+
+export interface BroadcastNotificationResult {
+  totalUsers: number;
+  pushedCount: number;
+  failedCount: number;
+}
+
 function buildQuery(params: ListNotificationsParams): string {
   const search = new URLSearchParams();
   if (params.page !== undefined) search.set("page", String(params.page));
@@ -96,6 +110,15 @@ class NotificationApi {
 
   remove(id: string): Promise<ApiResponse<{ message: string }>> {
     return apiClient.delete<{ message: string }>(`/notifications/${id}`);
+  }
+
+  sendBroadcast(
+    payload: BroadcastNotificationPayload,
+  ): Promise<ApiResponse<BroadcastNotificationResult>> {
+    return apiClient.post<BroadcastNotificationResult>(
+      "/notifications/send-broadcast",
+      payload,
+    );
   }
 }
 

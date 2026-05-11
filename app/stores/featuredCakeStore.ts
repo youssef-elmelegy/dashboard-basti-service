@@ -44,6 +44,7 @@ interface FeaturedCakeState {
   ) => Promise<FeaturedCake>;
   deleteFeaturedCake: (id: string) => Promise<void>;
   toggleFeaturedCakeStatus: (id: string) => Promise<FeaturedCake>;
+  toggleFeaturedCakeFeatured: (id: string) => Promise<void>;
   uploadFeaturedCakeImage: (file: File) => Promise<CloudinaryUploadResult>;
   deleteFeaturedCakeImages: (urls: string[]) => Promise<DeleteImageResult>;
   clearError: () => void;
@@ -274,6 +275,33 @@ export const useFeaturedCakeStore = create<FeaturedCakeState>((set) => ({
           : "Failed to toggle featured cake status";
       console.error("FeaturedCakeStore: Toggle status failed:", errorMessage);
       set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Toggle "best seller" flag (isFeatured)
+  toggleFeaturedCakeFeatured: async (id: string) => {
+    try {
+      const response = await featuredCakeApi.toggleFeatured(id);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set((state) => ({
+        featuredCakes: state.featuredCakes.map((cake) =>
+          cake.id === id ? { ...cake, isFeatured: !cake.isFeatured } : cake,
+        ) as FeaturedCake[],
+        currentFeaturedCake:
+          state.currentFeaturedCake?.id === id
+            ? {
+                ...state.currentFeaturedCake,
+                isFeatured: !state.currentFeaturedCake.isFeatured,
+              }
+            : state.currentFeaturedCake,
+      }));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to toggle best seller";
+      set({ error: errorMessage });
       throw error;
     }
   },

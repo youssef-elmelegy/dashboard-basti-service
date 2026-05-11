@@ -25,6 +25,7 @@ interface ShapeState {
   deleteShape: (id: string) => Promise<void>;
   forceDeleteShape: (id: string) => Promise<void>;
   changeShapeOrder: (id: string, newOrder: number) => Promise<void>;
+  toggleShapeFeatured: (id: string) => Promise<void>;
   clearConflict: () => void;
   uploadShapeImage: (file: File) => Promise<CloudinaryUploadResult>;
   clearError: () => void;
@@ -211,6 +212,26 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
       const errorMsg =
         error instanceof Error ? error.message : "Failed to change shape order";
       set({ shapes: prevShapes, error: errorMsg });
+      throw error;
+    }
+  },
+
+  toggleShapeFeatured: async (id) => {
+    set({ error: null });
+    try {
+      const response = await shapeApi.toggleFeatured(id);
+      if (!response.success) {
+        throw new Error(response.message || "Failed to toggle best seller");
+      }
+      set((state) => ({
+        shapes: state.shapes.map((s) =>
+          s.id === id ? { ...s, isFeatured: !s.isFeatured } : s,
+        ),
+      }));
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : "Failed to toggle best seller";
+      set({ error: errorMsg });
       throw error;
     }
   },

@@ -1,4 +1,4 @@
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,16 +14,27 @@ interface DecorationCardProps {
   decoration: Decoration;
   onEdit: (decoration: Decoration) => void;
   onDelete: (decoration: Decoration) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 export function DecorationCard({
   decoration,
   onEdit,
   onDelete,
+  onToggleFeatured,
 }: DecorationCardProps) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
+    <div className="relative rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
+      {decoration.isFeatured && (
+        <div
+          className="absolute top-2 start-2 z-10 flex items-center justify-center rounded-full bg-background/85 p-1.5 shadow-sm"
+          title={t("common.bestSeller")}
+          aria-label={t("common.bestSeller")}
+        >
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        </div>
+      )}
       <div className="flex gap-4">
         <img
           src={decoration.decorationUrl}
@@ -63,6 +74,10 @@ export function DecorationCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onToggleFeatured(decoration.id)}>
+              <Star className="h-4 w-4 mr-2" />
+              {t("common.toggleBestSeller")}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(decoration)}>
               <Pencil className="h-4 w-4 mr-2" />
               {t("customCakes.edit")}

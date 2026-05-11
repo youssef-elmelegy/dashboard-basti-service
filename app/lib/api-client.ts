@@ -1,6 +1,17 @@
 import axios from "axios";
 import type { AxiosInstance, AxiosError } from "axios";
+import i18n from "@/i18n/config";
 import { env } from "@/config/env";
+
+const SUPPORTED_LANGUAGES = ["en", "ar"] as const;
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+
+function getCurrentLanguage(): SupportedLanguage {
+  const lang = i18n.language?.split("-")[0];
+  return SUPPORTED_LANGUAGES.includes(lang as SupportedLanguage)
+    ? (lang as SupportedLanguage)
+    : "en";
+}
 
 export interface ApiResponse<T> {
   code: number;
@@ -33,8 +44,9 @@ class ApiClient {
       withCredentials: true,
     });
 
-    // Request interceptor for logging
+    // Request interceptor: attach Accept-Language and log
     this.axiosInstance.interceptors.request.use((config) => {
+      config.headers.set("Accept-Language", getCurrentLanguage());
       console.debug(
         `[API Request] ${config.method?.toUpperCase()} ${config.url}`,
         config.data,
@@ -85,7 +97,10 @@ class ApiClient {
               await axios.post(
                 `${env.API_BASE_URL}/admin-auth/refresh`,
                 {},
-                { withCredentials: true },
+                {
+                  withCredentials: true,
+                  headers: { "Accept-Language": getCurrentLanguage() },
+                },
               );
 
               this.isRefreshing = false;

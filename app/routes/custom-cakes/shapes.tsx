@@ -48,6 +48,9 @@ export default function ShapesPage() {
   const updateShape = useShapeStore((state) => state.updateShape);
   const deleteShape = useShapeStore((state) => state.deleteShape);
   const changeShapeOrder = useShapeStore((state) => state.changeShapeOrder);
+  const toggleShapeFeatured = useShapeStore(
+    (state) => state.toggleShapeFeatured,
+  );
   const shapeConflict = useShapeStore((state) => state.shapeConflict);
   const forceDeleteShape = useShapeStore((state) => state.forceDeleteShape);
   const clearConflict = useShapeStore((state) => state.clearConflict);
@@ -231,6 +234,11 @@ export default function ShapesPage() {
                 shape={shape}
                 onEdit={() => setEditingShape(shape)}
                 onDelete={() => handleDeleteShape(shape)}
+                onToggleFeatured={(id) =>
+                  toggleShapeFeatured(id).catch((err) =>
+                    console.error("Failed to toggle best seller:", err),
+                  )
+                }
               />
             </div>
           ))}

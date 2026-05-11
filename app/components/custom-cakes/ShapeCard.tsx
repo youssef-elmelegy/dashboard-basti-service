@@ -1,4 +1,4 @@
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,21 +14,36 @@ interface ShapeCardProps {
   shape: Shape;
   onEdit: (shape: Shape) => void;
   onDelete: (shape: Shape) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
-export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
+export function ShapeCard({
+  shape,
+  onEdit,
+  onDelete,
+  onToggleFeatured,
+}: ShapeCardProps) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
+    <div className="relative h-full rounded-lg border border-border bg-card p-4 hover:shadow-lg transition-shadow">
+      {shape.isFeatured && (
+        <div
+          className="absolute top-2 start-2 z-10 flex items-center justify-center rounded-full bg-background/85 p-1.5 shadow-sm"
+          title={t("common.bestSeller")}
+          aria-label={t("common.bestSeller")}
+        >
+          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        </div>
+      )}
       <div className="flex gap-4">
         <img
           src={shape.shapeUrl}
           alt={shape.title}
-          className="h-24 w-24 rounded-md object-contain"
+          className="h-24 w-24 shrink-0 rounded-md object-contain"
         />
-        <div className="flex-1">
-          <h3 className="font-semibold">{shape.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold wrap-break-word">{shape.title}</h3>
+          <p className="text-sm text-muted-foreground line-clamp-2 wrap-break-word">
             {shape.description}
           </p>
           <div className="mt-2 flex gap-2 flex-wrap">
@@ -38,11 +53,11 @@ export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
             <Badge variant="outline" className="text-xs">
               {shape.capacity} servings
             </Badge>
-            {shape.minPrepHours && (
+            {shape.minPrepHours ? (
               <Badge variant="outline" className="text-xs">
                 {shape.minPrepHours}h prep
               </Badge>
-            )}
+            ) : null}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             {new Date(shape.createdAt).toLocaleDateString()}
@@ -55,6 +70,10 @@ export function ShapeCard({ shape, onEdit, onDelete }: ShapeCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onToggleFeatured(shape.id)}>
+              <Star className="h-4 w-4 mr-2" />
+              {t("common.toggleBestSeller")}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(shape)}>
               <Pencil className="h-4 w-4 mr-2" />
               {t("customCakes.edit")}

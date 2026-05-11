@@ -55,6 +55,9 @@ export default function FlavorsPage() {
   const updateFlavor = useFlavorStore((state) => state.updateFlavor);
   const deleteFlavor = useFlavorStore((state) => state.deleteFlavor);
   const changeFlavorOrder = useFlavorStore((state) => state.changeFlavorOrder);
+  const toggleFlavorFeatured = useFlavorStore(
+    (state) => state.toggleFlavorFeatured,
+  );
   const flavorConflict = useFlavorStore((state) => state.flavorConflict);
   const forceDeleteFlavor = useFlavorStore((state) => state.forceDeleteFlavor);
   const clearConflict = useFlavorStore((state) => state.clearConflict);
@@ -272,6 +275,11 @@ export default function FlavorsPage() {
                   flavor={flavor}
                   onEdit={() => setEditingFlavor(flavor)}
                   onDelete={() => handleDeleteFlavor(flavor)}
+                  onToggleFeatured={(id) =>
+                    toggleFlavorFeatured(id).catch((err) =>
+                      console.error("Failed to toggle best seller:", err),
+                    )
+                  }
                 />
               </div>
             ))}

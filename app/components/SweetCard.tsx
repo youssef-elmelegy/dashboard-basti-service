@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import type { Sweet } from "@/lib/services/sweet.service";
+import { BestSellerBadge } from "@/components/BestSellerBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ interface SweetCardProps {
   onEdit: (sweet: Sweet) => void;
   onDelete: (sweet: Sweet) => void;
   onToggleActive: () => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 export function SweetCard({
@@ -23,6 +25,7 @@ export function SweetCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleFeatured,
 }: SweetCardProps) {
   const { t } = useTranslation();
   const [index, setIndex] = useState(0);
@@ -91,8 +94,11 @@ export function SweetCard({
           </div>
         )}
 
+        {/* Best Seller Badge */}
+        {sweet.isFeatured && <BestSellerBadge className="top-5 start-5" />}
+
         {/* Action Menu */}
-        <div className="absolute top-5 right-5">
+        <div className="absolute top-5 end-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -104,6 +110,9 @@ export function SweetCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onToggleFeatured(sweet.id)}>
+                {t("common.toggleBestSeller")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(sweet)}>
                 {t("common.edit")}
               </DropdownMenuItem>

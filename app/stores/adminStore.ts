@@ -7,6 +7,23 @@ import {
   type BlockAdminPayload,
 } from "@/lib/services/admin.service";
 
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object") {
+    const obj = error as { message?: unknown; details?: unknown };
+    if (Array.isArray(obj.details) && obj.details.length > 0) {
+      return obj.details.filter((d) => typeof d === "string").join("; ");
+    }
+    if (typeof obj.details === "string" && obj.details.length > 0) {
+      return obj.details;
+    }
+    if (typeof obj.message === "string" && obj.message.length > 0) {
+      return obj.message;
+    }
+  }
+  if (typeof error === "string" && error.length > 0) return error;
+  return fallback;
+}
+
 interface AdminStore {
   admins: Admin[];
   isLoading: boolean;
@@ -39,8 +56,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
       const admins = await adminService.getAll();
       set({ admins, isLoading: false, isCached: true });
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to fetch admins";
+      const message = extractErrorMessage(error, "Failed to fetch admins");
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -55,8 +71,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create admin";
+      const message = extractErrorMessage(error, "Failed to create admin");
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -73,8 +88,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to update admin";
+      const message = extractErrorMessage(error, "Failed to update admin");
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -91,8 +105,7 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to block admin";
+      const message = extractErrorMessage(error, "Failed to block admin");
       set({ error: message, isLoading: false });
       throw error;
     }
@@ -101,15 +114,13 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   deleteAdmin: async (id: string) => {
     set({ isLoading: true, error: null });
     try {
-      // Block admin instead of delete (soft delete)
-      await adminService.block(id, { isBlocked: true });
+      await adminService.delete(id);
       set((state) => ({
         admins: state.admins.filter((admin) => admin.id !== id),
         isLoading: false,
       }));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete admin";
+      const message = extractErrorMessage(error, "Failed to delete admin");
       set({ error: message, isLoading: false });
       throw error;
     }

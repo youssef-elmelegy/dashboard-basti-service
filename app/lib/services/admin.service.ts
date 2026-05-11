@@ -22,7 +22,7 @@ export interface CreateAdminPayload {
 export interface UpdateAdminPayload {
   role?: "super_admin" | "admin" | "manager";
   bakeryId?: string;
-  profileImage?: string;
+  profileImage?: string | null;
 }
 
 export interface BlockAdminPayload {
@@ -77,5 +77,13 @@ export const adminService = {
     }
 
     return response.data!;
+  },
+
+  async delete(id: string): Promise<void> {
+    const response = await apiClient.delete<null>(`/admin-auth/${id}`);
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to delete admin");
+    }
   },
 };

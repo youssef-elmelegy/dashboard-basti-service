@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FeaturedCake } from "@/lib/services/featured-cake.service";
 import { ProductImageCarousel } from "@/components/ProductImageCarousel";
+import { BestSellerBadge } from "@/components/BestSellerBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ interface FeaturedCakeCardProps {
   onEdit: (cake: FeaturedCake) => void;
   onDelete: (cake: FeaturedCake) => void;
   onToggleActive: (id: string) => void;
+  onToggleFeatured: (id: string) => void;
 }
 
 export function FeaturedCakeCard({
@@ -23,6 +25,7 @@ export function FeaturedCakeCard({
   onEdit,
   onDelete,
   onToggleActive,
+  onToggleFeatured,
 }: FeaturedCakeCardProps) {
   const { t } = useTranslation();
   const images = Array.isArray(cake.images)
@@ -35,8 +38,11 @@ export function FeaturedCakeCard({
       <div className="w-full h-48 bg-muted/30 relative overflow-hidden flex-shrink-0">
         <ProductImageCarousel images={images} name={cake.name} />
 
+        {/* Best Seller Badge */}
+        {cake.isFeatured && <BestSellerBadge />}
+
         {/* Action Menu */}
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 end-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -48,6 +54,9 @@ export function FeaturedCakeCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onToggleFeatured(cake.id)}>
+                {t("common.toggleBestSeller")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(cake)}>
                 {t("featuredCakes.edit")}
               </DropdownMenuItem>
@@ -114,7 +123,7 @@ export function FeaturedCakeCard({
         <div className="py-3 border-t border-b border-border text-center">
           <div>
             <p className="text-xs text-muted-foreground font-medium">
-              Capacity
+              {t("common.capacity")}
             </p>
             <p className="text-sm font-semibold text-card-foreground">
               {cake.capacity}

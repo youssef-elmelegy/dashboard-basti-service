@@ -265,7 +265,7 @@ export default function TagsManagementPage() {
                       <FormControl>
                         <Input
                           type="number"
-                          placeholder="Enter display order"
+                          placeholder={t("tags.displayOrderPlaceholder")}
                           {...field}
                           value={field.value === 0 ? "" : field.value}
                           onChange={(e) =>
@@ -315,8 +315,8 @@ export default function TagsManagementPage() {
                                     }}
                                   />
                                 </FormControl>
-                                <FormLabel className="font-normal capitalize cursor-pointer">
-                                  {type.replace(/-/g, " ")}
+                                <FormLabel className="font-normal cursor-pointer">
+                                  {t(`tags.typeLabels.${type}`)}
                                 </FormLabel>
                               </FormItem>
                             )}
@@ -347,7 +347,7 @@ export default function TagsManagementPage() {
                       variant="outline"
                       onClick={() => setEditingId(null)}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   )}
                 </div>
@@ -362,18 +362,18 @@ export default function TagsManagementPage() {
                   {t("tags.list") || "Available Tags"}
                 </h2>
                 <div className="text-sm text-muted-foreground">
-                  {tags.length} items
+                  {tags.length} {t("tags.items")}
                 </div>
               </div>
 
               <div className="rounded-lg p-2 h-full overflow-y-auto">
                 {isLoading ? (
                   <div className="p-4 text-sm text-muted-foreground">
-                    Loading...
+                    {t("common.loading")}
                   </div>
                 ) : tags.length === 0 ? (
                   <div className="p-4 text-sm text-muted-foreground">
-                    No tags
+                    {t("tags.noTags")}
                   </div>
                 ) : (
                   <ul className="space-y-2">
@@ -403,14 +403,14 @@ export default function TagsManagementPage() {
                         <div>
                           <div className="font-medium">{tag.name}</div>
                           <div className="text-xs text-muted-foreground">
-                            Order: {tag.displayOrder}
+                            {t("tags.order")}: {tag.displayOrder}
                           </div>
                           {Array.isArray(tag.types) &&
                             tag.types.length > 0 && (
                               <div className="flex gap-1 flex-wrap mt-2">
                                 {tag.types.map((type) => (
                                   <Badge key={type} variant="secondary">
-                                    {type.replace(/-/g, " ")}
+                                    {t(`tags.typeLabels.${type}`)}
                                   </Badge>
                                 ))}
                               </div>

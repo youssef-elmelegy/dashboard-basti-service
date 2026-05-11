@@ -7,6 +7,7 @@ export interface Flavor {
   description: string;
   flavorUrl: string;
   order: number;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -154,6 +155,16 @@ export const flavorApi = {
   ): Promise<ApiResponse<FlavorVariantImage[]>> => {
     return apiClient.get<FlavorVariantImage[]>(
       `/custom-cakes/flavors/${id}/variant-images`,
+    );
+  },
+
+  /**
+   * Toggle flavor "best seller" flag
+   */
+  toggleFeatured: (id: string): Promise<ApiResponse<{ message: string }>> => {
+    return apiClient.patch<{ message: string }>(
+      `/custom-cakes/flavors/${id}/toggle-featured`,
+      {},
     );
   },
 };

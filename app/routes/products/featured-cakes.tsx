@@ -51,6 +51,9 @@ export default function FeaturedCakesPage() {
   const toggleFeaturedCakeStatus = useFeaturedCakeStore(
     (state) => state.toggleFeaturedCakeStatus,
   );
+  const toggleFeaturedCakeFeatured = useFeaturedCakeStore(
+    (state) => state.toggleFeaturedCakeFeatured,
+  );
   const { openDeleteDialog } = useDeleteDialog();
 
   // Fetch featured cakes on mount
@@ -124,6 +127,16 @@ export default function FeaturedCakesPage() {
           ? err.message
           : "Failed to toggle featured cake status";
       console.error("Failed to toggle featured cake:", errorMsg);
+    }
+  };
+
+  const handleToggleFeatured = async (cakeId: string) => {
+    try {
+      await toggleFeaturedCakeFeatured(cakeId);
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to toggle best seller";
+      console.error("Failed to toggle best seller:", errorMsg);
     }
   };
 
@@ -220,6 +233,7 @@ export default function FeaturedCakesPage() {
               onEdit={(c) => setEditingCake(c)}
               onDelete={handleDeleteCake}
               onToggleActive={() => handleToggleCake(cake.id)}
+              onToggleFeatured={handleToggleFeatured}
             />
           ))}
         </div>
