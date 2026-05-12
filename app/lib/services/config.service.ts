@@ -14,6 +14,8 @@ export interface ConfigResponseDto {
   }>;
   isOpen: boolean;
   closureMessage: string | null;
+  bastiPercentage: number;
+  deliveryAmount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,8 @@ export interface UpdateConfigRequest {
   }>;
   isOpen?: boolean;
   closureMessage?: string | null;
+  bastiPercentage?: number;
+  deliveryAmount?: number;
 }
 
 export const configApi = {

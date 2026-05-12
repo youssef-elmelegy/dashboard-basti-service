@@ -103,6 +103,55 @@ export interface OrderFilters {
 }
 
 /**
+ * Orders financials types
+ */
+export interface OrderFinancialsRow {
+  addonsTotal: number;
+  bastiPercentage: number;
+  bastiAmount: number;
+  deliveryAmount: number;
+  totalPrice: number;
+  discountAmount: number;
+  finalPrice: number;
+  bakeryId: string;
+  bakeryName: string;
+  orderId: string;
+  referenceNumber: string;
+  deliveredAt: string;
+}
+
+export interface OrderFinancialsTotal {
+  addonsTotal: number;
+  bastiTotal: number;
+  bakeryTotal: number;
+  deliveryAmount: number;
+  totalPrice: number;
+  discountAmount: number;
+  finalPrice: number;
+}
+
+export interface OrderFinancialsPagination {
+  total: number;
+  limit: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface OrderFinancialsResponse {
+  rows: OrderFinancialsRow[];
+  total: OrderFinancialsTotal;
+  pagination: OrderFinancialsPagination;
+}
+
+export interface OrderFinancialsFilters {
+  bakeryId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+/**
  * Order API service with CRUD methods
  */
 export const orderApi = {
@@ -225,5 +274,23 @@ export const orderApi = {
   ): Promise<ApiResponse<{ id: string; finalImages: string[] }>> => {
     const url = `/orders/${orderId}/qa`;
     return apiClient.patch(url, { bakeryId, finalImages, notes: [] });
+  },
+
+  /**
+   * Get orders financials report
+   */
+  getFinancials: (
+    filters?: OrderFinancialsFilters,
+  ): Promise<ApiResponse<OrderFinancialsResponse>> => {
+    const params = new URLSearchParams();
+    if (filters?.bakeryId) params.append("bakeryId", filters.bakeryId);
+    if (filters?.from) params.append("from", filters.from);
+    if (filters?.to) params.append("to", filters.to);
+    if (filters?.page) params.append("page", String(filters.page));
+    if (filters?.limit) params.append("limit", String(filters.limit));
+
+    const queryString = params.toString();
+    const url = `/orders/financials${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<OrderFinancialsResponse>(url);
   },
 };

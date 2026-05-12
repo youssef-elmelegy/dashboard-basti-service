@@ -27,6 +27,8 @@ const formSchema = z.object({
   minHoursToPrepare: z.number().int().min(1),
   weekendDays: z.array(z.number().int().min(0).max(6)),
   holidays: z.array(z.string()),
+  bastiPercentage: z.number().int().min(0).max(100),
+  deliveryAmount: z.number().int().min(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +64,8 @@ export default function AppConfigPage() {
       minHoursToPrepare: 24,
       weekendDays: [5, 6],
       holidays: [],
+      bastiPercentage: 20,
+      deliveryAmount: 10,
     },
   });
 
@@ -81,6 +85,8 @@ export default function AppConfigPage() {
           minHoursToPrepare: config.minHoursToPrepare,
           weekendDays: config.weekendDays,
           holidays: config.holidays,
+          bastiPercentage: config.bastiPercentage,
+          deliveryAmount: config.deliveryAmount,
         });
 
         // Convert holidays to dates for calendar
@@ -102,6 +108,8 @@ export default function AppConfigPage() {
         minHoursToPrepare: values.minHoursToPrepare,
         weekendDays: values.weekendDays,
         holidays: values.holidays,
+        bastiPercentage: values.bastiPercentage,
+        deliveryAmount: values.deliveryAmount,
         // These fields are not managed by the form UI
         emergencyClosures: [],
         isOpen: true,
@@ -122,6 +130,8 @@ export default function AppConfigPage() {
         minHoursToPrepare: config.minHoursToPrepare,
         weekendDays: config.weekendDays,
         holidays: config.holidays,
+        bastiPercentage: config.bastiPercentage,
+        deliveryAmount: config.deliveryAmount,
       });
       const holidaysAsDate = config.holidays.map((h) =>
         parse(h, "yyyy-MM-dd", new Date()),
@@ -269,6 +279,78 @@ export default function AppConfigPage() {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+              </div>
+            </div>
+
+            {/* Pricing & Delivery Section */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">
+                {t("appConfig.pricingDelivery")}
+              </h2>
+              <div className="flex gap-6 flex-wrap">
+                <FormField
+                  control={form.control}
+                  name="deliveryAmount"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>{t("appConfig.deliveryAmount")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.deliveryAmountDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bastiPercentage"
+                  render={({ field }) => {
+                    const value =
+                      typeof field.value === "number" && !isNaN(field.value)
+                        ? field.value
+                        : 0;
+                    const bakeryPct = Math.max(0, Math.min(100, 100 - value));
+                    return (
+                      <FormItem className="flex-1 min-w-48">
+                        <FormLabel>
+                          {t("appConfig.bastiPercentage")}
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value))
+                              }
+                              className="pe-40"
+                            />
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none whitespace-nowrap">
+                              {t("appConfig.bakeryPercentage")}: {bakeryPct}%
+                            </span>
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          {t("appConfig.bastiPercentageDesc")}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </div>
