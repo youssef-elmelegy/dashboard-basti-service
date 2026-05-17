@@ -284,8 +284,8 @@ export default function CouponsPage() {
                         onClick={() => handleToggle(coupon)}
                         className={`p-2 rounded-lg transition-colors ${
                           coupon.isActive
-                            ? "hover:bg-orange-100"
-                            : "hover:bg-green-100"
+                            ? "hover:bg-green-100"
+                            : "hover:bg-orange-100"
                         }`}
                         title={
                           coupon.isActive
@@ -294,9 +294,9 @@ export default function CouponsPage() {
                         }
                       >
                         {coupon.isActive ? (
-                          <PowerOff className="w-4 h-4 text-orange-600" />
-                        ) : (
                           <Power className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <PowerOff className="w-4 h-4 text-orange-600" />
                         )}
                       </button>
                       <button
