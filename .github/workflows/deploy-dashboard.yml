@@ -18,6 +18,25 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: https://api.basty.ly/api
+        run: pnpm run build
+
       - name: Configure SSH agent with deploy key
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -26,31 +45,16 @@ jobs:
       - name: Trust the server host key
         run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Build & deploy on server
+      - name: Upload + extract dist on server
+        # Stream a tarball over ssh and extract into /var/www/dashboard/
+        # /var/www/dashboard is owned by elmelegy:caddy so no sudo needed.
         run: |
-          ssh -o StrictHostKeyChecking=no elmelegy@${{ secrets.SERVER_HOST }} 'bash -se' <<'EOF'
-            set -euo pipefail
-            cd ~/basti/dashboard-basti-service
-            git fetch origin main
-            git reset --hard origin/main
-
-            # API endpoint baked into the bundle at build time
-            cat > .env.production <<'ENVEOF'
-          VITE_API_BASE_URL=https://api.basty.ly/api
-          ENVEOF
-
-            corepack enable
-            # Clean install so pnpm-workspace.yaml's onlyBuiltDependencies is applied
-            rm -rf node_modules
-            pnpm install --frozen-lockfile
-            pnpm run build
-
-            # In-place rsync into existing /var/www/dashboard (owned by elmelegy:caddy)
-            # Not strictly atomic, but acceptable for a small SPA. Atomic swap would require sudo.
-            rsync -a --delete dist/ /var/www/dashboard/
-          EOF
+          tar -C dist -czf - . | \
+            ssh -o StrictHostKeyChecking=no \
+              elmelegy@${{ secrets.SERVER_HOST }} \
+              'set -e; rm -rf /var/www/dashboard/* /var/www/dashboard/.[!.]* 2>/dev/null || true; tar -C /var/www/dashboard -xzf -'
 
       - name: Verify dashboard responds
         run: |
           ssh -o StrictHostKeyChecking=no elmelegy@${{ secrets.SERVER_HOST }} \
-            'curl -fsS -H "Host: dashboard.basty.ly" http://127.0.0.1/ > /dev/null && echo OK'
+            'curl -fsS -H "Host: dashboard.basty.ly" http://127.0.0.1/ -o /dev/null && echo OK'
