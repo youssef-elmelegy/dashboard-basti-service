@@ -43,14 +43,9 @@ jobs:
             pnpm install --frozen-lockfile
             pnpm run build
 
-            # Atomic swap into /var/www/dashboard
-            rsync -a --delete dist/ /var/www/dashboard.new/
-            rm -rf /var/www/dashboard.old 2>/dev/null || true
-            if [[ -d /var/www/dashboard ]]; then
-              mv /var/www/dashboard /var/www/dashboard.old
-            fi
-            mv /var/www/dashboard.new /var/www/dashboard
-            rm -rf /var/www/dashboard.old
+            # In-place rsync into existing /var/www/dashboard (owned by elmelegy:caddy)
+            # Not strictly atomic, but acceptable for a small SPA. Atomic swap would require sudo.
+            rsync -a --delete dist/ /var/www/dashboard/
           EOF
 
       - name: Verify dashboard responds
