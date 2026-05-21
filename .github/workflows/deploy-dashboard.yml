@@ -1,0 +1,59 @@
+name: Deploy dashboard
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dashboard
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Configure SSH agent with deploy key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust the server host key
+        run: ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build & deploy on server
+        run: |
+          ssh -o StrictHostKeyChecking=no elmelegy@${{ secrets.SERVER_HOST }} 'bash -se' <<'EOF'
+            set -euo pipefail
+            cd ~/basti/dashboard-basti-service
+            git fetch origin main
+            git reset --hard origin/main
+
+            # API endpoint baked into the bundle at build time
+            cat > .env.production <<'ENVEOF'
+          VITE_API_BASE_URL=https://api.basty.ly/api
+          ENVEOF
+
+            corepack enable
+            pnpm install --frozen-lockfile
+            pnpm run build
+
+            # Atomic swap into /var/www/dashboard
+            rsync -a --delete dist/ /var/www/dashboard.new/
+            rm -rf /var/www/dashboard.old 2>/dev/null || true
+            if [[ -d /var/www/dashboard ]]; then
+              mv /var/www/dashboard /var/www/dashboard.old
+            fi
+            mv /var/www/dashboard.new /var/www/dashboard
+            rm -rf /var/www/dashboard.old
+          EOF
+
+      - name: Verify dashboard responds
+        run: |
+          ssh -o StrictHostKeyChecking=no elmelegy@${{ secrets.SERVER_HOST }} \
+            'curl -fsS -H "Host: dashboard.basty.ly" http://127.0.0.1/ > /dev/null && echo OK'
