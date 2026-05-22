@@ -941,10 +941,36 @@
       "all": "كل الأنواع",
       "order_update": "تحديث طلب",
       "order_status": "حالة طلب",
+      "order_cancelled_by_bakery": "إلغاء الطلب من المخبز",
       "promotion": "عرض ترويجي",
       "system": "نظام",
       "review": "تقييم",
-      "new_order": "طلب جديد"
+      "new_order": "طلب جديد",
+      "offer": "خصم",
+      "coupon": "كوبون"
+    },
+    "tester": {
+      "title": "أداة إرسال إشعار تجريبي",
+      "description": "إرسال إشعار اختبار سريع لاختبار حالات الإطلاق. متاح مؤقتًا.",
+      "open": "إرسال إشعار تجريبي",
+      "mode": "وضع الإرسال",
+      "modeUser": "إلى مستخدم محدد (بالمعرّف)",
+      "modeAdmin": "إلى مشرف محدد (بالمعرّف)",
+      "modeBroadcast": "بث لجميع المستخدمين",
+      "recipientId": "معرّف المستلم (UUID)",
+      "recipientIdPlaceholder": "ألصق معرّف المستخدم أو المشرف",
+      "regionId": "معرّف المنطقة (اختياري ضمن البيانات)",
+      "regionIdPlaceholder": "ألصق معرّف المنطقة — يُضاف داخل حمولة FCM",
+      "type": "النوع",
+      "titleField": "العنوان",
+      "bodyField": "النص",
+      "redirectId": "معرّف التوجيه (اختياري)",
+      "redirectIdPlaceholder": "مثل معرّف الطلب لأنواع order_*",
+      "send": "إرسال",
+      "sending": "جارٍ الإرسال…",
+      "successOne": "تم إرسال الإشعار بنجاح",
+      "successBroadcast": "تم البث إلى {{count}} مستخدم",
+      "errorGeneric": "فشل إرسال الإشعار"
     }
   },
   "coupons": {

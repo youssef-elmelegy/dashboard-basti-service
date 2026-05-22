@@ -17,9 +17,16 @@ function resolveNavigationPath(
     case "new_order":
     case "order_update":
     case "order_status":
+    case "order_cancelled_by_bakery":
       return redirectId ? `/orders/${redirectId}` : "/orders";
     case "review":
+      // redirectId is the review id; the review detail lives on the bakery
+      // customer screen — for now route to the customers list as a fallback.
       return redirectId ? `/customers/${redirectId}` : "/customers";
+    case "coupon":
+      return "/advertisement/coupons";
+    case "offer":
+      return "/advertisement/offers";
     case "promotion":
     case "system":
     default:

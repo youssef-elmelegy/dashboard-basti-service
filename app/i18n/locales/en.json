@@ -941,10 +941,36 @@
       "all": "All types",
       "order_update": "Order update",
       "order_status": "Order status",
+      "order_cancelled_by_bakery": "Bakery cancelled order",
       "promotion": "Promotion",
       "system": "System",
       "review": "Review",
-      "new_order": "New order"
+      "new_order": "New order",
+      "offer": "Offer",
+      "coupon": "Coupon"
+    },
+    "tester": {
+      "title": "Test notification sender",
+      "description": "Send a one-off notification for QA. Available while the in-app trigger flows are still being wired up.",
+      "open": "Send test notification",
+      "mode": "Send mode",
+      "modeUser": "To one user (by ID)",
+      "modeAdmin": "To one admin (by ID)",
+      "modeBroadcast": "Broadcast to all users",
+      "recipientId": "Recipient ID (UUID)",
+      "recipientIdPlaceholder": "Paste the user or admin UUID",
+      "regionId": "Region ID (optional, sent as data)",
+      "regionIdPlaceholder": "Paste a region UUID — included in the FCM payload",
+      "type": "Type",
+      "titleField": "Title",
+      "bodyField": "Body",
+      "redirectId": "Redirect ID (optional)",
+      "redirectIdPlaceholder": "e.g. order ID for order_* types",
+      "send": "Send",
+      "sending": "Sending…",
+      "successOne": "Notification sent successfully",
+      "successBroadcast": "Broadcast sent to {{count}} users",
+      "errorGeneric": "Failed to send notification"
     }
   },
   "coupons": {

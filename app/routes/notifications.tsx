@@ -13,6 +13,9 @@ import {
   Megaphone,
   Info,
   Trash2,
+  Ban,
+  Tag,
+  Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,18 +44,24 @@ const TYPE_ICONS: Record<NotificationType, typeof Bell> = {
   new_order: ShoppingBag,
   order_update: ShoppingBag,
   order_status: ShoppingBag,
+  order_cancelled_by_bakery: Ban,
   review: Star,
   promotion: Megaphone,
   system: Info,
+  offer: Percent,
+  coupon: Tag,
 };
 
 const TYPE_TINTS: Record<NotificationType, string> = {
   new_order: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   order_update: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   order_status: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  order_cancelled_by_bakery: "bg-red-500/10 text-red-600 dark:text-red-400",
   review: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   promotion: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
   system: "bg-muted text-muted-foreground",
+  offer: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  coupon: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
 };
 
 export default function NotificationsPage() {

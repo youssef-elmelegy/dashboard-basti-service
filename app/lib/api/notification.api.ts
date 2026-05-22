@@ -3,13 +3,28 @@ import { apiClient, type ApiResponse } from "../api-client";
 export const NOTIFICATION_TYPES = [
   "order_update",
   "order_status",
+  "order_cancelled_by_bakery",
   "promotion",
   "system",
   "review",
   "new_order",
+  "offer",
+  "coupon",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export type NotificationRecipientType = "user" | "admin";
+
+export interface SendNotificationPayload {
+  title: string;
+  body: string;
+  type: NotificationType;
+  recipientType: NotificationRecipientType;
+  recipientId: string;
+  redirectId?: string;
+  data?: Record<string, string>;
+}
 
 export interface NotificationData {
   id: string;
@@ -119,6 +134,10 @@ class NotificationApi {
       "/notifications/send-broadcast",
       payload,
     );
+  }
+
+  send(payload: SendNotificationPayload): Promise<ApiResponse<NotificationData>> {
+    return apiClient.post<NotificationData>("/notifications/send", payload);
   }
 }
 
