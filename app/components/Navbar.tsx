@@ -62,7 +62,7 @@ const Navbar = () => {
               <User className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
               {t("common.profile")}
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
               <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
               {t("common.settings")}
             </DropdownMenuItem>
