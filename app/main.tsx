@@ -14,6 +14,12 @@ Sentry.init({
   environment: import.meta.env.MODE,
   enabled: !!import.meta.env.VITE_SENTRY_DSN,
   tracesSampleRate: 0.1,
+  // Enable structured logs (experimental in both SDK and GlitchTip).
+  _experiments: { enableLogs: true },
+  integrations: [
+    // Forward console.warn / console.error from the browser to GlitchTip Logs.
+    Sentry.consoleLoggingIntegration({ levels: ["warn", "error"] }),
+  ],
 });
 
 createRoot(document.getElementById("root")!).render(
