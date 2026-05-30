@@ -648,9 +648,6 @@ export default function BakeryOrdersPage() {
   const currentBakery = useBakeryStore((state) => state.currentBakery);
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
   const setBakeryOrders = useBakeryStore((state) => state.setBakeryOrders);
-  const getCachedBakeryOrders = useBakeryStore(
-    (state) => state.getBakeryOrders,
-  );
   const updateOrder = useOrderStore((state) => state.updateOrder);
   const invalidateCompletedOrders = useBakeryCompletedOrdersStore(
     (state) => state.invalidate,
