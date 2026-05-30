@@ -18,12 +18,14 @@ interface BakeryItemsDisplayProps {
   items: BakeryItemStore[];
   bakeryId: string;
   isLoading?: boolean;
+  readOnly?: boolean;
 }
 
 export function BakeryItemsDisplay({
   items,
   bakeryId,
   isLoading = false,
+  readOnly = false,
 }: BakeryItemsDisplayProps) {
   const { t } = useTranslation();
   const [selectedItem, setSelectedItem] = useState<BakeryItemStore | null>(
@@ -73,13 +75,17 @@ export function BakeryItemsDisplay({
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} onEdit={handleEditClick} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                onEdit={readOnly ? undefined : handleEditClick}
+              />
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {selectedItem && (
+      {!readOnly && selectedItem && (
         <EditStockDialog
           item={selectedItem}
           bakeryId={bakeryId}
@@ -96,7 +102,7 @@ function ItemCard({
   onEdit,
 }: {
   item: BakeryItemStore;
-  onEdit: (item: BakeryItemStore) => void;
+  onEdit?: (item: BakeryItemStore) => void;
 }) {
   const { t, i18n } = useTranslation();
   const imageUrl = item.product?.images?.[0];
@@ -168,27 +174,29 @@ function ItemCard({
         )}
 
         {/* Options Menu */}
-        <div className={cn("absolute top-2", isRTL ? "left-2" : "right-2")}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 bg-background/80 hover:bg-background"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align={isRTL ? "start" : "end"}>
-              <DropdownMenuItem
-                onClick={() => onEdit(item)}
-                className={isRTL ? "text-right" : "text-left"}
-              >
-                {t("bakeriesManagement.editStock")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {onEdit && (
+          <div className={cn("absolute top-2", isRTL ? "left-2" : "right-2")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-background/80 hover:bg-background"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align={isRTL ? "start" : "end"}>
+                <DropdownMenuItem
+                  onClick={() => onEdit(item)}
+                  className={isRTL ? "text-right" : "text-left"}
+                >
+                  {t("bakeriesManagement.editStock")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
       {/* Content Section */}

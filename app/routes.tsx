@@ -4,6 +4,10 @@ import ManagerDashboard from "@/routes/manager-dashboard";
 import Orders from "@/routes/orders";
 import CompletedOrders from "@/routes/completed-orders";
 import BakeryOrders from "@/routes/bakery-orders";
+import BakeryCompletedOrders from "@/routes/bakery-completed-orders";
+import BakeryOrderDetail from "@/routes/bakery-order-detail";
+import BakeryStock from "@/routes/bakery-stock";
+import BakeryReviews from "@/routes/bakery-reviews";
 import Customers from "@/routes/customers";
 import CustomerDetail from "@/routes/customer-detail";
 import Settings from "@/routes/settings";
@@ -107,6 +111,22 @@ export const router = createBrowserRouter([
       {
         path: "orders/bakery/:id",
         element: <BakeryOrders />,
+      },
+      {
+        path: "orders/bakery/:id/completed",
+        element: <BakeryCompletedOrders />,
+      },
+      {
+        path: "orders/bakery/:bakeryId/orders/:orderId",
+        element: <BakeryOrderDetail />,
+      },
+      {
+        path: "bakery-stock",
+        element: <BakeryStock />,
+      },
+      {
+        path: "bakery-reviews",
+        element: <BakeryReviews />,
       },
       {
         path: "customers",

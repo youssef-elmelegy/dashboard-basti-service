@@ -13,13 +13,25 @@ function resolveNavigationPath(
 ): string | null {
   if (!type) return null;
 
+  // Bakery managers should land on the bakery-scoped views, never the
+  // admin-only /orders/:id route (which the role guard blocks).
+  const admin = useAuthStore.getState().admin;
+  const isManager = admin?.role === "manager";
+  const managerBakeryId = isManager ? admin?.bakeryId : undefined;
+
   switch (type) {
     case "new_order":
     case "order_update":
     case "order_status":
     case "order_cancelled_by_bakery":
+      if (managerBakeryId) {
+        return redirectId
+          ? `/orders/bakery/${managerBakeryId}/orders/${redirectId}`
+          : `/orders/bakery/${managerBakeryId}`;
+      }
       return redirectId ? `/orders/${redirectId}` : "/orders";
     case "review":
+      if (isManager) return "/bakery-reviews";
       // redirectId is the review id; the review detail lives on the bakery
       // customer screen — for now route to the customers list as a fallback.
       return redirectId ? `/customers/${redirectId}` : "/customers";

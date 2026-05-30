@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,14 +19,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useRegionStore } from "@/stores/regionStore";
 import type { Offer, CreateOfferPayload } from "@/lib/services/offer.service";
 
 const formSchema = z
@@ -40,7 +31,6 @@ const formSchema = z
     startDate: z.string().optional(),
     expiryDate: z.string().optional(),
     isActive: z.boolean(),
-    regionId: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -70,12 +60,6 @@ function toIsoDateInput(value: string | null | undefined): string {
 
 export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFormProps) {
   const { t } = useTranslation();
-  const regions = useRegionStore((s) => s.regions);
-  const fetchRegions = useRegionStore((s) => s.fetchRegions);
-
-  useEffect(() => {
-    fetchRegions();
-  }, [fetchRegions]);
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema) as Resolver<OfferFormValues, unknown>,
@@ -86,7 +70,6 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
           startDate: toIsoDateInput(initial.startDate),
           expiryDate: toIsoDateInput(initial.expiryDate),
           isActive: initial.isActive,
-          regionId: undefined,
         }
       : {
           name: "",
@@ -94,7 +77,6 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
           startDate: "",
           expiryDate: "",
           isActive: true,
-          regionId: undefined,
         },
   });
 
@@ -105,7 +87,6 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
       startDate: values.startDate || undefined,
       expiryDate: values.expiryDate || undefined,
       isActive: values.isActive,
-      regionId: values.regionId || undefined,
     };
     await onSubmit(payload);
   };
@@ -186,31 +167,6 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
                   )}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="regionId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("offers.region")}</FormLabel>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("offers.selectRegion")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {regions.map((region) => (
-                          <SelectItem key={region.id} value={region.id}>
-                            {region.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}

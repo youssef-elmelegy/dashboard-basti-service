@@ -12,6 +12,7 @@ import {
   type CloudinaryUploadResult,
   type DeleteImageResult,
 } from "@/lib/api/addOn.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 // Convert service AddOn (singular categories) to UI AddOn (plural categories)
 function convertServiceAddOnToUI(serviceAddOn: ServiceAddOn): AddOn {
@@ -244,8 +245,8 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
     );
     set({ isLoading: true, error: null });
     try {
-      console.log("Calling uploadImage with folder: basti/addons");
-      const response = await uploadImage(file, "basti/addons");
+      console.log(`Calling uploadImage with folder: ${UPLOAD_FOLDERS.addOns}`);
+      const response = await uploadImage(file, UPLOAD_FOLDERS.addOns);
       console.log("Image upload response:", response);
 
       if (response.success && response.data) {

@@ -149,7 +149,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       bakeryId,
     );
 
-    set({ isLoading: true, error: null });
+    set({ error: null });
     try {
       const endpoint = `/reviews/bakery/${bakeryId}?page=${nextPage}&limit=10`;
       console.log("[ReviewStore] Fetching from endpoint:", endpoint);
@@ -178,10 +178,13 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
           totalPages: paginationData.totalPages,
         });
 
+        // Dedupe by id so we never insert the same review twice
+        const seen = new Set(state.reviews.map((r) => r.id));
+        const fresh = reviewsData.filter((r) => !seen.has(r.id));
+
         return {
-          reviews: [...state.reviews, ...reviewsData],
+          reviews: [...state.reviews, ...fresh],
           bakeryPagination: pagination,
-          isLoading: false,
         };
       });
 
@@ -192,7 +195,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
           ? error.message
           : "Failed to fetch next page of reviews";
       console.error("[ReviewStore] Error fetching next page:", errorMessage);
-      set({ error: errorMessage, isLoading: false });
+      set({ error: errorMessage });
       return null;
     }
   },

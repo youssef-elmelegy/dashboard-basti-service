@@ -14,6 +14,7 @@ import { useBakeryStore } from "@/stores/bakeryStore";
 import type { Admin, UpdateAdminPayload } from "@/lib/services/admin.service";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
 import { uploadImage } from "@/lib/api/chef.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
 
 interface EditAdminProps {
@@ -55,7 +56,7 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
         const file = new File([webpBlob], "admin-profile.webp", {
           type: "image/webp",
         });
-        const response = await uploadImage(file, "basti/admins");
+        const response = await uploadImage(file, UPLOAD_FOLDERS.admins);
         setProfileImageUrl(response.data?.secure_url);
       } catch (error) {
         console.error("Error uploading admin profile image:", error);

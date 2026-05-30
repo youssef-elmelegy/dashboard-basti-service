@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2, X } from "lucide-react";
 import {
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
@@ -49,13 +50,48 @@ const ITEM_TYPES: {
   productType: RegionalProductType;
   labelKey: string;
 }[] = [
-  { key: "addonId", connectionType: "addon", productType: "addons", labelKey: "offers.itemTypes.addon" },
-  { key: "featuredCakeId", connectionType: "featuredCake", productType: "featured-cakes", labelKey: "offers.itemTypes.featuredCake" },
-  { key: "sweetId", connectionType: "sweet", productType: "sweets", labelKey: "offers.itemTypes.sweet" },
-  { key: "predesignedCakeId", connectionType: "predesignedCake", productType: "predesigned-cakes", labelKey: "offers.itemTypes.predesignedCake" },
-  { key: "decorationId", connectionType: "decoration", productType: "decorations", labelKey: "offers.itemTypes.decoration" },
-  { key: "flavorId", connectionType: "flavor", productType: "flavors", labelKey: "offers.itemTypes.flavor" },
-  { key: "shapeId", connectionType: "shape", productType: "shapes", labelKey: "offers.itemTypes.shape" },
+  {
+    key: "addonId",
+    connectionType: "addon",
+    productType: "addons",
+    labelKey: "offers.itemTypes.addon",
+  },
+  {
+    key: "featuredCakeId",
+    connectionType: "featuredCake",
+    productType: "featured-cakes",
+    labelKey: "offers.itemTypes.featuredCake",
+  },
+  {
+    key: "sweetId",
+    connectionType: "sweet",
+    productType: "sweets",
+    labelKey: "offers.itemTypes.sweet",
+  },
+  {
+    key: "predesignedCakeId",
+    connectionType: "predesignedCake",
+    productType: "predesigned-cakes",
+    labelKey: "offers.itemTypes.predesignedCake",
+  },
+  {
+    key: "decorationId",
+    connectionType: "decoration",
+    productType: "decorations",
+    labelKey: "offers.itemTypes.decoration",
+  },
+  {
+    key: "flavorId",
+    connectionType: "flavor",
+    productType: "flavors",
+    labelKey: "offers.itemTypes.flavor",
+  },
+  {
+    key: "shapeId",
+    connectionType: "shape",
+    productType: "shapes",
+    labelKey: "offers.itemTypes.shape",
+  },
 ];
 
 function connectionTypeToKey(type: OfferItemConnectionType): OfferItemType {
@@ -83,11 +119,20 @@ export default function AssignOfferDialog({
 }: AssignOfferDialogProps) {
   const { t } = useTranslation();
 
+  const PAGE_SIZE = 20;
+
   const [regionId, setRegionId] = useState("");
   const [itemType, setItemType] = useState<OfferItemType | "">("");
-  const [itemId, setItemId] = useState("");
-  const [regionalProducts, setRegionalProducts] = useState<RegionalProduct[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [regionalProducts, setRegionalProducts] = useState<RegionalProduct[]>(
+    [],
+  );
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   const [connectedItems, setConnectedItems] = useState<OfferItem[]>([]);
   const [isLoadingConnected, setIsLoadingConnected] = useState(false);
@@ -116,20 +161,43 @@ export default function AssignOfferDialog({
     loadConnectedItems();
   }, [open, fetchRegions, loadConnectedItems]);
 
+  const selectedTypeConfig = ITEM_TYPES.find((it) => it.key === itemType);
+  const selectedProductType = selectedTypeConfig?.productType;
+
+  // Reset accumulated list, selection and page when the user changes
+  // region/type — they're now looking at a different list.
   useEffect(() => {
-    if (!regionId) {
-      setRegionalProducts([]);
-      return;
-    }
+    setSelectedItemIds(new Set());
+    setRegionalProducts([]);
+    setPage(1);
+    setTotalPages(1);
+  }, [itemType, regionId]);
+
+  // Fetch one page of regional products restricted to the chosen family and
+  // APPEND to the accumulated list. Skips entirely when no region+type yet.
+  useEffect(() => {
+    if (!regionId || !selectedProductType) return;
     let cancelled = false;
     setIsLoadingProducts(true);
     regionApi
-      .getRegionalProducts(regionId)
+      .getRegionalProducts(regionId, {
+        types: [selectedProductType],
+        page,
+        limit: PAGE_SIZE,
+      })
       .then((res) => {
-        if (!cancelled) setRegionalProducts(res.data?.items ?? []);
+        if (cancelled) return;
+        const incoming = res.data?.items ?? [];
+        setRegionalProducts((prev) => {
+          // Dedupe by id so a refetch of the same page never duplicates rows.
+          const seen = new Set(prev.map((p) => p.id));
+          const fresh = incoming.filter((p) => !seen.has(p.id));
+          return page === 1 ? incoming : [...prev, ...fresh];
+        });
+        setTotalPages(res.data?.pagination.totalPages ?? 1);
       })
       .catch(() => {
-        if (!cancelled) setRegionalProducts([]);
+        if (!cancelled && page === 1) setTotalPages(1);
       })
       .finally(() => {
         if (!cancelled) setIsLoadingProducts(false);
@@ -137,51 +205,102 @@ export default function AssignOfferDialog({
     return () => {
       cancelled = true;
     };
-  }, [regionId]);
+  }, [regionId, selectedProductType, page]);
 
+  // Infinite scroll: when the user nears the bottom of the list, advance the
+  // page. Guarded by isLoadingProducts so we don't fire while a fetch is
+  // already in flight.
   useEffect(() => {
-    setItemId("");
-  }, [itemType, regionId]);
+    const el = listRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (isLoadingProducts) return;
+      if (page >= totalPages) return;
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      if (scrollTop + clientHeight >= scrollHeight - 40) {
+        setPage((p) => p + 1);
+      }
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [isLoadingProducts, page, totalPages]);
 
   useEffect(() => {
     if (!open) {
       setRegionId("");
       setItemType("");
-      setItemId("");
+      setSelectedItemIds(new Set());
       setRegionalProducts([]);
       setConnectedItems([]);
     }
   }, [open]);
 
-  const selectedTypeConfig = ITEM_TYPES.find((it) => it.key === itemType);
-
   const connectedKeySet = useMemo(
-    () => new Set(connectedItems.map((c) => `${c.regionId}::${c.type}::${c.itemId}`)),
+    () =>
+      new Set(
+        connectedItems.map((c) => `${c.regionId}::${c.type}::${c.itemId}`),
+      ),
     [connectedItems],
   );
 
+  // Backend already filtered by type, so no client-side .filter — just decorate
+  // each row with whether it's already connected to this offer in this region.
   const itemOptions = useMemo(() => {
     if (!selectedTypeConfig) return [];
-    return regionalProducts
-      .filter((p) => p.type === selectedTypeConfig.productType)
-      .map((p) => {
-        const key = `${regionId}::${selectedTypeConfig.connectionType}::${p.id}`;
-        return { ...p, alreadyConnected: connectedKeySet.has(key) };
-      });
+    return regionalProducts.map((p) => {
+      const key = `${regionId}::${selectedTypeConfig.connectionType}::${p.id}`;
+      return { ...p, alreadyConnected: connectedKeySet.has(key) };
+    });
   }, [regionalProducts, selectedTypeConfig, connectedKeySet, regionId]);
 
-  const canSubmit = !!regionId && !!itemType && !!itemId;
+  const canSubmit = !!regionId && !!itemType && selectedItemIds.size > 0;
 
   const handleSubmit = async () => {
     if (!offer || !canSubmit || !itemType) return;
-    const payload: ToggleItemOfferPayload = {
-      offerId: offer.id,
-      regionId,
-      [itemType]: itemId,
-    };
-    await onSubmit(payload);
+    // Backend toggle-item takes one item per call; fan out in parallel so the
+    // user can attach a whole batch in a single click.
+    const ids = Array.from(selectedItemIds);
+    await Promise.all(
+      ids.map((id) =>
+        onSubmit({
+          offerId: offer.id,
+          regionId,
+          [itemType]: id,
+        } as ToggleItemOfferPayload),
+      ),
+    );
     await loadConnectedItems();
-    setItemId("");
+    setSelectedItemIds(new Set());
+  };
+
+  const toggleItemSelected = (id: string, alreadyConnected: boolean) => {
+    if (alreadyConnected) return;
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectableIds = useMemo(
+    () => itemOptions.filter((o) => !o.alreadyConnected).map((o) => o.id),
+    [itemOptions],
+  );
+  const allSelectableSelected =
+    selectableIds.length > 0 &&
+    selectableIds.every((id) => selectedItemIds.has(id));
+  const toggleSelectAll = () => {
+    setSelectedItemIds((prev) => {
+      if (allSelectableSelected) {
+        const next = new Set(prev);
+        selectableIds.forEach((id) => next.delete(id));
+        return next;
+      }
+      const next = new Set(prev);
+      selectableIds.forEach((id) => next.add(id));
+      return next;
+    });
   };
 
   const handleRemoveConnected = (item: OfferItem) => {
@@ -191,9 +310,7 @@ export default function AssignOfferDialog({
         description: (
           <>
             {t("offers.removeConnectionMessage")}{" "}
-            <strong>{item.itemName}</strong>
-            {" "}
-            ({item.regionName})?
+            <strong>{item.itemName}</strong> ({item.regionName})?
           </>
         ),
         recordName: item.itemName,
@@ -311,42 +428,82 @@ export default function AssignOfferDialog({
 
                 {itemType && (
                   <div className="space-y-2">
-                    <Label>{t("offers.item")}</Label>
-                    {isLoadingProducts ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>{t("offers.item")}</Label>
+                      {selectableIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={toggleSelectAll}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          {allSelectableSelected
+                            ? t("common.deselectAll") || "Deselect all"
+                            : t("common.selectAll") || "Select all"}
+                        </button>
+                      )}
+                    </div>
+                    {isLoadingProducts && itemOptions.length === 0 ? (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground p-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         {t("common.loading")}
                       </div>
+                    ) : itemOptions.length === 0 ? (
+                      <p className="text-sm text-muted-foreground p-2">
+                        {t("offers.noItemsForRegion")}
+                      </p>
                     ) : (
-                      <Select value={itemId} onValueChange={setItemId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("offers.selectItem")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {itemOptions.length === 0 ? (
-                            <div className="p-2 text-sm text-muted-foreground">
-                              {t("offers.noItemsForRegion")}
-                            </div>
-                          ) : (
-                            itemOptions.map((p) => (
-                              <SelectItem
-                                key={p.id}
-                                value={p.id}
-                                disabled={p.alreadyConnected}
+                      <ul
+                        ref={listRef}
+                        className="max-h-64 overflow-y-auto custom-scrollbar border rounded-md divide-y"
+                      >
+                        {itemOptions.map((p) => {
+                          const checked = selectedItemIds.has(p.id);
+                          return (
+                            <li key={p.id}>
+                              <label
+                                className={`flex items-center gap-2 p-2 ${
+                                  p.alreadyConnected
+                                    ? "opacity-60 cursor-not-allowed"
+                                    : "hover:bg-muted/50 cursor-pointer"
+                                }`}
                               >
-                                <span className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={checked}
+                                  disabled={p.alreadyConnected}
+                                  onCheckedChange={() =>
+                                    toggleItemSelected(p.id, p.alreadyConnected)
+                                  }
+                                />
+                                <span className="flex-1 text-sm truncate">
                                   {getProductLabel(p)}
-                                  {p.alreadyConnected && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {t("offers.alreadyConnected")}
-                                    </Badge>
-                                  )}
                                 </span>
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                                {p.alreadyConnected && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {t("offers.alreadyConnected")}
+                                  </Badge>
+                                )}
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    {isLoadingProducts && itemOptions.length > 0 && (
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {t("common.loading")}
+                      </div>
+                    )}
+                    {selectedItemIds.size > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {selectedItemIds.size}{" "}
+                        {selectedItemIds.size === 1
+                          ? t("offers.itemSelected") || "item selected"
+                          : t("offers.itemsSelected") || "items selected"}
+                      </p>
                     )}
                   </div>
                 )}
@@ -356,8 +513,15 @@ export default function AssignOfferDialog({
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   {t("common.close")}
                 </Button>
-                <Button onClick={handleSubmit} disabled={!canSubmit || isSaving}>
-                  {isSaving ? t("common.loading") : t("offers.addConnection")}
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!canSubmit || isSaving}
+                >
+                  {isSaving
+                    ? t("common.loading")
+                    : selectedItemIds.size > 1
+                      ? `${t("offers.addConnection")} (${selectedItemIds.size})`
+                      : t("offers.addConnection")}
                 </Button>
               </SheetFooter>
             </div>

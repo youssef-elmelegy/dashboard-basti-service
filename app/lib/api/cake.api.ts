@@ -1,6 +1,7 @@
 import { type ApiResponse } from "../api-client";
 import axios from "axios";
 import { env } from "@/config/env";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 export interface CloudinaryUploadResult {
   public_id: string;
@@ -22,14 +23,12 @@ export interface DeleteImageResult {
 }
 
 /**
- * Upload image to generic upload endpoint
- * @param file - Image file to upload
- * @param folder - Target folder in Cloudinary (e.g., 'basti/cakes', 'basti/products')
- * @returns CloudinaryUploadResult with secure_url
+ * Upload image to generic upload endpoint.
+ * Pass a folder from `UPLOAD_FOLDERS` so the storage layout stays organized.
  */
 export async function uploadImage(
   file: File,
-  folder: string = "basti/cakes",
+  folder: string = UPLOAD_FOLDERS.general,
 ): Promise<ApiResponse<CloudinaryUploadResult>> {
   const formData = new FormData();
   formData.append("file", file);

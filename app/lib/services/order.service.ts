@@ -154,6 +154,63 @@ export interface OrderFinancialsFilters {
 /**
  * Order API service with CRUD methods
  */
+export interface OrdersPagination {
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
+export interface UnassignedOrdersPage {
+  items: OrderResponse[];
+  pagination: OrdersPagination;
+}
+
+export interface UnassignedOrdersFilters {
+  page?: number;
+  limit?: number;
+  regionId?: string;
+  type?: string;
+  q?: string;
+  status?: string[];
+  sort?: "asc" | "desc";
+}
+
+export interface AssignedOrdersFilters {
+  q?: string;
+  status?: string[];
+  sort?: "asc" | "desc";
+}
+
+export interface CompletedOrdersPage {
+  items: OrderResponse[];
+  pagination: OrdersPagination;
+}
+
+export interface CompletedOrdersFilters {
+  page?: number;
+  limit?: number;
+  regionId?: string;
+  q?: string;
+  status?: string[];
+  sort?: "asc" | "desc";
+}
+
+export interface BakeryOrdersPage {
+  items: OrderResponse[];
+  pagination: OrdersPagination;
+}
+
+export interface BakeryOrdersFilters {
+  page?: number;
+  limit?: number;
+  regionId?: string;
+  type?: string;
+  q?: string;
+  status?: string[];
+  sort?: "asc" | "desc";
+}
+
 export const orderApi = {
   /**
    * Get all orders with optional filters
@@ -176,6 +233,68 @@ export const orderApi = {
     const url = `/orders${queryString ? `?${queryString}` : ""}`;
 
     return apiClient.get<OrderResponse[]>(url);
+  },
+
+  /**
+   * Paginated feed of unassigned orders for the admin sidebar.
+   * Backend filters: regionId, type (cartType), status[], q (reference search),
+   * sort (asc | desc on createdAt), page, limit.
+   */
+  getUnassigned: (
+    filters: UnassignedOrdersFilters,
+  ): Promise<ApiResponse<UnassignedOrdersPage>> => {
+    const params = new URLSearchParams();
+    if (filters.page != null) params.append("page", String(filters.page));
+    if (filters.limit != null) params.append("limit", String(filters.limit));
+    if (filters.regionId) params.append("regionId", filters.regionId);
+    if (filters.type) params.append("type", filters.type);
+    if (filters.q && filters.q.trim()) params.append("q", filters.q.trim());
+    if (filters.status && filters.status.length > 0) {
+      params.append("status", filters.status.join(","));
+    }
+    if (filters.sort) params.append("sort", filters.sort);
+    const queryString = params.toString();
+    const url = `/orders/unassigned${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<UnassignedOrdersPage>(url);
+  },
+
+  /**
+   * Paginated feed of completed orders for the admin completed-orders table.
+   * Filters: regionId, q (reference search), status[], sort, page, limit.
+   */
+  getCompleted: (
+    filters: CompletedOrdersFilters,
+  ): Promise<ApiResponse<CompletedOrdersPage>> => {
+    const params = new URLSearchParams();
+    if (filters.page != null) params.append("page", String(filters.page));
+    if (filters.limit != null) params.append("limit", String(filters.limit));
+    if (filters.regionId) params.append("regionId", filters.regionId);
+    if (filters.q && filters.q.trim()) params.append("q", filters.q.trim());
+    if (filters.status && filters.status.length > 0) {
+      params.append("status", filters.status.join(","));
+    }
+    if (filters.sort) params.append("sort", filters.sort);
+    const queryString = params.toString();
+    const url = `/orders/completed${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<CompletedOrdersPage>(url);
+  },
+
+  /**
+   * Active orders that already have a bakery assigned, grouped by bakeryId.
+   * Filters: q (reference search), status[], sort.
+   */
+  getAssigned: (
+    filters: AssignedOrdersFilters,
+  ): Promise<ApiResponse<Record<string, OrderResponse[]>>> => {
+    const params = new URLSearchParams();
+    if (filters.q && filters.q.trim()) params.append("q", filters.q.trim());
+    if (filters.status && filters.status.length > 0) {
+      params.append("status", filters.status.join(","));
+    }
+    if (filters.sort) params.append("sort", filters.sort);
+    const queryString = params.toString();
+    const url = `/orders/assigned${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<Record<string, OrderResponse[]>>(url);
   },
 
   /**
@@ -212,26 +331,26 @@ export const orderApi = {
   },
 
   /**
-   * Get orders assigned to a specific bakery
+   * Paginated orders for a specific bakery. Returns the same `{ items,
+   * pagination }` envelope as the other paginated order endpoints.
    */
   getBakeryOrders: (
     bakeryId: string,
-    filters?: OrderFilters,
-  ): Promise<ApiResponse<OrderResponse[]>> => {
+    filters?: BakeryOrdersFilters,
+  ): Promise<ApiResponse<BakeryOrdersPage>> => {
     const params = new URLSearchParams();
-
+    if (filters?.page != null) params.append("page", String(filters.page));
+    if (filters?.limit != null) params.append("limit", String(filters.limit));
+    if (filters?.regionId) params.append("regionId", filters.regionId);
+    if (filters?.type) params.append("type", filters.type);
+    if (filters?.q && filters.q.trim()) params.append("q", filters.q.trim());
     if (filters?.status && filters.status.length > 0) {
       params.append("status", filters.status.join(","));
     }
-
-    if (filters?.regionId) {
-      params.append("regionId", filters.regionId);
-    }
-
+    if (filters?.sort) params.append("sort", filters.sort);
     const queryString = params.toString();
     const url = `/orders/bakery/${bakeryId}${queryString ? `?${queryString}` : ""}`;
-
-    return apiClient.get<OrderResponse[]>(url);
+    return apiClient.get<BakeryOrdersPage>(url);
   },
 
   /**

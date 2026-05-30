@@ -5,11 +5,12 @@ import { format } from "date-fns";
 import { createPortal } from "react-dom";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
-import { LocationMap } from "@/components/location-map";
+import { useBakeryCompletedOrdersStore } from "@/stores/bakeryCompletedOrdersStore";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import type { Order, OrderItem } from "@/data/orders";
 import { orderApi, type OrderResponse } from "@/lib/services/order.service";
 import { uploadImage } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import {
@@ -32,7 +33,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 // import { Checkbox } from "@/components/ui/checkbox";
 import {
   Calendar,
-  MapPin,
   Package,
   User,
   Phone,
@@ -41,6 +41,7 @@ import {
   Check,
   X,
   ChevronLeft,
+  ChevronRight,
   RotateCw,
   Download,
   Upload,
@@ -93,20 +94,20 @@ function getOrderTypeStyle(orderType?: string): string {
 /**
  * Get the category type of an order item
  */
-function getItemCategory(item: OrderItem): string {
+function getItemCategoryKey(item: OrderItem): string {
   switch (item.type) {
     case "addon":
-      return "Add-on";
+      return "bakeryOrders.categories.addon";
     case "sweet":
-      return "Sweet";
+      return "bakeryOrders.categories.sweet";
     case "featured_cake":
-      return "Featured Cake";
+      return "bakeryOrders.categories.featured_cake";
     case "predesigned_cake":
-      return "Predesigned Cake";
+      return "bakeryOrders.categories.predesigned_cake";
     case "custom_cake":
-      return "Custom Cake";
+      return "bakeryOrders.categories.custom_cake";
     default:
-      return "Item";
+      return "bakeryOrders.categories.item";
   }
 }
 
@@ -382,6 +383,7 @@ const PendingOrderStatusCard = memo(function PendingOrderStatusCard({
   onConfirm: () => void;
   onDecline: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
@@ -389,10 +391,10 @@ const PendingOrderStatusCard = memo(function PendingOrderStatusCard({
           <Clock className="w-5 h-5 text-yellow-600" />
           <div>
             <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200">
-              Pending Confirmation
+              {t("bakeryOrders.pendingConfirmation")}
             </p>
             <p className="text-xs text-yellow-700/70 dark:text-yellow-300/70">
-              Auto-confirms in 1 hour from assignment
+              {t("bakeryOrders.autoConfirmsInOneHour")}
             </p>
           </div>
         </div>
@@ -404,11 +406,11 @@ const PendingOrderStatusCard = memo(function PendingOrderStatusCard({
           onClick={onConfirm}
         >
           <Check className="w-4 h-4 mr-2" />
-          Accept Order
+          {t("bakeryOrders.acceptOrder")}
         </Button>
         <Button variant="destructive" className="flex-1" onClick={onDecline}>
           <X className="w-4 h-4 mr-2" />
-          Decline Order
+          {t("bakeryOrders.declineOrder")}
         </Button>
       </div>
     </div>
@@ -507,6 +509,7 @@ function OrderSidebarCard({
   onConfirm: () => void;
   onDecline: (reason: string) => void;
 }) {
+  const { t } = useTranslation();
   const isPending = order.status === "pending";
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
@@ -545,7 +548,11 @@ function OrderSidebarCard({
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm truncate">
-                  {order.productName}
+                  {t(`orders.type.${order.productName}`, {
+                    defaultValue: t("orders.customOrder", {
+                      defaultValue: order.productName,
+                    }),
+                  })}
                 </h4>
                 <p className="text-xs text-muted-foreground truncate">
                   {order.customerName}
@@ -558,7 +565,9 @@ function OrderSidebarCard({
                   statusColors[order.status],
                 )}
               >
-                {order.status}
+                {t(`orderStatus.${order.status}`, {
+                  defaultValue: order.status,
+                })}
               </Badge>
             </div>
 
@@ -574,7 +583,9 @@ function OrderSidebarCard({
                   }
                 })()}
               </span>
-              <span>{order.capacitySlots} slots</span>
+              <span>
+                {order.capacitySlots} {t("orders.slots")}
+              </span>
             </div>
 
             {isPending && (
@@ -596,7 +607,7 @@ function OrderSidebarCard({
                         e.stopPropagation();
                         onConfirm();
                       }}
-                      title="Approve Order"
+                      title={t("bakeryOrders.approveOrder")}
                     >
                       <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                     </Button>
@@ -605,7 +616,7 @@ function OrderSidebarCard({
                       variant="ghost"
                       className="w-6 h-6 p-0 rounded-full opacity-40 hover:opacity-100 transition-opacity border border-dashed border-foreground flex items-center justify-center"
                       onClick={handleCancelClick}
-                      title="Cancel Order"
+                      title={t("bakeryOrders.cancelOrder")}
                     >
                       <X className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                     </Button>
@@ -641,11 +652,21 @@ export default function BakeryOrdersPage() {
     (state) => state.getBakeryOrders,
   );
   const updateOrder = useOrderStore((state) => state.updateOrder);
+  const invalidateCompletedOrders = useBakeryCompletedOrdersStore(
+    (state) => state.invalidate,
+  );
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(
     location.state?.selectedOrderId || null,
   );
   const [bakeryOrders, setBakeryOrdersLocal] = useState<Order[]>([]);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+  } | null>(null);
+  const [page, setPage] = useState<number>(1);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -656,6 +677,19 @@ export default function BakeryOrdersPage() {
   const [sortDir, setSortDir] = useState<"normal" | "asc" | "desc">("normal");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [copiedReference, setCopiedReference] = useState<boolean>(false);
+
+  // Debounce search → server-side filter.
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
+
+  // Reset back to page 1 whenever a filter changes — the backend page numbers
+  // only make sense within a single filter combo.
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, sortDir, debouncedSearch]);
 
   // Fetch bakery details on mount or when id changes
   useEffect(() => {
@@ -671,39 +705,29 @@ export default function BakeryOrdersPage() {
     setImagePreview("");
   }, [selectedOrderId]);
 
-  // Fetch bakery-specific orders
+  // Fetch bakery-specific orders (paginated, server-filtered)
   useEffect(() => {
     if (!id) return;
 
     const fetchBakeryOrders = async () => {
       try {
-        // Check if orders are cached
-        const cachedOrders = getCachedBakeryOrders(id);
-        if (cachedOrders && cachedOrders.length > 0) {
-          console.log("Using cached bakery orders");
-          setBakeryOrdersLocal(cachedOrders);
-          setIsLoadingOrders(false);
-          return;
-        }
-
         setIsLoadingOrders(true);
-        // Updated statuses to exclude 'cancelled' and 'delivered'
-        const statuses = [
-          "pending",
-          "confirmed",
-          "preparing",
-          "ready",
-          "out_for_delivery",
-        ];
+        // Active statuses only — ready / out_for_delivery / delivered / cancelled
+        // live on the dedicated /orders/bakery/:id/completed page.
+        const statuses = ["pending", "confirmed", "preparing"];
 
-        // Fetch orders for this specific bakery with status filter
         const response = await orderApi.getBakeryOrders(id, {
+          page,
+          limit: 20,
           status: statuses,
+          type: typeFilter === "all" ? undefined : typeFilter,
+          q: debouncedSearch || undefined,
+          sort: sortDir === "normal" ? undefined : sortDir,
         });
 
         if (response.success && response.data) {
-          // Convert API responses to internal Order format
-          const bakeryOrdersList = response.data.map(
+          setPagination(response.data.pagination);
+          const bakeryOrdersList = response.data.items.map(
             (apiOrder: OrderResponse) => {
               const orderItems = [
                 ...(apiOrder.addons || []).map((item) => ({
@@ -860,10 +884,8 @@ export default function BakeryOrdersPage() {
             },
           );
 
-          // Server already filters by bakery, just set the orders
+          // Server-side filtered + paginated.
           setBakeryOrdersLocal(bakeryOrdersList);
-          // Store in cache
-          setBakeryOrders(id, bakeryOrdersList);
         }
       } catch (error) {
         console.error("Failed to fetch bakery orders:", error);
@@ -873,7 +895,7 @@ export default function BakeryOrdersPage() {
     };
 
     fetchBakeryOrders();
-  }, [id, getCachedBakeryOrders, setBakeryOrders]);
+  }, [id, page, typeFilter, sortDir, debouncedSearch]);
 
   const bakery = currentBakery;
   const selectedOrder = bakeryOrders.find((o) => o.id === selectedOrderId);
@@ -989,19 +1011,28 @@ export default function BakeryOrdersPage() {
       );
 
       if (response.success) {
-        // Update the local bakery orders list with the new status
+        // Keep the order in local state with its new status so the open detail
+        // panel can still render it. The sidebar list filters non-active
+        // statuses out on its own.
         const updatedOrders = bakeryOrders.map((order) =>
           order.id === selectedOrderId
             ? { ...order, status: newStatus }
             : order,
         ) as Order[];
 
-        // Update both local state and store
         setBakeryOrdersLocal(updatedOrders);
         if (id) setBakeryOrders(id, updatedOrders);
-
-        // Also update the global order store
         updateOrder(selectedOrderId, { status: newStatus });
+
+        // Anything beyond pending/confirmed/preparing belongs on the completed
+        // page — drop its cache so the next visit refetches and shows this one.
+        const activeStatuses = ["pending", "confirmed", "preparing"] as const;
+        const leavesActiveList = !(
+          activeStatuses as readonly string[]
+        ).includes(newStatus);
+        if (leavesActiveList && id) {
+          invalidateCompletedOrders(id);
+        }
       }
     } catch (error) {
       console.error("Failed to change order status:", error);
@@ -1020,7 +1051,7 @@ export default function BakeryOrdersPage() {
       setIsUploadingImage(true);
 
       // Step 1: Upload image to get URL
-      const uploadResponse = await uploadImage(file, "basti/orders");
+      const uploadResponse = await uploadImage(file, UPLOAD_FOLDERS.orders);
 
       if (!uploadResponse.success || !uploadResponse.data) {
         throw new Error(uploadResponse.message || "Failed to upload image");
@@ -1165,7 +1196,10 @@ export default function BakeryOrdersPage() {
 
       {/* Mobile FAB Toggle Button */}
       <button
-        className="lg:hidden fixed bottom-6 right-6 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all"
+        className={cn(
+          "lg:hidden fixed bottom-6 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all",
+          isRTL ? "left-6" : "right-6",
+        )}
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         aria-label="Toggle sidebar"
       >
@@ -1193,6 +1227,14 @@ export default function BakeryOrdersPage() {
               <p className="text-muted-foreground mt-1">
                 {bakery.locationDescription}
               </p>
+              <Button
+                variant="link"
+                size="sm"
+                className="px-0 mt-1 h-auto"
+                onClick={() => navigate(`/orders/bakery/${id}/completed`)}
+              >
+                {t("bakeryOrders.viewCompleted") || "View completed orders →"}
+              </Button>
             </div>
 
             {/* Capacity Circle */}
@@ -1252,7 +1294,7 @@ export default function BakeryOrdersPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="w-5 h-5" />
-                      Order Items
+                      {t("bakeryOrders.orderItems")}
                       <div className="ml-auto flex items-center gap-2">
                         {selectedOrder.orderItems &&
                           selectedOrder.orderItems.length > 0 && (
@@ -1278,9 +1320,15 @@ export default function BakeryOrdersPage() {
                               console.error("Failed to copy reference:", err);
                             }
                           }}
-                          title={copiedReference ? "Copied" : "Copy reference"}
+                          title={
+                            copiedReference
+                              ? t("bakeryOrders.copied")
+                              : t("bakeryOrders.copyReference")
+                          }
                         >
-                          {copiedReference ? "Copied" : "Copy Ref"}
+                          {copiedReference
+                            ? t("bakeryOrders.copied")
+                            : t("bakeryOrders.copyRef")}
                         </Button>
                       </div>
                     </CardTitle>
@@ -1320,10 +1368,10 @@ export default function BakeryOrdersPage() {
                                   "";
 
                           const itemName = isCustomCake
-                            ? "Custom Cake"
+                            ? t("bakeryOrders.customCake")
                             : typeof itemData?.name === "string"
                               ? itemData.name
-                              : "Item";
+                              : t("bakeryOrders.item");
 
                           return (
                             <div
@@ -1362,7 +1410,7 @@ export default function BakeryOrdersPage() {
                                         variant="outline"
                                         className="mt-1 capitalize"
                                       >
-                                        {getItemCategory(item)}
+                                        {t(getItemCategoryKey(item))}
                                       </Badge>
                                     </div>
                                   </div>
@@ -1377,7 +1425,7 @@ export default function BakeryOrdersPage() {
 
                                   <div className="flex items-center gap-4 pt-2 text-sm">
                                     <span className="font-medium">
-                                      Quantity:{" "}
+                                      {t("bakeryOrders.quantity")}:{" "}
                                       <span className="font-bold text-primary">
                                         {item.quantity}
                                       </span>
@@ -1386,13 +1434,13 @@ export default function BakeryOrdersPage() {
 
                                   {item.size && (
                                     <div className="text-xs text-muted-foreground">
-                                      Size: {item.size}
+                                      {t("bakeryOrders.size")}: {item.size}
                                     </div>
                                   )}
 
                                   {item.flavor && (
                                     <div className="text-xs text-muted-foreground">
-                                      Flavor: {item.flavor}
+                                      {t("bakeryOrders.flavor")}: {item.flavor}
                                     </div>
                                   )}
 
@@ -1400,7 +1448,7 @@ export default function BakeryOrdersPage() {
                                     typeof itemData?.shape === "object" &&
                                     itemData.shape && (
                                       <div className="text-xs text-muted-foreground">
-                                        Shape:{" "}
+                                        {t("bakeryOrders.shape")}:{" "}
                                         {((
                                           itemData.shape as Record<
                                             string,
@@ -1414,7 +1462,7 @@ export default function BakeryOrdersPage() {
                                     typeof itemData?.flavor === "object" &&
                                     itemData.flavor && (
                                       <div className="text-xs text-muted-foreground">
-                                        Flavor:{" "}
+                                        {t("bakeryOrders.flavor")}:{" "}
                                         {((
                                           itemData.flavor as Record<
                                             string,
@@ -1425,7 +1473,7 @@ export default function BakeryOrdersPage() {
                                     )}
 
                                   <div className="text-xs text-blue-600 dark:text-blue-400 font-medium pt-1">
-                                    Click to view details
+                                    {t("bakeryOrders.clickToViewDetails")}
                                   </div>
                                 </div>
                               </div>
@@ -1438,7 +1486,7 @@ export default function BakeryOrdersPage() {
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        No items in this order
+                        {t("bakeryOrders.noItemsInOrder")}
                       </p>
                     )}
                   </CardContent>
@@ -1450,7 +1498,7 @@ export default function BakeryOrdersPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <FileText className="w-5 h-5" />
-                        Order Design
+                        {t("bakeryOrders.orderDesign")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1466,7 +1514,7 @@ export default function BakeryOrdersPage() {
                           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors w-full justify-center"
                         >
                           <Download className="w-4 h-4" />
-                          Download Design
+                          {t("bakeryOrders.downloadDesign")}
                         </a>
                       </div>
                     </CardContent>
@@ -1478,7 +1526,7 @@ export default function BakeryOrdersPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="w-5 h-5" />
-                      Customer
+                      {t("bakeryOrders.customer")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -1506,72 +1554,6 @@ export default function BakeryOrdersPage() {
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Delivery Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="w-5 h-5" />
-                      Delivery Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        Region
-                      </span>
-                      <p className="text-sm font-medium">
-                        {selectedOrder.region}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        Address
-                      </span>
-                      <p className="text-sm">
-                        {selectedOrder.deliveryLocation}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <span className="text-xs text-muted-foreground">
-                          Delivery Date
-                        </span>
-                        <p className="text-sm font-medium">
-                          {format(
-                            new Date(
-                              selectedOrder.orderedAt ||
-                                selectedOrder.deliverDay,
-                            ),
-                            "EEEE, MMMM d, yyyy",
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Delivery Location Map */}
-                {selectedOrder.deliveryLatitude &&
-                  selectedOrder.deliveryLongitude && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <MapPin className="w-5 h-5" />
-                          Delivery Location Map
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <LocationMap
-                          latitude={selectedOrder.deliveryLatitude}
-                          longitude={selectedOrder.deliveryLongitude}
-                          address={selectedOrder.deliveryLocation}
-                          className="w-full h-64 rounded-lg border"
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
 
                 {/* Design Image to Print */}
                 {selectedOrder.customCakes &&
@@ -1611,7 +1593,7 @@ export default function BakeryOrdersPage() {
                           <div className="flex items-center justify-between gap-2">
                             <CardTitle className="flex items-center gap-2 text-base">
                               <Download className="w-4 h-4" />
-                              Design to Print
+                              {t("bakeryOrders.designToPrint")}
                             </CardTitle>
                           </div>
                         </CardHeader>
@@ -1636,7 +1618,7 @@ export default function BakeryOrdersPage() {
                                 }
                               >
                                 <Download className="w-3 h-3" />
-                                Download Design
+                                {t("bakeryOrders.downloadDesign")}
                               </Button>
                             </div>
                           </div>
@@ -1648,7 +1630,7 @@ export default function BakeryOrdersPage() {
                 {/* Status Buttons */}
                 <Card className="md:col-span-2">
                   <CardHeader>
-                    <CardTitle>Order Status</CardTitle>
+                    <CardTitle>{t("bakeryOrders.orderStatus")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col gap-3">
@@ -1670,10 +1652,10 @@ export default function BakeryOrdersPage() {
                           {isChangingStatus ? (
                             <>
                               <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                              Processing...
+                              {t("bakeryOrders.processing")}
                             </>
                           ) : (
-                            "Start Preparing"
+                            t("bakeryOrders.startPreparing")
                           )}
                         </Button>
                       )}
@@ -1684,7 +1666,7 @@ export default function BakeryOrdersPage() {
                             <CardHeader>
                               <CardTitle className="text-sm flex items-center gap-2">
                                 <Upload className="w-4 h-4" />
-                                Upload Final Image
+                                {t("bakeryOrders.uploadFinalImage")}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
@@ -1693,10 +1675,10 @@ export default function BakeryOrdersPage() {
                                   <div className="flex flex-col items-center justify-center">
                                     <Upload className="w-8 h-8 text-muted-foreground mb-2" />
                                     <p className="text-sm font-medium text-center">
-                                      Click to upload final image
+                                      {t("bakeryOrders.clickToUploadFinal")}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      PNG, JPG up to 10MB
+                                      {t("bakeryOrders.pngJpgUpTo10Mb")}
                                     </p>
                                   </div>
                                   <input
@@ -1721,7 +1703,7 @@ export default function BakeryOrdersPage() {
                                   <label className="flex w-full px-3 py-2 border border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors justify-center items-center gap-2">
                                     <RotateCw className="w-4 h-4" />
                                     <span className="text-sm">
-                                      Replace Image
+                                      {t("bakeryOrders.replaceImage")}
                                     </span>
                                     <input
                                       type="file"
@@ -1733,7 +1715,7 @@ export default function BakeryOrdersPage() {
                                   </label>
                                   {selectedOrder.finalImageUploadedAt && (
                                     <p className="text-xs text-muted-foreground">
-                                      Uploaded:{" "}
+                                      {t("bakeryOrders.uploadedLabel")}{" "}
                                       {format(
                                         new Date(
                                           selectedOrder.finalImageUploadedAt,
@@ -1748,7 +1730,7 @@ export default function BakeryOrdersPage() {
                                 <div className="flex items-center justify-center gap-2">
                                   <RotateCw className="w-4 h-4 animate-spin" />
                                   <span className="text-sm">
-                                    Uploading image...
+                                    {t("bakeryOrders.uploadingImage")}
                                   </span>
                                 </div>
                               )}
@@ -1766,15 +1748,15 @@ export default function BakeryOrdersPage() {
                             {isChangingStatus ? (
                               <>
                                 <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                                Processing...
+                                {t("bakeryOrders.processing")}
                               </>
                             ) : !selectedOrder.finalImage ? (
                               <>
                                 <Upload className="w-4 h-4 mr-2" />
-                                Upload image first
+                                {t("bakeryOrders.uploadImageFirst")}
                               </>
                             ) : (
-                              "Mark as Ready"
+                              t("bakeryOrders.markAsReady")
                             )}
                           </Button>
                         </div>
@@ -1786,7 +1768,7 @@ export default function BakeryOrdersPage() {
                             <CardHeader>
                               <CardTitle className="text-sm flex items-center gap-2">
                                 <Package className="w-4 h-4" />
-                                Final Image
+                                {t("bakeryOrders.finalImage")}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
@@ -1799,7 +1781,7 @@ export default function BakeryOrdersPage() {
                               </div>
                               {selectedOrder.finalImageUploadedAt && (
                                 <p className="text-xs text-muted-foreground">
-                                  Uploaded:{" "}
+                                  {t("bakeryOrders.uploadedLabel")}{" "}
                                   {format(
                                     new Date(
                                       selectedOrder.finalImageUploadedAt,
@@ -1812,41 +1794,21 @@ export default function BakeryOrdersPage() {
                           </Card>
                         )}
                       {selectedOrder.status === "ready" && (
-                        <Button
-                          className="flex-1"
-                          disabled={isChangingStatus}
-                          onClick={() => handleStatusChange("out_for_delivery")}
-                        >
-                          {isChangingStatus ? (
-                            <>
-                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            "Out for Delivery"
-                          )}
+                        <Button className="flex-1" disabled variant="secondary">
+                          <Check className="w-4 h-4 mr-2" />
+                          {t("bakeryOrders.ready")}
                         </Button>
                       )}
                       {selectedOrder.status === "out_for_delivery" && (
-                        <Button
-                          className="flex-1"
-                          disabled={isChangingStatus}
-                          onClick={() => handleStatusChange("delivered")}
-                        >
-                          {isChangingStatus ? (
-                            <>
-                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            "Mark as Delivered"
-                          )}
+                        <Button className="flex-1" disabled variant="secondary">
+                          <Check className="w-4 h-4 mr-2" />
+                          {t("bakeryOrders.outForDelivery")}
                         </Button>
                       )}
                       {selectedOrder.status === "delivered" && (
                         <Button className="flex-1" disabled variant="secondary">
                           <Check className="w-4 h-4 mr-2" />
-                          Delivered
+                          {t("bakeryOrders.delivered")}
                         </Button>
                       )}
                     </div>
@@ -1859,7 +1821,7 @@ export default function BakeryOrdersPage() {
                     <div className="flex items-center justify-between gap-2">
                       <CardTitle className="flex items-center gap-2">
                         <Package className="w-5 h-5" />
-                        General Order Details
+                        {t("bakeryOrders.generalOrderDetails")}
                       </CardTitle>
                       <Badge
                         variant={
@@ -1867,19 +1829,19 @@ export default function BakeryOrdersPage() {
                         }
                       >
                         {selectedOrder.keepAnonymous
-                          ? "Anonymous Order"
-                          : "Not Anonymous"}
+                          ? t("bakeryOrders.anonymousOrder")
+                          : t("bakeryOrders.notAnonymous")}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
                       <span className="text-xs text-muted-foreground">
-                        Delivery Note
+                        {t("bakeryOrders.deliveryNote")}
                       </span>
                       <p className="text-sm bg-muted p-3 rounded-lg mt-1">
                         {selectedOrder.deliveryNote ||
-                          "No delivery note provided"}
+                          t("bakeryOrders.noDeliveryNote")}
                       </p>
                     </div>
                   </CardContent>
@@ -1892,7 +1854,7 @@ export default function BakeryOrdersPage() {
                       <div className="flex items-center justify-between gap-2">
                         <CardTitle className="flex items-center gap-2">
                           <MessageSquare className="w-5 h-5" />
-                          Greeting Card
+                          {t("bakeryOrders.greetingCard")}
                         </CardTitle>
                         <Button
                           variant="outline"
@@ -1903,7 +1865,7 @@ export default function BakeryOrdersPage() {
                           className="gap-2"
                         >
                           <Download className="w-4 h-4" />
-                          Download Card
+                          {t("bakeryOrders.downloadCard")}
                         </Button>
                       </div>
                     </CardHeader>
@@ -1927,7 +1889,7 @@ export default function BakeryOrdersPage() {
                         <div className="lg:w-64 space-y-4">
                           <div className="space-y-2">
                             <label className="text-xs font-semibold text-muted-foreground uppercase">
-                              From
+                              {t("bakeryOrders.from")}
                             </label>
                             <p className="text-sm font-medium">
                               {selectedOrder.cardMessage.from}
@@ -1938,7 +1900,7 @@ export default function BakeryOrdersPage() {
 
                           <div className="space-y-2">
                             <label className="text-xs font-semibold text-muted-foreground uppercase">
-                              To
+                              {t("bakeryOrders.to")}
                             </label>
                             <p className="text-sm font-medium">
                               {selectedOrder.cardMessage.to}
@@ -1951,7 +1913,7 @@ export default function BakeryOrdersPage() {
                             <>
                               <div className="space-y-2">
                                 <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  Recipient Name
+                                  {t("bakeryOrders.recipientName")}
                                 </label>
                                 <p className="text-sm font-medium flex items-center gap-2">
                                   <User className="w-4 h-4 text-muted-foreground" />
@@ -1963,7 +1925,7 @@ export default function BakeryOrdersPage() {
 
                               <div className="space-y-2">
                                 <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  Email
+                                  {t("bakeryOrders.email")}
                                 </label>
                                 <p className="text-sm font-medium flex items-center gap-2">
                                   <Mail className="w-4 h-4 text-muted-foreground" />
@@ -1975,7 +1937,7 @@ export default function BakeryOrdersPage() {
 
                               <div className="space-y-2">
                                 <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  Phone
+                                  {t("bakeryOrders.phone")}
                                 </label>
                                 <p className="text-sm font-medium flex items-center gap-2">
                                   <Phone className="w-4 h-4 text-muted-foreground" />
@@ -2000,17 +1962,21 @@ export default function BakeryOrdersPage() {
         </div>
       </div>
 
-      {/* Right Sidebar - Orders List */}
+      {/* Orders sidebar — anchored to the empty side opposite the AppSidebar */}
       <div
         className={cn(
           "h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden transition-transform duration-300",
           "lg:fixed lg:top-16 lg:translate-x-0",
           isRTL
-            ? "lg:left-0 lg:border-r order-first"
-            : "lg:right-0 lg:border-l order-last",
+            ? "lg:left-0 lg:right-auto lg:border-r order-first"
+            : "lg:right-0 lg:left-auto lg:border-l order-last",
           isSidebarOpen
-            ? "fixed top-16 right-0 border-l shadow-lg translate-x-0"
-            : "fixed top-16 right-0 translate-x-full",
+            ? isRTL
+              ? "fixed top-16 left-0 right-auto border-r shadow-lg translate-x-0"
+              : "fixed top-16 right-0 left-auto border-l shadow-lg translate-x-0"
+            : isRTL
+              ? "fixed top-16 left-0 right-auto -translate-x-full"
+              : "fixed top-16 right-0 left-auto translate-x-full",
         )}
       >
         <div className="shrink-0 border-b px-4 py-3">
@@ -2022,7 +1988,7 @@ export default function BakeryOrdersPage() {
               <button
                 className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
                 onClick={() => setIsSidebarOpen(false)}
-                aria-label="Close sidebar"
+                aria-label={t("common.close", { defaultValue: "Close" })}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2110,7 +2076,15 @@ export default function BakeryOrdersPage() {
             ) : (
               (() => {
                 // Apply search/type filters and sorting similar to OrdersSidebarRight
-                let filtered = bakeryOrders.slice();
+                // Only active statuses live in the sidebar — ready/out_for_delivery/
+                // delivered/cancelled belong on the completed page, even if they're
+                // still in local state because the user is viewing them.
+                let filtered = bakeryOrders.filter(
+                  (o) =>
+                    o.status === "pending" ||
+                    o.status === "confirmed" ||
+                    o.status === "preparing",
+                );
                 if (searchTerm.trim()) {
                   const s = searchTerm.toLowerCase();
                   filtered = filtered.filter((o) =>
@@ -2163,6 +2137,50 @@ export default function BakeryOrdersPage() {
           </div>
           <ScrollBar orientation="vertical" />
         </ScrollArea>
+
+        {/* Pagination arrows */}
+        {pagination && pagination.total > 0 && (
+          <div className="shrink-0 flex items-center justify-between px-3 py-2 border-t gap-2">
+            <p className="text-[10px] text-muted-foreground truncate">
+              {t("orders.pageOf", {
+                page: pagination.page,
+                totalPages: pagination.totalPages,
+                defaultValue: `Page ${pagination.page} of ${pagination.totalPages}`,
+              })}{" "}
+              · {pagination.total}
+            </p>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() => page > 1 && setPage(page - 1)}
+                disabled={page <= 1 || isLoadingOrders}
+                aria-label={t("orders.previousPage") || "Previous"}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={() =>
+                  pagination &&
+                  page < pagination.totalPages &&
+                  setPage(page + 1)
+                }
+                disabled={
+                  isLoadingOrders ||
+                  !pagination ||
+                  page >= pagination.totalPages
+                }
+                aria-label={t("orders.nextPage") || "Next"}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Item Detail Modal */}

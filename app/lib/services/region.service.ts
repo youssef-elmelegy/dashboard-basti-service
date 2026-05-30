@@ -36,7 +36,12 @@ export interface RegionalProduct {
 
 export interface RegionalProductsResponse {
   items: RegionalProduct[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export const regionApi = {
@@ -86,14 +91,24 @@ export const regionApi = {
   },
 
   /**
-   * Get all items priced for a specific region
+   * Get items priced for a specific region. Pass `types` to fetch only those
+   * product families (e.g. only decorations) — the backend skips every other
+   * family entirely, so this is far cheaper than fetching everything and
+   * filtering client-side.
    */
   async getRegionalProducts(
     regionId: string,
-    types?: RegionalProductType[],
-    limit = 1000,
+    options: {
+      types?: RegionalProductType[];
+      page?: number;
+      limit?: number;
+    } = {},
   ): Promise<ApiResponse<RegionalProductsResponse>> {
-    const params = new URLSearchParams({ limit: String(limit) });
+    const { types, page = 1, limit = 20 } = options;
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
     if (types && types.length > 0) params.set("types", types.join(","));
     return apiClient.get<RegionalProductsResponse>(
       `/regions/${regionId}/products?${params.toString()}`,

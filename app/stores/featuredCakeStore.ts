@@ -18,6 +18,7 @@ import {
   type CloudinaryUploadResult,
   type DeleteImageResult,
 } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 interface FeaturedCakeState {
   // Data
@@ -325,8 +326,8 @@ export const useFeaturedCakeStore = create<FeaturedCakeState>((set) => ({
     );
     set({ isLoading: true, error: null });
     try {
-      console.log("Calling uploadImage with folder: basti/featured-cakes");
-      const response = await uploadImage(file, "basti/featured-cakes");
+      console.log(`Calling uploadImage with folder: ${UPLOAD_FOLDERS.featuredCakes}`);
+      const response = await uploadImage(file, UPLOAD_FOLDERS.featuredCakes);
       console.log("Image upload response:", response);
 
       if (response.success && response.data) {

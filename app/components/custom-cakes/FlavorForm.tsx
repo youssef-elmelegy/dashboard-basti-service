@@ -14,7 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
-import { useRegionStore } from "@/stores/regionStore";
+import { uploadImage } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
 import type { CreateFlavorWithVariantImagesFormValues } from "@/schemas/custom-cakes.schema";
 import { createFlavorWithVariantImagesSchema } from "@/schemas/custom-cakes.schema";
@@ -44,7 +45,7 @@ export function FlavorForm({
 }: FlavorFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!flavor;
-  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
+  // Main flavor images upload to basti/flavors.
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
     flavor?.flavorUrl || "",
@@ -109,9 +110,12 @@ export function FlavorForm({
         type: "image/webp",
       });
 
-      const result = await uploadRegionImage(file);
-      setUploadedImageUrl(result.secure_url);
-      form.setValue("flavorUrl", result.secure_url, { shouldValidate: true });
+      const response = await uploadImage(file, UPLOAD_FOLDERS.flavors);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Image upload failed");
+      }
+      setUploadedImageUrl(response.data.secure_url);
+      form.setValue("flavorUrl", response.data.secure_url, { shouldValidate: true });
     } catch (error) {
       console.error("Error uploading image:", error);
     } finally {

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 interface ImageStore {
   uploadCakeImage: (
@@ -11,7 +12,7 @@ interface ImageStore {
 export const useImageStore = create<ImageStore>(() => ({
   uploadCakeImage: async (
     file: File,
-    folder: string = "basti/cakes",
+    folder: string = UPLOAD_FOLDERS.cakes,
   ): Promise<CloudinaryUploadResult> => {
     const response = await uploadImage(file, folder);
     if (!response.success || !response.data) {

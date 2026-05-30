@@ -1,230 +1,181 @@
+/**
+ * Completed Orders Store — backend-paginated feed for the admin
+ * completed-orders table.
+ *
+ * Cache structure: each (filter-combo, page) tuple is cached separately so
+ * paging back and forth, or revisiting a region you've already loaded, is
+ * instant. The store owns the filter state, the current page, and the
+ * pagination metadata; the page only reads what's currently visible.
+ */
+
 import { create } from "zustand";
-import type { Order, OrderItem as LocalOrderItem } from "@/data/orders";
+import type { Order } from "@/data/orders";
 import {
   orderApi,
-  type OrderResponse,
-  type OrderFilters,
-  type OrderItem as ApiOrderItem,
+  type CompletedOrdersFilters,
+  type OrdersPagination,
 } from "@/lib/services/order.service";
+import { convertApiResponseToOrder } from "@/stores/orderStore";
+
+export interface CompletedFiltersState {
+  regionId?: string;
+  q?: string;
+  status?: string[];
+  sort?: "asc" | "desc";
+}
+
+interface CacheEntry {
+  orders: Order[];
+  pagination: OrdersPagination;
+  fetchedAt: number;
+}
 
 interface CompletedOrdersState {
-  // Data
   orders: Order[];
+  pagination: OrdersPagination | null;
+  filters: CompletedFiltersState;
+  page: number;
   isLoading: boolean;
   error: string | null;
 
-  // Cache management
-  lastFetchTime: number | null;
+  cache: Record<string, CacheEntry>;
+  currentKey: string;
 
-  // Actions
-  getOrderById: (id: string) => Order | undefined;
-  fetchCompletedOrders: (forceRefresh?: boolean) => Promise<void>;
-  updateOrder: (id: string, order: Partial<Order>) => void;
-  deleteOrder: (id: string) => void;
-  resetOrders: () => void;
-  clearError: () => void;
+  setFilters: (next: Partial<CompletedFiltersState>) => void;
+  /** Switch to a specific page of the current filter combo. */
+  goToPage: (page: number) => Promise<void>;
+  /** Reload page 1 — useful when filters change or on explicit refresh. */
+  reload: (options?: { force?: boolean }) => Promise<void>;
+  /** Clear the entire cache (e.g. after an order state change elsewhere). */
+  invalidate: () => void;
+  reset: () => void;
 }
 
-const COMPLETED_ORDERS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_LIMIT = 20;
+const CACHE_TTL = 5 * 60 * 1000;
 
-/**
- * Convert API response to internal Order format
- */
-function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
-  // Helper to map API OrderItem -> local OrderItem shape
-  const mapApiItem = (it: ApiOrderItem): LocalOrderItem => {
-    let selectedOptions: LocalOrderItem["selectedOptions"] | undefined =
-      undefined;
+function makeCacheKey(filters: CompletedFiltersState, page: number): string {
+  return JSON.stringify({
+    regionId: filters.regionId || "",
+    q: filters.q || "",
+    status:
+      filters.status && filters.status.length > 0
+        ? [...filters.status].sort()
+        : [],
+    sort: filters.sort || "",
+    page,
+  });
+}
 
-    if (typeof it.selectedOptions === "string" && it.selectedOptions) {
-      try {
-        const parsed = JSON.parse(it.selectedOptions) as unknown;
-        if (Array.isArray(parsed)) {
-          selectedOptions = parsed.map((opt) => {
-            const o = opt as Record<string, unknown>;
-            return {
-              type: typeof o.type === "string" ? o.type : "",
-              label: typeof o.label === "string" ? o.label : "",
-              value: typeof o.value === "string" ? o.value : "",
-              imageUrl: typeof o.imageUrl === "string" ? o.imageUrl : "",
-              optionId: typeof o.optionId === "string" ? o.optionId : "",
-            };
-          });
-        }
-      } catch {
-        selectedOptions = undefined;
-      }
-    }
-
-    return {
-      id: it.id,
-      orderId: (it.orderId ?? "") as unknown as string,
-      addonId: it.addonId ?? null,
-      sweetId: it.sweetId ?? null,
-      predesignedCakeId: it.predesignedCakeId ?? null,
-      featuredCakeId: it.featuredCakeId ?? null,
-      customCake: it.customCake ?? null,
-      quantity: it.quantity,
-      size: it.size ?? null,
-      flavor: it.flavor ?? null,
-      price: it.price,
-      selectedOptions: selectedOptions,
-      createdAt: it.createdAt,
-      updatedAt: it.updatedAt,
-      data: it.data,
-    } as LocalOrderItem;
-  };
-
-  // Map cartType to local OrderType union
-  const allowedTypes = ["big_cakes", "small_cakes", "others"] as const;
-  const cartType = (apiOrder.cartType || "big_cakes").toString();
-  const mappedType = (
-    allowedTypes.includes(cartType as unknown as (typeof allowedTypes)[number])
-      ? (cartType as (typeof allowedTypes)[number])
-      : "big_cakes"
-  ) as Order["type"];
-
-  // Map orderStatus to local OrderStatus (fallback to 'pending')
-  const allowedStatuses: Order["status"][] = [
-    "pending",
-    "confirmed",
-    "preparing",
-    "ready",
-    "out_for_delivery",
-    "delivered",
-    "cancelled",
-  ];
-  const statusStr = (apiOrder.orderStatus || "pending").toString();
-  const mappedStatus = allowedStatuses.includes(
-    statusStr as unknown as (typeof allowedStatuses)[number],
-  )
-    ? (statusStr as Order["status"])
-    : ("pending" as Order["status"]);
-
+function buildApiFilters(
+  filters: CompletedFiltersState,
+  page: number,
+): CompletedOrdersFilters {
   return {
-    id: apiOrder.id,
-    referenceNumber: apiOrder.referenceNumber,
-    customerName: `${apiOrder.userData.firstName} ${apiOrder.userData.lastName}`,
-    customerPhone: apiOrder.userData.phoneNumber || undefined,
-    customerEmail: apiOrder.userData.email || undefined,
-    type: mappedType,
-    productName: "Custom Order",
-    productImage: "",
-    basePrice: apiOrder.totalPrice,
-    totalPrice: apiOrder.finalPrice,
-    deliveryLocation: apiOrder.locationData?.description || "",
-    region: apiOrder.regionName,
-    deliverDay: apiOrder.wantedDeliveryDate || apiOrder.willDeliverAt,
-    orderedAt: apiOrder.createdAt,
-    status: mappedStatus,
-    deliveredAt: apiOrder.deliveredAt || undefined,
-    capacitySlots: apiOrder.totalCapacity,
-    assignedBakeryId: apiOrder.bakeryId || undefined,
-    deliveryLatitude: apiOrder.locationData?.latitude,
-    deliveryLongitude: apiOrder.locationData?.longitude,
-    orderItems: (apiOrder.addons || []).map(mapApiItem),
-    addons: (apiOrder.addons || []).map(mapApiItem),
-    sweets: (apiOrder.sweets || []).map(mapApiItem),
-    featuredCakes: (apiOrder.featuredCakes || []).map(mapApiItem),
-    predesignedCakes: (apiOrder.predesignedCakes || []).map(mapApiItem),
-    customCakes: (apiOrder.customCakes || []).map(mapApiItem),
+    page,
+    limit: DEFAULT_LIMIT,
+    regionId: filters.regionId || undefined,
+    q: filters.q || undefined,
+    status:
+      filters.status && filters.status.length > 0 ? filters.status : undefined,
+    sort: filters.sort,
   };
 }
+
+const initialKey = makeCacheKey({}, 1);
 
 export const useCompletedOrdersStore = create<CompletedOrdersState>(
   (set, get) => ({
-    // Initial state
     orders: [],
+    pagination: null,
+    filters: {},
+    page: 1,
     isLoading: false,
     error: null,
-    lastFetchTime: null,
+    cache: {},
+    currentKey: initialKey,
 
-    // Actions
-    getOrderById: (id: string) => {
-      return get().orders.find((o) => o.id === id);
+    setFilters: (next) => {
+      set((state) => ({ filters: { ...state.filters, ...next } }));
     },
 
-    /**
-     * Fetch completed orders from API with caching
-     * Only refetches if cache is stale (> 5 minutes) or forceRefresh is true
-     */
-    fetchCompletedOrders: async (forceRefresh: boolean = false) => {
+    goToPage: async (page) => {
       const state = get();
-      const now = Date.now();
+      if (page < 1) return;
+      const key = makeCacheKey(state.filters, page);
+      const cached = state.cache[key];
 
-      // Check if we have cached data and it's not stale
-      if (!forceRefresh && state.lastFetchTime) {
-        if (now - state.lastFetchTime < COMPLETED_ORDERS_CACHE_DURATION) {
-          console.log("[Completed Orders Store] Using cached completed orders");
-          return;
-        }
+      if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+        set({
+          orders: cached.orders,
+          pagination: cached.pagination,
+          page,
+          currentKey: key,
+          isLoading: false,
+          error: null,
+        });
+        return;
       }
 
-      set({ isLoading: true, error: null });
+      set({ isLoading: true, error: null, currentKey: key, page });
       try {
-        // Fetch orders with completed statuses
-        const filters: OrderFilters = {
-          status: ["ready", "out_for_delivery", "delivered", "cancelled"],
-        };
-
-        const response = await orderApi.getAll(filters);
-
-        if (response.success && response.data) {
-          // Convert API responses to internal Order format
-          const convertedOrders = response.data.map(convertApiResponseToOrder);
-
-          set({
-            orders: convertedOrders,
-            isLoading: false,
-            lastFetchTime: now,
-          });
-        } else {
+        const response = await orderApi.getCompleted(
+          buildApiFilters(state.filters, page),
+        );
+        if (!response.success || !response.data) {
           throw new Error(
-            response.message || "Failed to fetch completed orders",
+            response.message || "Failed to load completed orders",
           );
         }
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch completed orders";
-        console.error("[Completed Orders Store] Fetch error:", errorMessage);
-        set({ error: errorMessage, isLoading: false });
+        const orders = response.data.items.map(convertApiResponseToOrder);
+        const pagination = response.data.pagination;
+
+        // Drop the response if the user changed page/filters mid-flight.
+        if (makeCacheKey(get().filters, get().page) !== key) return;
+
+        set((s) => ({
+          orders,
+          pagination,
+          isLoading: false,
+          cache: {
+            ...s.cache,
+            [key]: { orders, pagination, fetchedAt: Date.now() },
+          },
+        }));
+      } catch (err) {
+        if (makeCacheKey(get().filters, get().page) !== key) return;
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Failed to load completed orders";
+        console.error("[CompletedOrdersStore] goToPage error:", message);
+        set({ error: message, isLoading: false });
       }
     },
 
-    /**
-     * Update existing order
-     */
-    updateOrder: (id: string, updates: Partial<Order>) => {
-      set((state) => ({
-        orders: state.orders.map((o) =>
-          o.id === id ? { ...o, ...updates } : o,
-        ),
-      }));
+    reload: async ({ force = false } = {}) => {
+      if (force) {
+        set({ cache: {} });
+      }
+      set({ page: 1 });
+      await get().goToPage(1);
     },
 
-    /**
-     * Delete order from list
-     */
-    deleteOrder: (id: string) => {
-      set((state) => ({
-        orders: state.orders.filter((o) => o.id !== id),
-      }));
+    invalidate: () => {
+      set({ cache: {} });
     },
 
-    /**
-     * Reset orders
-     */
-    resetOrders: () => {
-      set({ orders: [], lastFetchTime: null });
-    },
-
-    /**
-     * Clear error message
-     */
-    clearError: () => {
-      set({ error: null });
+    reset: () => {
+      set({
+        orders: [],
+        pagination: null,
+        filters: {},
+        page: 1,
+        isLoading: false,
+        error: null,
+        cache: {},
+        currentKey: initialKey,
+      });
     },
   }),
 );

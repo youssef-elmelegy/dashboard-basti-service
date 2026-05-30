@@ -6,6 +6,7 @@ import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useCakeStore } from "@/stores/imageStore";
 import { useShapeStore } from "@/stores/shapeStore";
 import { convertToWebP } from "@/lib/image-utils";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { X } from "lucide-react";
 
 interface VariantImageData {
@@ -65,7 +66,7 @@ export function VariantImagesInput({
         type: "image/webp",
       });
 
-      const result = await uploadCakeImage(file);
+      const result = await uploadCakeImage(file, UPLOAD_FOLDERS.flavorVariants);
       updateVariantImage(shapeId, viewType, result.secure_url);
     } catch (error) {
       console.error(`Error uploading ${viewType}:`, error);

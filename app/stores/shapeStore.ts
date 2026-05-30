@@ -7,6 +7,7 @@ import {
   type UpdateShapeRequest,
 } from "@/lib/services/shape.service";
 import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 interface ShapeState {
   shapes: Shape[];
@@ -241,7 +242,7 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
   uploadShapeImage: async (file: File) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await uploadImage(file, "basti/shapes");
+      const response = await uploadImage(file, UPLOAD_FOLDERS.shapes);
       if (response.success && response.data) {
         set({ isLoading: false });
         return response.data;

@@ -236,7 +236,7 @@ export default function CouponsPage() {
                 <TableHead className={isRTL ? "text-right" : "text-left"}>
                   {t("coupons.status")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-left" : "text-right"}>
+                <TableHead className="text-end">
                   {t("coupons.actions")}
                 </TableHead>
               </TableRow>
@@ -265,12 +265,8 @@ export default function CouponsPage() {
                         : t("common.inactive")}
                     </Badge>
                   </TableCell>
-                  <TableCell
-                    className={isRTL ? "text-left" : "text-right"}
-                  >
-                    <div
-                      className={`flex gap-2 ${isRTL ? "justify-start" : "justify-end"}`}
-                    >
+                  <TableCell className="text-end">
+                    <div className="flex gap-2 justify-end">
                       <button
                         type="button"
                         onClick={() => setNotifyingCoupon(coupon)}

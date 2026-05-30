@@ -1,4 +1,4 @@
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -11,12 +11,10 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useOrderStore } from "@/stores/orderStore";
+import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import { useRegionStore } from "@/stores/regionStore";
 import { type Order } from "@/data/orders";
 import { CalendarIcon, X, Search } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { Select } from "@/components/ui/select";
 import {
   SelectTrigger,
@@ -155,17 +153,22 @@ export function OrdersSidebarRight({
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
-  const orders = useOrderStore((state) => state.orders);
-  const isLoading = useOrderStore((state) => state.isLoading);
+
+  const orders = useUnassignedOrdersStore((s) => s.orders);
+  const pagination = useUnassignedOrdersStore((s) => s.pagination);
+  const isLoading = useUnassignedOrdersStore((s) => s.isLoading);
+  const isLoadingMore = useUnassignedOrdersStore((s) => s.isLoadingMore);
+  const setStoreFilters = useUnassignedOrdersStore((s) => s.setFilters);
+  const reload = useUnassignedOrdersStore((s) => s.reload);
+  const fetchMore = useUnassignedOrdersStore((s) => s.fetchMore);
+
+  // UI-level controls (mapped into the store's filters on change).
+  // "normal" = no sorting hint sent → backend default (desc on createdAt).
   const [sortDir, setSortDir] = React.useState<"normal" | "asc" | "desc">(
     "normal",
   );
   const [regionFilter, setRegionFilter] = React.useState<string>("all");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
-  const [dateFilter, setDateFilter] = React.useState<Date | undefined>(
-    undefined,
-  );
-  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
 
@@ -180,65 +183,50 @@ export function OrdersSidebarRight({
     }
   }, [regions.length, fetchRegions]);
 
-  // Filter by region and unassigned orders only
-  const filteredOrders = React.useMemo(() => {
-    const unassignedOrders = orders.filter(
-      (order): order is Order => !order.assignedBakeryId,
-    );
-    let filtered = unassignedOrders;
+  // Debounce the search query so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = React.useState(searchTerm);
+  React.useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
 
-    // Apply region filter
-    if (regionFilter !== "all") {
-      filtered = filtered.filter((order) => order.region === regionFilter);
-    }
-
-    // Apply date filter
-    if (dateFilter) {
-      filtered = filtered.filter((order) =>
-        isSameDay(new Date(order.deliverDay), dateFilter),
-      );
-    }
-
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter((order) =>
-        (order.referenceNumber || order.id).toLowerCase().includes(searchLower),
-      );
-    }
-
-    // Apply type filter
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((order) => order.type === typeFilter);
-    }
-
-    return filtered;
-  }, [orders, regionFilter, dateFilter, searchTerm, typeFilter]);
-
-  // Sort orders by deliverDay or show original
-  const sortedOrders = React.useMemo(() => {
-    if (sortDir === "normal") return filteredOrders;
-    return [...filteredOrders].sort((a, b) => {
-      // Sort by order creation time (API's createdAt mapped to `orderedAt`)
-      const aTime = new Date(a.orderedAt || a.deliverDay).getTime();
-      const bTime = new Date(b.orderedAt || b.deliverDay).getTime();
-      return sortDir === "asc" ? aTime - bTime : bTime - aTime;
+  // Push filter changes into the store, then reload page 1.
+  React.useEffect(() => {
+    setStoreFilters({
+      regionId: regionFilter === "all" ? undefined : regionFilter,
+      type: typeFilter === "all" ? undefined : typeFilter,
+      q: debouncedSearch || undefined,
+      sort: sortDir === "normal" ? undefined : sortDir,
     });
-  }, [filteredOrders, sortDir]);
+    reload();
+  }, [
+    regionFilter,
+    typeFilter,
+    debouncedSearch,
+    sortDir,
+    setStoreFilters,
+    reload,
+  ]);
+
+  // Orders come pre-filtered and pre-sorted from the backend.
+  const sortedOrders = orders;
 
   const handleOrderClick = (orderId: string) => {
     navigate(`/orders/${orderId}`);
     onClose?.();
   };
 
-  // Get all unassigned order dates for calendar highlighting
-  const unassignedOrders = React.useMemo(() => {
-    return orders.filter((order): order is Order => !order.assignedBakeryId);
-  }, [orders]);
-
-  const orderDates = React.useMemo(() => {
-    return unassignedOrders.map((order) => new Date(order.deliverDay));
-  }, [unassignedOrders]);
+  // Infinite scroll — load the next page when we approach the bottom.
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const handleScroll = React.useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (nearBottom) {
+      void fetchMore();
+    }
+  }, [fetchMore]);
 
   return (
     <Sidebar
@@ -268,7 +256,7 @@ export function OrdersSidebarRight({
               <SelectContent>
                 <SelectItem value="all">{t("orders.allRegions")}</SelectItem>
                 {regions.map((region) => (
-                  <SelectItem key={region.id} value={region.name}>
+                  <SelectItem key={region.id} value={region.id}>
                     {region.name}
                   </SelectItem>
                 ))}
@@ -376,7 +364,11 @@ export function OrdersSidebarRight({
             </SelectContent>
           </Select>
         </div>
-        <ScrollArea className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 mb-2">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto custom-scrollbar mb-2"
+        >
           {isLoading ? (
             <div className="flex items-center justify-center flex-1 py-8">
               <div className="flex flex-col items-center gap-2">
@@ -387,98 +379,40 @@ export function OrdersSidebarRight({
               </div>
             </div>
           ) : (
-            <div
-              key={sortDir + regionFilter + typeFilter}
-              className="flex flex-col gap-2 transition-opacity duration-200 animate-fadein"
-            >
+            <div className="flex flex-col gap-2">
               {sortedOrders.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   {t("orders.noOrders")}
                 </div>
               ) : (
-                sortedOrders.map((order: Order) => (
-                  <DraggableOrderCard
-                    key={order.id}
-                    order={order}
-                    onNavigate={handleOrderClick}
-                    t={t}
-                  />
-                ))
+                <>
+                  {sortedOrders.map((order: Order) => (
+                    <DraggableOrderCard
+                      key={order.id}
+                      order={order}
+                      onNavigate={handleOrderClick}
+                      t={t}
+                    />
+                  ))}
+                  {isLoadingMore && (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                    </div>
+                  )}
+                  {pagination &&
+                    pagination.page >= pagination.totalPages &&
+                    sortedOrders.length > 0 && (
+                      <div className="text-center py-3 text-xs text-muted-foreground">
+                        {pagination.total}{" "}
+                        {t("orders.totalShown") || "total"}
+                      </div>
+                    )}
+                </>
               )}
             </div>
           )}
-        </ScrollArea>
-
-        <SidebarSeparator className="mx-0 w-full mb-2" />
-
-        {/* Calendar Button - Popup on demand */}
-        <div className="flex gap-2 items-center w-full -mx-4 px-4">
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex-1 flex items-center gap-2 text-xs h-8"
-              >
-                <CalendarIcon className="w-4 h-4 shrink-0" />
-                <span className="text-xs font-semibold truncate">
-                  {t("orders.filterByDate")}
-                </span>
-                {dateFilter && (
-                  <span className="ml-auto text-xs text-red-600 font-medium shrink-0">
-                    {format(dateFilter, "MMM d")}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0"
-              align={isRTL ? "end" : "start"}
-            >
-              <div className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground">
-                    {t("orders.filterByDate")}
-                  </span>
-                  {dateFilter && (
-                    <button
-                      onClick={() => setDateFilter(undefined)}
-                      className="text-xs text-muted-foreground hover:text-foreground transition"
-                    >
-                      {t("common.clear")}
-                    </button>
-                  )}
-                </div>
-                <Calendar
-                  mode="single"
-                  selected={dateFilter}
-                  onSelect={(date) => {
-                    setDateFilter(date);
-                    setIsCalendarOpen(false);
-                  }}
-                  disabled={(date) =>
-                    !orderDates.some((orderDate) => isSameDay(orderDate, date))
-                  }
-                  modifiers={{
-                    hasOrders: orderDates,
-                  }}
-                  modifiersClassNames={{
-                    hasOrders:
-                      "bg-red-500/20 text-red-700 dark:text-red-400 font-semibold",
-                  }}
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
-          {dateFilter && (
-            <button
-              onClick={() => setDateFilter(undefined)}
-              className="text-muted-foreground hover:text-foreground transition p-1 shrink-0"
-              title={t("common.clear")}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
+        <SidebarSeparator className="mx-0 w-full mb-2" />
       </SidebarContent>
     </Sidebar>
   );

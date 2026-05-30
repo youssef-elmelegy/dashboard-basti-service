@@ -6,6 +6,7 @@
 import axios, { type AxiosInstance } from "axios";
 import type { ApiResponse } from "@/lib/api-client";
 import { env } from "@/config/env";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 /**
  * Cloudinary upload result
@@ -87,7 +88,7 @@ function addAutoRefreshInterceptor(axiosInstance: AxiosInstance) {
  */
 export const uploadImage = async (
   file: File,
-  folder: string = "basti/addons",
+  folder: string = UPLOAD_FOLDERS.addOns,
 ): Promise<ApiResponse<CloudinaryUploadResult>> => {
   try {
     console.log("[uploadImage] Uploading with folder:", folder);

@@ -15,6 +15,7 @@ import type { CreateAdminPayload } from "@/lib/services/admin.service";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
 import { uploadImage } from "@/lib/api/chef.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
 
 interface AddAdminProps {
@@ -83,7 +84,7 @@ export default function AddAdmin({ onSubmit }: AddAdminProps) {
         const file = new File([webpBlob], "admin-profile.webp", {
           type: "image/webp",
         });
-        const response = await uploadImage(file, "basti/admins");
+        const response = await uploadImage(file, UPLOAD_FOLDERS.admins);
         setProfileImageUrl(response.data?.secure_url);
       } catch (error) {
         console.error("Error uploading admin profile image:", error);

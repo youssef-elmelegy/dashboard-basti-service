@@ -11,6 +11,7 @@ import {
   type CloudinaryUploadResult,
   type DeleteImageResult,
 } from "@/lib/api/chef.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 interface ChefStore {
   chefs: Chef[];
@@ -142,8 +143,8 @@ export const useChefStore = create<ChefStore>((set, get) => ({
     );
     set({ isLoading: true, error: null });
     try {
-      console.log("Calling uploadImage with folder: basti/chefs");
-      const response = await uploadImage(file, "basti/chefs");
+      console.log(`Calling uploadImage with folder: ${UPLOAD_FOLDERS.chefs}`);
+      const response = await uploadImage(file, UPLOAD_FOLDERS.chefs);
       console.log("Image upload response:", response);
 
       if (response.success && response.data) {

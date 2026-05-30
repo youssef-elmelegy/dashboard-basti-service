@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
-import { useRegionStore } from "@/stores/regionStore";
+import { uploadImage } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -52,7 +53,7 @@ export function SliderImageForm({
 }: SliderImageFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!image;
-  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
+  // Slider images upload directly through the generic uploader so they land in basti/sliders.
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(
     image?.imageUrl || "",
@@ -99,9 +100,12 @@ export function SliderImageForm({
         type: "image/webp",
       });
 
-      const result = await uploadRegionImage(file);
-      setUploadedImageUrl(result.secure_url);
-      form.setValue("imageUrl", result.secure_url, { shouldValidate: true });
+      const response = await uploadImage(file, UPLOAD_FOLDERS.sliders);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Image upload failed");
+      }
+      setUploadedImageUrl(response.data.secure_url);
+      form.setValue("imageUrl", response.data.secure_url, { shouldValidate: true });
     } catch (error) {
       console.error("Error uploading image:", error);
     } finally {

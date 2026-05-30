@@ -5,6 +5,9 @@ import {
   ChefHat,
   Users,
   Package,
+  PackageCheck,
+  Boxes,
+  Star,
   Cake,
   Gift,
   Palette,
@@ -35,16 +38,20 @@ import {
 
 const AppSidebar = () => {
   const { i18n, t } = useTranslation();
-  const { canViewAllContent } = useAuth();
+  const { canViewAllContent, admin, isManager } = useAuth();
   const isRTL = i18n.language === "ar";
+  const showManagerOrders = isManager() && admin?.bakeryId;
 
-  const items = [
-    {
-      title: t("sidebar.home"),
-      url: "/",
-      icon: Home,
-    },
-  ];
+  // Bakery managers go straight to their orders, so the global home link is hidden for them.
+  const items = isManager()
+    ? []
+    : [
+        {
+          title: t("sidebar.home"),
+          url: "/",
+          icon: Home,
+        },
+      ];
 
   const managementItems = [
     {
@@ -162,9 +169,34 @@ const AppSidebar = () => {
     {
       title: t("sidebar.completedOrders"),
       url: "/completed-orders",
-      icon: Package,
+      icon: PackageCheck,
     },
   ];
+
+  const managerOrderItems = admin?.bakeryId
+    ? [
+        {
+          title: t("sidebar.orders") || "Active Orders",
+          url: `/orders/bakery/${admin.bakeryId}`,
+          icon: Package,
+        },
+        {
+          title: t("sidebar.completedOrders") || "Completed Orders",
+          url: `/orders/bakery/${admin.bakeryId}/completed`,
+          icon: PackageCheck,
+        },
+        {
+          title: t("sidebar.stock") || "Stock",
+          url: "/bakery-stock",
+          icon: Boxes,
+        },
+        {
+          title: t("sidebar.reviews") || "Reviews",
+          url: "/bakery-reviews",
+          icon: Star,
+        },
+      ]
+    : [];
 
   return (
     <Sidebar collapsible="icon" side={isRTL ? "right" : "left"}>
@@ -182,23 +214,25 @@ const AppSidebar = () => {
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{t("sidebar.main")}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {items.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.main")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {canViewAllContent() && (
           <SidebarGroup>
@@ -206,6 +240,26 @@ const AppSidebar = () => {
             <SidebarGroupContent>
               <SidebarMenu>
                 {orderItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {showManagerOrders && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("sidebar.orders")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {managerOrderItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link to={item.url}>

@@ -18,6 +18,14 @@ body {
 
 @custom-variant dark (&:is(.dark *));
 
+/* Leaflet uses high z-index values for its panes (up to 700) and controls
+   (up to 1000), which would leak above Radix popovers/dropdowns (z-50).
+   Scope the map's stacking context so its internals can't outrank them. */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}
+
 /* Native date/time picker icon: invert in dark mode so it reads as gray, not black */
 .dark input[type="date"]::-webkit-calendar-picker-indicator,
 .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,

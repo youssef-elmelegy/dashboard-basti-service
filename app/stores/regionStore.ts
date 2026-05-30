@@ -14,6 +14,7 @@
 import { create } from "zustand";
 import { regionApi } from "@/lib/services/region.service";
 import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import type { Region } from "@/data/regions";
 
 interface RegionState {
@@ -266,8 +267,8 @@ export const useRegionStore = create<RegionState>((set, get) => ({
     );
     set({ isLoading: true, error: null });
     try {
-      console.log("Calling uploadImage with folder: basti/general");
-      const response = await uploadImage(file, "basti/general");
+      console.log(`Calling uploadImage with folder: ${UPLOAD_FOLDERS.regions}`);
+      const response = await uploadImage(file, UPLOAD_FOLDERS.regions);
       console.log("Image upload response:", response);
 
       if (response.success && response.data) {

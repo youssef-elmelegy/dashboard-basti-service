@@ -22,7 +22,8 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useTagsStore } from "@/stores/tagsStore";
-import { useRegionStore } from "@/stores/regionStore";
+import { uploadImage } from "@/lib/api/cake.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
 import type {
   CreateDecorationFormValues,
@@ -65,7 +66,7 @@ export function DecorationForm({
 }: DecorationFormProps) {
   const { t } = useTranslation();
   const isEditMode = !!decoration;
-  const uploadRegionImage = useRegionStore((state) => state.uploadRegionImage);
+  // Main decoration images upload to basti/decorations.
   const tags = useTagsStore((state) => state.tags);
   const fetchTags = useTagsStore((state) => state.fetchTags);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -172,9 +173,12 @@ export function DecorationForm({
         type: "image/webp",
       });
 
-      const result = await uploadRegionImage(file);
-      setUploadedImageUrl(result.secure_url);
-      form.setValue("decorationUrl", result.secure_url, {
+      const response = await uploadImage(file, UPLOAD_FOLDERS.decorations);
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Image upload failed");
+      }
+      setUploadedImageUrl(response.data.secure_url);
+      form.setValue("decorationUrl", response.data.secure_url, {
         shouldValidate: true,
       });
     } catch (error) {

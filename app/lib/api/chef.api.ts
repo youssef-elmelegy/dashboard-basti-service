@@ -1,6 +1,7 @@
 import { type ApiResponse } from "../api-client";
 import axios, { type AxiosInstance } from "axios";
 import { env } from "@/config/env";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 export interface CloudinaryUploadResult {
   public_id: string;
@@ -79,7 +80,7 @@ function addAutoRefreshInterceptor(axiosInstance: AxiosInstance) {
  */
 export async function uploadImage(
   file: File,
-  folder: string = "basti/general",
+  folder: string = UPLOAD_FOLDERS.general,
 ): Promise<ApiResponse<CloudinaryUploadResult>> {
   const formData = new FormData();
   formData.append("file", file);

@@ -117,11 +117,12 @@ export default function BakeryDetailPage() {
     return allReviews.filter((review) => review.bakeryId === bakery.id);
   }, [bakery, allReviews]);
 
-  const averageRating = useMemo(() => {
-    if (!bakery || reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return Math.round((total / reviews.length) * 10) / 10;
-  }, [bakery, reviews]);
+  // Headline stats come from the bakery aggregate, not the loaded page slice —
+  // so pagination doesn't shift the displayed average/count.
+  const averageRating = bakery?.averageRating
+    ? Math.round(Number(bakery.averageRating) * 10) / 10
+    : 0;
+  const totalReviews = bakery?.totalReviews ?? 0;
 
   const fetchReviews = useCallback(async (bakeryId: string) => {
     console.log("Fetching reviews for bakeryId:", bakeryId);
@@ -213,10 +214,13 @@ export default function BakeryDetailPage() {
   const getBakeryTypeLabel = (type: string): string => {
     const typeMap: Record<string, string> = {
       small_cakes: "smallCakes",
-      large_cakes: "largeCakes",
+      big_cakes: "bigCakes",
+      large_cakes: "bigCakes",
       others: "othersType",
     };
-    return t(`bakeriesManagement.${typeMap[type] || type}`);
+    return t(`bakeriesManagement.${typeMap[type] || type}`, {
+      defaultValue: type,
+    });
   };
 
   return (
@@ -342,50 +346,36 @@ export default function BakeryDetailPage() {
           )}
         >
           {/* Rating Summary Card */}
-          <Card>
+          <Card className="relative overflow-hidden border-yellow-400/40 bg-linear-to-br from-yellow-400/15 via-amber-300/5 to-transparent shadow-sm">
+            <div className="absolute inset-y-0 start-0 w-1 bg-linear-to-b from-yellow-400 to-amber-500" />
+            <div className="absolute -top-10 -end-10 w-32 h-32 rounded-full bg-yellow-400/10 blur-2xl pointer-events-none" />
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 {t("bakeriesManagement.reviews")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl font-bold">{averageRating}</div>
-                <div className="flex flex-col gap-1">
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="flex items-baseline justify-center gap-1 py-2 px-3 rounded-xl bg-yellow-400/10 border border-yellow-400/30">
+                  <span className="text-4xl font-extrabold leading-none text-yellow-600 dark:text-yellow-400 tabular-nums">
+                    {averageRating}
+                  </span>
+                  <span className="text-sm font-medium text-muted-foreground tabular-nums">
+                    / 5
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <RatingStars rating={averageRating} />
-                  <p className="text-xs text-muted-foreground">
-                    {reviews.length}{" "}
-                    {reviews.length === 1
-                      ? t("bakeriesManagement.review")
-                      : t("bakeriesManagement.reviewPlural")}
+                  <p className="text-sm font-medium">
+                    <span className="text-foreground">{totalReviews}</span>{" "}
+                    <span className="text-muted-foreground">
+                      {totalReviews === 1
+                        ? t("bakeriesManagement.review")
+                        : t("bakeriesManagement.reviewPlural")}
+                    </span>
                   </p>
                 </div>
-              </div>
-
-              {/* Rating Distribution */}
-              <Separator />
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const count = reviews.filter((r) => r.rating === star).length;
-                  const percentage =
-                    reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-
-                  return (
-                    <div key={star} className="flex items-center gap-2">
-                      <span className="text-xs font-medium w-4">{star}</span>
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-yellow-400 transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground w-5 text-right">
-                        {count}
-                      </span>
-                    </div>
-                  );
-                })}
               </div>
             </CardContent>
           </Card>
@@ -397,7 +387,7 @@ export default function BakeryDetailPage() {
                 <p className="text-sm text-red-600">{reviewError}</p>
               </CardContent>
             </Card>
-          ) : isReviewsLoading ? (
+          ) : isReviewsLoading && reviews.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
                 <p className="text-sm text-muted-foreground">

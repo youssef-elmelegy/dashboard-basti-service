@@ -26,29 +26,33 @@ function extractExtraLayers(item: OrderItem): ExtraLayer[] {
   return [];
 }
 
-function getItemCategory(item: OrderItem): string {
+function getItemCategoryKey(item: OrderItem): string {
   switch (item.type) {
     case "addon":
-      return "Add-on";
+      return "itemDetail.categories.addon";
     case "sweet":
-      return "Sweet";
+      return "itemDetail.categories.sweet";
     case "featured_cake":
-      return "Featured Cake";
+      return "itemDetail.categories.featured_cake";
     case "predesigned_cake":
-      return "Predesigned Cake";
+      return "itemDetail.categories.predesigned_cake";
     case "custom_cake":
-      return "Custom Cake";
+      return "itemDetail.categories.custom_cake";
     default:
-      return "Item";
+      return "itemDetail.categories.item";
   }
 }
 
-function getCakeSliderImages(item: OrderItem): {
+function getCakeSliderImages(
+  item: OrderItem,
+  t: (key: string) => string,
+): {
   images: string[];
   labels: string[];
 } {
   const itemData = item.data as Record<string, unknown>;
   const itemType = item.type;
+  const unknown = t("itemDetail.unknown");
 
   // For add-ons with selectedOptions, use the option images
   if (itemType === "addon") {
@@ -78,7 +82,7 @@ function getCakeSliderImages(item: OrderItem): {
     // Add thumbnail
     if (typeof itemData.thumbnailUrl === "string") {
       images.push(itemData.thumbnailUrl);
-      labels.push("Thumbnail");
+      labels.push(t("itemDetail.thumbnail"));
     }
 
     // Add config images (shape, flavor, decoration)
@@ -91,15 +95,19 @@ function getCakeSliderImages(item: OrderItem): {
     ).forEach((config) => {
       if (config.shape?.shapeUrl) {
         images.push(config.shape.shapeUrl);
-        labels.push(`Shape: ${config.shape.title || "Unknown"}`);
+        labels.push(`${t("itemDetail.shape")}: ${config.shape.title || unknown}`);
       }
       if (config.flavor?.flavorUrl) {
         images.push(config.flavor.flavorUrl);
-        labels.push(`Flavor: ${config.flavor.title || "Unknown"}`);
+        labels.push(
+          `${t("itemDetail.flavor")}: ${config.flavor.title || unknown}`,
+        );
       }
       if (config.decoration?.decorationUrl) {
         images.push(config.decoration.decorationUrl);
-        labels.push(`Decoration: ${config.decoration.title || "Unknown"}`);
+        labels.push(
+          `${t("itemDetail.decoration")}: ${config.decoration.title || unknown}`,
+        );
       }
     });
 
@@ -110,7 +118,9 @@ function getCakeSliderImages(item: OrderItem): {
   if (Array.isArray(itemData.images)) {
     return {
       images: itemData.images as string[],
-      labels: (itemData.images as string[]).map((_, idx) => `Image ${idx + 1}`),
+      labels: (itemData.images as string[]).map(
+        (_, idx) => `${t("itemDetail.image")} ${idx + 1}`,
+      ),
     };
   }
 
@@ -138,17 +148,17 @@ export default function ItemDetailPage() {
   if (!item) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
-        <h1 className="text-2xl font-bold">Item Not Found</h1>
+        <h1 className="text-2xl font-bold">{t("itemDetail.itemNotFound")}</h1>
         <Button onClick={() => navigate("/")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Go Back
+          {t("itemDetail.goBack")}
         </Button>
       </div>
     );
   }
 
   const itemData = item.data as Record<string, unknown>;
-  const category = getItemCategory(item);
+  const category = t(getItemCategoryKey(item));
   const selectedOptions = Array.isArray(item.selectedOptions)
     ? item.selectedOptions
     : undefined;
@@ -173,7 +183,7 @@ export default function ItemDetailPage() {
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight">
               {(typeof itemData.name === "string" ? itemData.name : null) ||
-                "Item Details"}
+                t("itemDetail.itemDetails")}
             </h1>
             <div className="flex items-center gap-2 mt-2">
               <Badge className="capitalize">{category}</Badge>
@@ -192,13 +202,13 @@ export default function ItemDetailPage() {
           >
             {isRTL ? (
               <>
-                Back
+                {t("itemDetail.back")}
                 <ArrowLeft className="w-4 h-4 transform scale-x-[-1]" />
               </>
             ) : (
               <>
                 <ArrowLeft className="w-4 h-4" />
-                Back
+                {t("itemDetail.back")}
               </>
             )}
           </Button>
@@ -217,7 +227,9 @@ export default function ItemDetailPage() {
                 itemData.description && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">Description</CardTitle>
+                      <CardTitle className="text-lg">
+                        {t("itemDetail.description")}
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground">
@@ -232,21 +244,21 @@ export default function ItemDetailPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Zap className="w-5 h-5" />
-                    Order Details
+                    {t("itemDetail.orderDetails")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1 bg-muted p-4 rounded-lg">
                       <p className="text-xs text-muted-foreground uppercase font-medium">
-                        Quantity
+                        {t("itemDetail.quantity")}
                       </p>
                       <p className="text-2xl font-bold">{item.quantity}</p>
                     </div>
                     {item.size && (
                       <div className="space-y-1 bg-muted p-4 rounded-lg">
                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                          Size
+                          {t("itemDetail.size")}
                         </p>
                         <p className="text-2xl font-bold">{item.size}</p>
                       </div>
@@ -254,14 +266,14 @@ export default function ItemDetailPage() {
                     {item.flavor && (
                       <div className="space-y-1 bg-muted p-4 rounded-lg">
                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                          Flavor
+                          {t("itemDetail.flavor")}
                         </p>
                         <p className="text-2xl font-bold">{item.flavor}</p>
                       </div>
                     )}
                     <div className="space-y-1 bg-muted p-4 rounded-lg">
                       <p className="text-xs text-muted-foreground uppercase font-medium">
-                        Price
+                        {t("itemDetail.price")}
                       </p>
                       <p className="text-2xl font-bold">${item.price}</p>
                     </div>
@@ -273,7 +285,7 @@ export default function ItemDetailPage() {
                       <Separator />
                       <div>
                         <h4 className="text-sm font-semibold mb-3">
-                          Selected Options
+                          {t("itemDetail.selectedOptions")}
                         </h4>
                         <div className="space-y-2">
                           {selectedOptions.map((option) => (
@@ -290,7 +302,7 @@ export default function ItemDetailPage() {
                                 </p>
                                 {option.value && (
                                   <p className="text-xs text-muted-foreground">
-                                    Value: {option.value}
+                                    {t("itemDetail.value")}: {option.value}
                                   </p>
                                 )}
                               </div>
@@ -316,7 +328,7 @@ export default function ItemDetailPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Palette className="w-5 h-5" />
-                      Flavors & Palette
+                      {t("itemDetail.flavorsAndPalette")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -324,7 +336,7 @@ export default function ItemDetailPage() {
                       itemData.flavorList.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3">
-                            Available Flavors
+                            {t("itemDetail.availableFlavors")}
                           </h3>
                           <div className="flex flex-wrap gap-2">
                             {(itemData.flavorList as string[]).map(
@@ -341,7 +353,7 @@ export default function ItemDetailPage() {
                       itemData.pipingPaletteList.length > 0 && (
                         <div>
                           <h3 className="text-sm font-semibold mb-3">
-                            Piping Colors
+                            {t("itemDetail.pipingColors")}
                           </h3>
                           <div className="flex flex-wrap gap-2">
                             {(itemData.pipingPaletteList as string[]).map(
@@ -357,10 +369,11 @@ export default function ItemDetailPage() {
                     {typeof itemData.capacity === "number" && (
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                          Capacity
+                          {t("itemDetail.capacity")}
                         </p>
                         <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                          {itemData.capacity as number} servings
+                          {itemData.capacity as number}{" "}
+                          {t("itemDetail.servings")}
                         </p>
                       </div>
                     )}
@@ -372,7 +385,7 @@ export default function ItemDetailPage() {
               {item.type === "sweet" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Available Sizes</CardTitle>
+                    <CardTitle>{t("itemDetail.availableSizes")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {Array.isArray(itemData.sizes) &&
@@ -386,7 +399,7 @@ export default function ItemDetailPage() {
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Standard size only
+                        {t("itemDetail.standardSizeOnly")}
                       </p>
                     )}
                   </CardContent>
@@ -401,7 +414,7 @@ export default function ItemDetailPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Package className="w-5 h-5" />
-                        Selected Options
+                        {t("itemDetail.selectedOptions")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -415,7 +428,7 @@ export default function ItemDetailPage() {
                           </div>
                           {option.value && (
                             <div className="text-xs text-muted-foreground mb-2">
-                              Value: {option.value}
+                              {t("itemDetail.value")}: {option.value}
                             </div>
                           )}
                           {idx < selectedOptions.length - 1 && (
@@ -437,15 +450,15 @@ export default function ItemDetailPage() {
 
                     if (typeof itemData.snapshotTop === "string") {
                       snapshotImages.push(itemData.snapshotTop as string);
-                      snapshotLabels.push("Top View");
+                      snapshotLabels.push(t("itemDetail.topView"));
                     }
                     if (typeof itemData.snapshotFront === "string") {
                       snapshotImages.push(itemData.snapshotFront as string);
-                      snapshotLabels.push("Front View");
+                      snapshotLabels.push(t("itemDetail.frontView"));
                     }
                     if (typeof itemData.snapshotSliced === "string") {
                       snapshotImages.push(itemData.snapshotSliced as string);
-                      snapshotLabels.push("Sliced View");
+                      snapshotLabels.push(t("itemDetail.slicedView"));
                     }
 
                     return (
@@ -453,7 +466,7 @@ export default function ItemDetailPage() {
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2">
                             <Package className="w-5 h-5" />
-                            Custom Cake
+                            {t("itemDetail.customCake")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-6">
@@ -497,7 +510,7 @@ export default function ItemDetailPage() {
                                       )}
                                       <div>
                                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                                          Shape
+                                          {t("itemDetail.shape")}
                                         </p>
                                         <p className="font-semibold text-sm">
                                           {typeof (
@@ -512,7 +525,7 @@ export default function ItemDetailPage() {
                                                   string | unknown
                                                 >
                                               ).title as string)
-                                            : "Unknown"}
+                                            : t("itemDetail.unknown")}
                                         </p>
                                       </div>
                                     </div>
@@ -545,7 +558,7 @@ export default function ItemDetailPage() {
                                       )}
                                       <div>
                                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                                          Flavor
+                                          {t("itemDetail.flavor")}
                                         </p>
                                         <p className="font-semibold text-sm">
                                           {typeof (
@@ -560,7 +573,7 @@ export default function ItemDetailPage() {
                                                   string | unknown
                                                 >
                                               ).title as string)
-                                            : "Unknown"}
+                                            : t("itemDetail.unknown")}
                                         </p>
                                       </div>
                                     </div>
@@ -593,7 +606,7 @@ export default function ItemDetailPage() {
                                       )}
                                       <div>
                                         <p className="text-xs text-muted-foreground uppercase font-medium">
-                                          Decoration
+                                          {t("itemDetail.decoration")}
                                         </p>
                                         <p className="font-semibold text-sm">
                                           {typeof (
@@ -608,7 +621,7 @@ export default function ItemDetailPage() {
                                                   string | unknown
                                                 >
                                               ).title as string)
-                                            : "Unknown"}
+                                            : t("itemDetail.unknown")}
                                         </p>
                                       </div>
                                     </div>
@@ -644,7 +657,7 @@ export default function ItemDetailPage() {
                                   />
                                   <div className="text-xs">
                                     <p className="text-muted-foreground uppercase font-medium">
-                                      Color
+                                      {t("itemDetail.color")}
                                     </p>
                                     <p className="font-semibold">
                                       {
@@ -665,7 +678,7 @@ export default function ItemDetailPage() {
                               itemData.message && (
                                 <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                                   <p className="text-xs text-muted-foreground uppercase font-medium mb-1">
-                                    Message
+                                    {t("itemDetail.message")}
                                   </p>
                                   <p className="font-medium text-sm text-blue-900 dark:text-blue-100 italic">
                                     "{itemData.message as string}"
@@ -693,8 +706,12 @@ export default function ItemDetailPage() {
                                           key={li}
                                           className="text-sm text-purple-900 dark:text-purple-100"
                                         >
-                                          <strong>Layer {layer.layer}</strong>:{" "}
-                                          {flavorTitle || "Flavor not found"}
+                                          <strong>
+                                            {t("itemDetail.layer")} {layer.layer}
+                                          </strong>
+                                          :{" "}
+                                          {flavorTitle ||
+                                            t("itemDetail.flavorNotFound")}
                                         </li>
                                       );
                                     },
@@ -708,7 +725,7 @@ export default function ItemDetailPage() {
                     ) as React.ReactNode;
                   })()
                 : (() => {
-                    const sliderData = getCakeSliderImages(item);
+                    const sliderData = getCakeSliderImages(item, t);
                     if (sliderData.images.length > 0) {
                       const currentConfig =
                         item.type === "predesigned_cake" &&
@@ -739,8 +756,8 @@ export default function ItemDetailPage() {
                             <CardTitle className="flex items-center gap-2 text-sm">
                               <Package className="w-4 h-4" />
                               {item.type === "predesigned_cake"
-                                ? "Cake"
-                                : "Image"}
+                                ? t("itemDetail.cake")
+                                : t("itemDetail.image")}
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="p-4 space-y-4">
@@ -757,7 +774,8 @@ export default function ItemDetailPage() {
                                   {currentConfig.flavor && (
                                     <div className="space-y-1">
                                       <p className="font-semibold text-xs">
-                                        {currentConfig.flavor.title || "Flavor"}
+                                        {currentConfig.flavor.title ||
+                                          t("itemDetail.flavor")}
                                       </p>
                                       <p className="text-xs text-muted-foreground line-clamp-2">
                                         {currentConfig.flavor.description || ""}
@@ -768,7 +786,8 @@ export default function ItemDetailPage() {
                                   {currentConfig.shape && (
                                     <div className="space-y-1">
                                       <p className="font-semibold text-xs">
-                                        {currentConfig.shape.title || "Shape"}
+                                        {currentConfig.shape.title ||
+                                          t("itemDetail.shape")}
                                       </p>
                                       <p className="text-xs text-muted-foreground line-clamp-2">
                                         {currentConfig.shape.description || ""}
@@ -780,7 +799,7 @@ export default function ItemDetailPage() {
                                     <div className="space-y-1">
                                       <p className="font-semibold text-xs">
                                         {currentConfig.decoration.title ||
-                                          "Decoration"}
+                                          t("itemDetail.decoration")}
                                       </p>
                                       <p className="text-xs text-muted-foreground line-clamp-2">
                                         {currentConfig.decoration.description ||

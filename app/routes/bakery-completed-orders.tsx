@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useCompletedOrdersStore } from "@/stores/completedOrdersStore";
-import { useRegionStore } from "@/stores/regionStore";
+import { useBakeryStore } from "@/stores/bakeryStore";
+import { useBakeryCompletedOrdersStore } from "@/stores/bakeryCompletedOrdersStore";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import type { VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Copy,
   Search,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Popover,
@@ -32,70 +33,77 @@ import {
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Select } from "@/components/ui/select";
 import {
+  Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
 
-const CompletedOrders = () => {
+const BakeryCompletedOrders = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const orders = useCompletedOrdersStore((s) => s.orders);
-  const pagination = useCompletedOrdersStore((s) => s.pagination);
-  const page = useCompletedOrdersStore((s) => s.page);
-  const isLoading = useCompletedOrdersStore((s) => s.isLoading);
-  const setStoreFilters = useCompletedOrdersStore((s) => s.setFilters);
-  const reload = useCompletedOrdersStore((s) => s.reload);
-  const goToPage = useCompletedOrdersStore((s) => s.goToPage);
+  const { id } = useParams<{ id: string }>();
+  const currentBakery = useBakeryStore((state) => state.currentBakery);
+  const getBakeryById = useBakeryStore((state) => state.getBakeryById);
 
-  const regions = useRegionStore((s) => s.regions);
-  const fetchRegions = useRegionStore((s) => s.fetchRegions);
+  const orders = useBakeryCompletedOrdersStore((s) => s.orders);
+  const pagination = useBakeryCompletedOrdersStore((s) => s.pagination);
+  const page = useBakeryCompletedOrdersStore((s) => s.page);
+  const isLoading = useBakeryCompletedOrdersStore((s) => s.isLoading);
+  const setStoreFilters = useBakeryCompletedOrdersStore((s) => s.setFilters);
+  const reload = useBakeryCompletedOrdersStore((s) => s.reload);
+  const goToPage = useBakeryCompletedOrdersStore((s) => s.goToPage);
 
-  // UI-level controls — pushed into the store on change.
   const [sortDir, setSortDir] = useState<"normal" | "asc" | "desc">("normal");
   const [query, setQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
-  const [regionFilter, setRegionFilter] = useState<string>("all");
 
-  // Debounce the search query so we don't refetch on every keystroke.
+  const bakery =
+    currentBakery && currentBakery.id === id ? currentBakery : null;
+
+  useEffect(() => {
+    if (id) {
+      getBakeryById(id).catch((err) =>
+        console.error("Failed to fetch bakery:", err),
+      );
+    }
+  }, [id, getBakeryById]);
+
+  // Debounce search.
   const [debouncedQuery, setDebouncedQuery] = useState(query);
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(handle);
   }, [query]);
 
-  // Push filter changes into the store and reset to page 1.
+  // Push filter changes into the store and reload page 1.
   useEffect(() => {
+    if (!id) return;
     setStoreFilters({
-      regionId: regionFilter === "all" ? undefined : regionFilter,
       q: debouncedQuery || undefined,
       sort: sortDir === "normal" ? undefined : sortDir,
     });
-    reload();
-  }, [regionFilter, debouncedQuery, sortDir, setStoreFilters, reload]);
-
-  // Load regions for the filter dropdown.
-  useEffect(() => {
-    fetchRegions();
-  }, [fetchRegions]);
-
-  // Orders come pre-sorted from the API; the page renders them as-is.
-  const sortedOrders = orders;
+    reload(id);
+  }, [id, debouncedQuery, sortDir, setStoreFilters, reload]);
 
   const handleRefresh = async () => {
-    await reload({ force: true });
+    if (id) await reload(id, { force: true });
   };
 
   const handlePrev = () => {
-    if (page > 1) void goToPage(page - 1);
+    if (id && page > 1) void goToPage(id, page - 1);
   };
   const handleNext = () => {
-    if (pagination && page < pagination.totalPages) void goToPage(page + 1);
+    if (id && pagination && page < pagination.totalPages) {
+      void goToPage(id, page + 1);
+    }
   };
+
+  // Orders come pre-sorted from the API.
+  const sortedOrders = orders;
 
   const handleCopyRef = async (e: React.MouseEvent, ref: string) => {
     e.stopPropagation();
@@ -111,48 +119,57 @@ const CompletedOrders = () => {
   const getStatusInfo = (status: string | undefined) => {
     const statusMap: Record<
       string,
-      { label: string; variant?: VariantProps<typeof badgeVariants>["variant"]; icon: string }
+      {
+        label: string;
+        variant?: VariantProps<typeof badgeVariants>["variant"];
+      }
     > = {
       ready: {
         label: t("orderStatus.ready") || "Ready",
         variant: "default",
-        icon: "✓",
       },
       out_for_delivery: {
         label: t("orderStatus.outForDelivery") || "Out for Delivery",
         variant: "secondary",
-        icon: "🚚",
       },
       delivered: {
         label: t("orderStatus.delivered") || "Delivered",
         variant: "outline",
-        icon: "📦",
       },
       cancelled: {
         label: t("orderStatus.cancelled") || "Cancelled",
         variant: "destructive",
-        icon: "✕",
       },
     };
     return (
       statusMap[status || ""] || {
         label: status,
-        variant: "secondary",
-        icon: "?",
+        variant: "secondary" as const,
       }
     );
   };
 
   const handleRowClick = (orderId: string) => {
-    navigate(`/orders/${orderId}`);
+    navigate(`/orders/bakery/${id}/orders/${orderId}`);
   };
 
   return (
     <div className="flex w-full h-full flex-col">
       <div className="p-6">
         <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-0 mb-2 h-auto"
+            onClick={() => navigate(`/orders/bakery/${id}`)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            {t("bakeryOrders.backToActive") || "Back to active orders"}
+          </Button>
           <h1 className="text-3xl font-bold tracking-tight mb-2">
-            {t("completedOrders.title") || "Completed Orders"}
+            {bakery?.name
+              ? `${bakery.name} — ${t("completedOrders.title") || "Completed Orders"}`
+              : t("completedOrders.title") || "Completed Orders"}
           </h1>
           <p className="text-muted-foreground">
             {t("completedOrders.description") ||
@@ -199,23 +216,6 @@ const CompletedOrders = () => {
               </div>
             </PopoverContent>
           </Popover>
-          <Select value={regionFilter} onValueChange={setRegionFilter}>
-            <SelectTrigger className="w-40 h-8 text-xs">
-              <SelectValue
-                placeholder={t("orders.filterByRegion") || "Region"}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("orders.allRegions") || "All regions"}
-              </SelectItem>
-              {regions.map((region) => (
-                <SelectItem key={region.id} value={region.id}>
-                  {region.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select
             value={sortDir}
             onValueChange={(v) => setSortDir(v as "normal" | "asc" | "desc")}
@@ -281,7 +281,12 @@ const CompletedOrders = () => {
               </TableHeader>
               <TableBody>
                 {sortedOrders.map((order) => {
-                  const statusInfo = getStatusInfo(order.status);
+                  const statusInfo = getStatusInfo(order.orderStatus);
+                  const customerName =
+                    `${order.userData?.firstName || ""} ${order.userData?.lastName || ""}`.trim() ||
+                    "-";
+                  const displayRef =
+                    order.referenceNumber || `#${order.id.slice(0, 8)}`;
                   return (
                     <TableRow
                       key={order.id}
@@ -290,27 +295,16 @@ const CompletedOrders = () => {
                     >
                       <TableCell className="font-mono font-semibold">
                         <div className="flex items-center gap-2">
-                          <span>
-                            {order.referenceNumber ||
-                              `#${order.id.slice(0, 8)}`}
-                          </span>
+                          <span>{displayRef}</span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={(e) =>
-                              handleCopyRef(
-                                e,
-                                order.referenceNumber ||
-                                  `#${order.id.slice(0, 8)}`,
-                              )
-                            }
+                            onClick={(e) => handleCopyRef(e, displayRef)}
                             title={t("common.copy") || "Copy"}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
-                          {copiedRef ===
-                            (order.referenceNumber ||
-                              `#${order.id.slice(0, 8)}`) && (
+                          {copiedRef === displayRef && (
                             <span className="text-xs text-muted-foreground">
                               {t("common.copied") || "Copied"}
                             </span>
@@ -319,12 +313,10 @@ const CompletedOrders = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-medium">
-                            {order.customerName}
-                          </span>
-                          {order.customerPhone && (
+                          <span className="font-medium">{customerName}</span>
+                          {order.userData?.phoneNumber && (
                             <span className="text-xs text-muted-foreground">
-                              {order.customerPhone}
+                              {order.userData.phoneNumber}
                             </span>
                           )}
                         </div>
@@ -335,7 +327,7 @@ const CompletedOrders = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {order.status === "delivered" ? (
+                        {order.orderStatus === "delivered" ? (
                           <div className="flex items-center gap-1.5 text-sm">
                             <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                             {order.deliveredAt
@@ -372,8 +364,7 @@ const CompletedOrders = () => {
                 totalPages: pagination.totalPages,
                 defaultValue: `Page ${pagination.page} of ${pagination.totalPages}`,
               })}{" "}
-              · {pagination.total}{" "}
-              {t("orders.totalShown") || "orders"}
+              · {pagination.total} {t("orders.totalShown") || "orders"}
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -422,4 +413,4 @@ const CompletedOrders = () => {
   );
 };
 
-export default CompletedOrders;
+export default BakeryCompletedOrders;

@@ -19,14 +19,6 @@ export interface CreateOfferPayload {
   startDate?: string;
   expiryDate?: string;
   isActive?: boolean;
-  regionId?: string;
-  addonId?: string;
-  featuredCakeId?: string;
-  sweetId?: string;
-  predesignedCakeId?: string;
-  decorationId?: string;
-  flavorId?: string;
-  shapeId?: string;
 }
 
 export type UpdateOfferPayload = Partial<CreateOfferPayload>;

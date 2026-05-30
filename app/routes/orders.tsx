@@ -23,6 +23,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { OrdersSidebarRight } from "@/components/orders-sidebar-right";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useOrderStore } from "@/stores/orderStore";
+import { useAssignedOrdersStore } from "@/stores/assignedOrdersStore";
+import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import type { Order } from "@/data/orders";
 import type { Bakery } from "@/lib/services/bakery.service";
 import { httpRequest } from "@/lib/http-handler";
@@ -428,10 +430,20 @@ const Orders = () => {
   const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
   const fetchBakeries = useBakeryStore((state) => state.fetchBakeries);
-  const orders = useOrderStore((state) => state.orders);
   const updateOrder = useOrderStore((state) => state.updateOrder);
-  const fetchOrders = useOrderStore((state) => state.fetchOrders);
-  const isLoading = useOrderStore((state) => state.isLoading);
+
+  // Kanban data comes from the backend `/orders/assigned` endpoint, grouped
+  // by bakeryId. No client-side filtering / regrouping.
+  const ordersByBakeryFromApi = useAssignedOrdersStore(
+    (s) => s.ordersByBakery,
+  );
+  const reloadAssigned = useAssignedOrdersStore((s) => s.reload);
+  const isLoading = useAssignedOrdersStore((s) => s.isLoading);
+
+  // Unassigned sidebar store — page 1 also fetches on mount.
+  const reloadUnassigned = useUnassignedOrdersStore((s) => s.reload);
+  const invalidateUnassigned = useUnassignedOrdersStore((s) => s.invalidate);
+
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(
     new Set(),
@@ -440,9 +452,9 @@ const Orders = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
 
-  // Fetch bakeries and orders only once on mount
+  // Fetch bakeries + both order feeds once on mount.
   useEffect(() => {
-    if (hasInitialized) return; // Skip if already initialized
+    if (hasInitialized) return;
 
     const initializeData = async () => {
       try {
@@ -450,33 +462,24 @@ const Orders = () => {
       } catch (error) {
         console.error("Failed to fetch bakeries:", error);
       }
-
-      try {
-        // Fetch orders with all statuses except cancelled and completed
-        await fetchOrders({
-          status: ["pending", "confirmed", "preparing", "ready"],
-        });
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
-      }
-
+      await Promise.all([
+        reloadAssigned().catch((err) =>
+          console.error("Failed to fetch assigned orders:", err),
+        ),
+        reloadUnassigned().catch((err) =>
+          console.error("Failed to fetch unassigned orders:", err),
+        ),
+      ]);
       setHasInitialized(true);
     };
 
     initializeData();
-  }, [hasInitialized, fetchBakeries, fetchOrders]);
+  }, [hasInitialized, fetchBakeries, reloadAssigned, reloadUnassigned]);
 
-  // Local state for managing order positions
+  // Local drag-and-drop ordering hint. Keyed by orderId, only meaningful
+  // while a drag is in flight — the canonical order list comes from the API.
   const [orderPositions, setOrderPositions] = useState<Record<string, number>>(
-    () => {
-      const positions: Record<string, number> = {};
-      orders.forEach((order, index) => {
-        if (order.assignedBakeryId) {
-          positions[order.id] = index;
-        }
-      });
-      return positions;
-    },
+    {},
   );
 
   // Sensors for drag and drop
@@ -494,19 +497,26 @@ const Orders = () => {
     }),
   );
 
-  // Get orders for each bakery, sorted by position
+  // Orders for each bakery come pre-grouped from the API. We just apply the
+  // local drag-and-drop ordering hint on top.
   const bakeryOrders = useMemo(() => {
-    const ordersByBakery: Record<string, Order[]> = {};
+    const out: Record<string, Order[]> = {};
     bakeries.forEach((bakery) => {
-      const bakeryOrderList = orders
-        .filter((order) => order.assignedBakeryId === bakery.id)
-        .sort(
-          (a, b) => (orderPositions[a.id] || 0) - (orderPositions[b.id] || 0),
-        );
-      ordersByBakery[bakery.id] = bakeryOrderList;
+      const list = ordersByBakeryFromApi[bakery.id] || [];
+      out[bakery.id] = [...list].sort(
+        (a, b) => (orderPositions[a.id] || 0) - (orderPositions[b.id] || 0),
+      );
     });
-    return ordersByBakery;
-  }, [bakeries, orders, orderPositions]);
+    return out;
+  }, [bakeries, ordersByBakeryFromApi, orderPositions]);
+
+  // Flat list of every order currently visible on the page (assigned + unassigned).
+  // Used by the drag handlers to look up the order being dragged.
+  const unassignedOrders = useUnassignedOrdersStore((s) => s.orders);
+  const orders = useMemo<Order[]>(() => {
+    const assigned = Object.values(ordersByBakeryFromApi).flat();
+    return [...assigned, ...unassignedOrders];
+  }, [ordersByBakeryFromApi, unassignedOrders]);
 
   const toggleColumnCollapse = (bakeryId: string) => {
     setCollapsedColumns((prev) => {
@@ -548,7 +558,6 @@ const Orders = () => {
       }
 
       const result = await response.json();
-      // Update local store with the response
       // Clear any previous assign error on success
       setAssignError(null);
       const bakery = bakeries.find((b) => b.id === bakeryId);
@@ -557,6 +566,12 @@ const Orders = () => {
         assignedBakeryName: bakery?.name || "",
         assignedAt: new Date().toISOString(),
       });
+      // The just-assigned order should drop out of the sidebar across all
+      // filter combinations — bust the unassigned cache, then refetch both
+      // feeds so the Kanban and the sidebar reflect the new assignment.
+      invalidateUnassigned();
+      void reloadAssigned();
+      void reloadUnassigned({ force: true });
       return true;
     } catch (error) {
       console.error("Error assigning order:", error);

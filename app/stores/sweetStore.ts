@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { sweetService, type Sweet } from "@/lib/services/sweet.service";
 import { uploadImage, type CloudinaryUploadResult } from "@/lib/api/addOn.api";
+import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 type SweetInput = {
   name: string;
@@ -157,7 +158,7 @@ export const useSweetStore = create<SweetStore>((set, get) => ({
   uploadSweetImage: async (file: File) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await uploadImage(file, "basti/sweets");
+      const response = await uploadImage(file, UPLOAD_FOLDERS.sweets);
       if (response.success && response.data) {
         set({ isLoading: false });
         return response.data;

@@ -63,7 +63,7 @@ const ORDER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 /**
  * Convert API response to internal Order format
  */
-function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
+export function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
   // Helper to normalize selectedOptions coming from API
   function parseSelectedOptions(value: unknown): OrderItem["selectedOptions"] {
     if (!value) return undefined;
