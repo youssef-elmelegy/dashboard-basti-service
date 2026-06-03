@@ -50,7 +50,7 @@ export function NotificationTester() {
   const regions = useRegionStore((state) => state.regions);
   const fetchRegions = useRegionStore((state) => state.fetchRegions);
   const [mode, setMode] = useState<SendMode>("broadcast");
-  const [recipientId, setRecipientId] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [regionId, setRegionId] = useState<string>(REGION_NONE);
   const [type, setType] = useState<NotificationType>(DEFAULT_TYPE);
   const [title, setTitle] = useState("");
@@ -85,7 +85,7 @@ export function NotificationTester() {
       });
       return;
     }
-    if (mode !== "broadcast" && !recipientId.trim()) {
+    if (mode !== "broadcast" && !recipientEmail.trim()) {
       setStatus({
         kind: "error",
         message: t("notifications.tester.errorRecipient"),
@@ -121,7 +121,7 @@ export function NotificationTester() {
           body: body.trim(),
           type,
           recipientType: mode,
-          recipientId: recipientId.trim(),
+          recipientEmail: recipientEmail.trim(),
           redirectId: redirectId.trim() || undefined,
           data: Object.keys(data).length > 0 ? data : undefined,
         });
@@ -202,14 +202,15 @@ export function NotificationTester() {
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nt-recipient">
               {mode === "user"
-                ? t("notifications.tester.recipientIdUser")
-                : t("notifications.tester.recipientIdAdmin")}
+                ? t("notifications.tester.recipientEmailUser")
+                : t("notifications.tester.recipientEmailAdmin")}
             </Label>
             <Input
               id="nt-recipient"
-              value={recipientId}
-              onChange={(e) => setRecipientId(e.target.value)}
-              placeholder={t("notifications.tester.recipientIdPlaceholder")}
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => setRecipientEmail(e.target.value)}
+              placeholder={t("notifications.tester.recipientEmailPlaceholder")}
             />
           </div>
         )}

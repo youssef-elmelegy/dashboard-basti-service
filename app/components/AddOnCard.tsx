@@ -125,14 +125,18 @@ export function AddOnCard({
         {/* Category */}
         <div className="bg-muted/50 rounded p-2">
           <p className="text-xs text-muted-foreground font-medium mb-1">
-            Category
+            {t("addOns.category")}
           </p>
           <div className="flex gap-1">
             <Badge
               variant="secondary"
               className={`text-xs ${CATEGORY_COLORS[addOn.category]}`}
             >
-              {addOn.category.charAt(0).toUpperCase() + addOn.category.slice(1)}
+              {t(`addOns.categories.${addOn.category}`, {
+                defaultValue:
+                  addOn.category.charAt(0).toUpperCase() +
+                  addOn.category.slice(1),
+              })}
             </Badge>
           </div>
         </div>

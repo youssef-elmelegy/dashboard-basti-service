@@ -405,7 +405,31 @@
     "updateAddOn": "تحديث الإضافة",
     "edit": "تعديل",
     "delete": "حذف",
-    "uploadingImage": "جاري تحميل الصورة..."
+    "uploadingImage": "جاري تحميل الصورة...",
+    "options": "خيارات الإضافة",
+    "optionsDescription": "أضف خيارات التخصيص لهذه الإضافة (الألوان، الأحجام، إلخ)",
+    "newOption": "خيار جديد",
+    "editOption": "تعديل الخيار",
+    "selectType": "اختر النوع",
+    "optionLabelPlaceholder": "التسمية (مثال: 'أحمر'، 'صغير')",
+    "optionValuePlaceholder": "القيمة (مثال: '#FF0000'، 'S')",
+    "optionImage": "صورة الخيار (اختياري)",
+    "addOption": "إضافة خيار",
+    "updateOption": "تحديث الخيار",
+    "cancel": "إلغاء",
+    "optionTypes": {
+      "color": "لون",
+      "number": "رقم",
+      "letter": "حرف",
+      "text": "نص"
+    },
+    "categories": {
+      "balloons": "بالونات",
+      "cards": "بطاقات",
+      "candles": "شموع",
+      "decorations": "زينة",
+      "other": "أخرى"
+    }
   },
   "buttons": {
     "add": "إضافة",
@@ -1080,10 +1104,10 @@
       "modeUser": "مستخدم واحد",
       "modeAdmin": "مشرف واحد",
       "modeBroadcast": "جميع المستخدمين",
-      "recipientId": "معرّف المستلم (UUID)",
-      "recipientIdUser": "معرّف المستخدم",
-      "recipientIdAdmin": "معرّف المشرف",
-      "recipientIdPlaceholder": "ألصق المعرّف هنا",
+      "recipientEmail": "بريد المستلم الإلكتروني",
+      "recipientEmailUser": "بريد المستخدم الإلكتروني",
+      "recipientEmailAdmin": "بريد المشرف الإلكتروني",
+      "recipientEmailPlaceholder": "أدخل البريد الإلكتروني",
       "regionId": "المنطقة",
       "regionIdPlaceholder": "معرّف اختياري للمنطقة — يُضاف داخل الحمولة",
       "regionPlaceholder": "اختر منطقة",

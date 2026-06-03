@@ -69,14 +69,6 @@ interface AddOnFormProps {
   isLoading?: boolean;
 }
 
-const categoryLabels: Record<string, string> = {
-  balloons: "Balloons",
-  cards: "Cards",
-  candles: "Candles",
-  decorations: "Decorations",
-  other: "Other",
-};
-
 const optionTypes = ["color", "number", "letter", "text"] as const;
 
 export function AddOnForm({
@@ -355,19 +347,19 @@ export function AddOnForm({
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="balloons">
-                      {categoryLabels["balloons"]}
+                      {t("addOns.categories.balloons")}
                     </SelectItem>
                     <SelectItem value="cards">
-                      {categoryLabels["cards"]}
+                      {t("addOns.categories.cards")}
                     </SelectItem>
                     <SelectItem value="candles">
-                      {categoryLabels["candles"]}
+                      {t("addOns.categories.candles")}
                     </SelectItem>
                     <SelectItem value="decorations">
-                      {categoryLabels["decorations"]}
+                      {t("addOns.categories.decorations")}
                     </SelectItem>
                     <SelectItem value="other">
-                      {categoryLabels["other"]}
+                      {t("addOns.categories.other")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -383,11 +375,11 @@ export function AddOnForm({
           name="tagId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("common.selectTag")}</FormLabel>
+              <FormLabel>{t("common.tag")}</FormLabel>
               <FormControl>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  value={field.value}
                 >
                   <SelectTrigger>
                     <SelectValue
@@ -418,9 +410,9 @@ export function AddOnForm({
 
         {/* Options */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Add-on Options</h3>
+          <h3 className="text-lg font-semibold">{t("addOns.options")}</h3>
           <FormDescription>
-            Add customization options for this add-on (colors, sizes, etc.)
+            {t("addOns.optionsDescription")}
           </FormDescription>
 
           {/* Existing Options */}
@@ -442,7 +434,7 @@ export function AddOnForm({
                     <div>
                       <p className="font-medium">{option.label}</p>
                       <p className="text-sm text-muted-foreground">
-                        {option.type} • {option.value}
+                        {t(`addOns.optionTypes.${option.type}`)} • {option.value}
                       </p>
                     </div>
                   </div>
@@ -453,7 +445,7 @@ export function AddOnForm({
                       size="sm"
                       onClick={() => handleEditOption(index)}
                     >
-                      Edit
+                      {t("addOns.edit")}
                     </Button>
                     <Button
                       type="button"
@@ -472,7 +464,9 @@ export function AddOnForm({
           {/* Add Option Form */}
           <div className="space-y-4 p-4 border rounded-lg bg-secondary/20">
             <h4 className="font-medium">
-              {editingOptionIndex !== null ? "Edit Option" : "New Option"}
+              {editingOptionIndex !== null
+                ? t("addOns.editOption")
+                : t("addOns.newOption")}
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
@@ -486,12 +480,12 @@ export function AddOnForm({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("addOns.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {optionTypes.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                      {t(`addOns.optionTypes.${type}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -499,7 +493,7 @@ export function AddOnForm({
             </div>
 
             <Input
-              placeholder="Label (e.g., 'Red', 'Small')"
+              placeholder={t("addOns.optionLabelPlaceholder")}
               value={newOption.label}
               onChange={(e) =>
                 setNewOption({ ...newOption, label: e.target.value })
@@ -507,7 +501,7 @@ export function AddOnForm({
             />
 
             <Input
-              placeholder="Value (e.g., '#FF0000', 'S')"
+              placeholder={t("addOns.optionValuePlaceholder")}
               value={newOption.value}
               onChange={(e) =>
                 setNewOption({ ...newOption, value: e.target.value })
@@ -518,7 +512,7 @@ export function AddOnForm({
               imageUrl={newOption.imageUrl}
               onImageChange={handleOptionImageChange}
               isLoading={uploadingImage}
-              label="Option Image (optional)"
+              label={t("addOns.optionImage")}
             />
 
             <div className="flex gap-2">
@@ -529,7 +523,9 @@ export function AddOnForm({
                   !newOption.label || !newOption.value || uploadingImage
                 }
               >
-                {editingOptionIndex !== null ? "Update Option" : "Add Option"}
+                {editingOptionIndex !== null
+                  ? t("addOns.updateOption")
+                  : t("addOns.addOption")}
               </Button>
               {editingOptionIndex !== null && (
                 <Button
@@ -541,7 +537,7 @@ export function AddOnForm({
                   }}
                   disabled={uploadingImage}
                 >
-                  Cancel
+                  {t("addOns.cancel")}
                 </Button>
               )}
             </div>

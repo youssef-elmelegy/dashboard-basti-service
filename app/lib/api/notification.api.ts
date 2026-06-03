@@ -21,7 +21,7 @@ export interface SendNotificationPayload {
   body: string;
   type: NotificationType;
   recipientType: NotificationRecipientType;
-  recipientId: string;
+  recipientEmail: string;
   redirectId?: string;
   data?: Record<string, string>;
 }

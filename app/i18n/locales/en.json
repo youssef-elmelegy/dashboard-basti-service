@@ -405,7 +405,31 @@
     "updateAddOn": "Update Add-on",
     "edit": "Edit",
     "delete": "Delete",
-    "uploadingImage": "Uploading image..."
+    "uploadingImage": "Uploading image...",
+    "options": "Add-on Options",
+    "optionsDescription": "Add customization options for this add-on (colors, sizes, etc.)",
+    "newOption": "New Option",
+    "editOption": "Edit Option",
+    "selectType": "Select type",
+    "optionLabelPlaceholder": "Label (e.g., 'Red', 'Small')",
+    "optionValuePlaceholder": "Value (e.g., '#FF0000', 'S')",
+    "optionImage": "Option Image (optional)",
+    "addOption": "Add Option",
+    "updateOption": "Update Option",
+    "cancel": "Cancel",
+    "optionTypes": {
+      "color": "Color",
+      "number": "Number",
+      "letter": "Letter",
+      "text": "Text"
+    },
+    "categories": {
+      "balloons": "Balloons",
+      "cards": "Cards",
+      "candles": "Candles",
+      "decorations": "Decorations",
+      "other": "Other"
+    }
   },
   "buttons": {
     "add": "Add",
@@ -1080,10 +1104,10 @@
       "modeUser": "One user",
       "modeAdmin": "One admin",
       "modeBroadcast": "All users",
-      "recipientId": "Recipient ID (UUID)",
-      "recipientIdUser": "User ID",
-      "recipientIdAdmin": "Admin ID",
-      "recipientIdPlaceholder": "Paste the UUID",
+      "recipientEmail": "Recipient email",
+      "recipientEmailUser": "User email",
+      "recipientEmailAdmin": "Admin email",
+      "recipientEmailPlaceholder": "Enter the email address",
       "regionId": "Region",
       "regionIdPlaceholder": "Optional region UUID — included in payload",
       "regionPlaceholder": "Select a region",
