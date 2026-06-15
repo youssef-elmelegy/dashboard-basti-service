@@ -16,6 +16,16 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export type NotificationRecipientType = "user" | "admin";
 
+export const BROADCAST_AUDIENCES = [
+  "all",
+  "users",
+  "admins",
+  "bakery_owners",
+  "drivers",
+] as const;
+
+export type BroadcastAudience = (typeof BROADCAST_AUDIENCES)[number];
+
 export interface SendNotificationPayload {
   title: string;
   body: string;
@@ -56,12 +66,15 @@ export interface ListNotificationsParams {
   limit?: number;
   isRead?: boolean;
   type?: NotificationType;
+  /** When true, request only notifications that need admin action. */
+  actionRequired?: boolean;
 }
 
 export interface BroadcastNotificationPayload {
   title: string;
   body: string;
   type: NotificationType;
+  audience?: BroadcastAudience;
   redirectId?: string;
   data?: Record<string, string>;
 }
@@ -78,6 +91,7 @@ function buildQuery(params: ListNotificationsParams): string {
   if (params.limit !== undefined) search.set("limit", String(params.limit));
   if (params.isRead !== undefined) search.set("isRead", String(params.isRead));
   if (params.type !== undefined) search.set("type", params.type);
+  if (params.actionRequired) search.set("actionRequired", "true");
   const qs = search.toString();
   return qs ? `?${qs}` : "";
 }

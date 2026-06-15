@@ -12,6 +12,7 @@ export const UPLOAD_FOLDERS = {
   sliders: "basti/sliders",
   chefs: "basti/chefs",
   admins: "basti/admins",
+  drivers: "basti/drivers",
   featuredCakes: "basti/featured-cakes",
   cakes: "basti/cakes",
   shapes: "basti/shapes",

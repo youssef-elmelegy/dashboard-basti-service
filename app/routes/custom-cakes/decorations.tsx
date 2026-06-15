@@ -203,7 +203,14 @@ export default function DecorationsPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{error}</p>
-          <Button onClick={() => fetchDecorations()} className="mt-4">
+          {/* Force a refresh: bypasses the cache guard so the retry actually
+              clears the error and re-fetches, instead of returning early. */}
+          <Button
+            onClick={() =>
+              fetchDecorations(undefined, undefined, undefined, true)
+            }
+            className="mt-4"
+          >
             {t("common.tryAgain")}
           </Button>
         </div>

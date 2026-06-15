@@ -2,8 +2,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import type { OrderItem } from "@/data/orders";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/stores/orderStore";
+import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { env } from "@/config/env";
 import { httpRequest } from "@/lib/http-handler";
 import { LocationMap } from "@/components/location-map";
@@ -34,6 +35,7 @@ import {
   Copy,
   Download,
   MessageSquare,
+  ArrowRightLeft,
 } from "lucide-react";
 
 type OrderStatus = keyof typeof statusColors;
@@ -95,6 +97,7 @@ interface OrderData {
     | { to: string; from: string; message: string; link?: string }
     | string;
   assignedBakeryName?: string;
+  bakeryId?: string;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -354,9 +357,12 @@ export default function OrderDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
+  // `forceRefresh` skips the cache — used after an assign/unassign so the page
+  // reflects the new status and bakery rather than the stale cached order.
+  const loadOrder = useCallback(
+    async (forceRefresh = false) => {
       if (!id) {
         setError("Order ID not provided");
         setIsLoading(false);
@@ -367,11 +373,13 @@ export default function OrderDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const cachedOrder = getDetailedOrder(id);
-        if (cachedOrder) {
-          setFetchedOrder(cachedOrder);
-          setIsLoading(false);
-          return;
+        if (!forceRefresh) {
+          const cachedOrder = getDetailedOrder(id);
+          if (cachedOrder) {
+            setFetchedOrder(cachedOrder);
+            setIsLoading(false);
+            return;
+          }
         }
 
         const response = await httpRequest(`${env.API_BASE_URL}/orders/${id}`, {
@@ -405,10 +413,13 @@ export default function OrderDetailPage() {
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [id, getDetailedOrder, cacheDetailedOrder],
+  );
 
-    fetchOrder();
-  }, [id, getDetailedOrder, cacheDetailedOrder]);
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
 
   const order = (fetchedOrder || orders.find((o) => o.id === id)) as OrderData;
 
@@ -450,6 +461,14 @@ export default function OrderDetailPage() {
       </div>
     );
   }
+
+  // The order can be moved (returned to admin or reassigned) only while a bakery
+  // holds it and it hasn't progressed past preparing.
+  const canReassign =
+    !!order.bakeryId &&
+    ["pending", "confirmed", "preparing"].includes(
+      order.orderStatus as string,
+    );
 
   return (
     <div className="flex flex-col gap-6 pb-8">
@@ -530,14 +549,26 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={() => navigate("/orders")}
-          className="gap-2"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          {t("orderDetail.back")}
-        </Button>
+        <div className="flex items-center gap-2">
+          {canReassign && (
+            <Button
+              variant="outline"
+              onClick={() => setReassignOpen(true)}
+              className="gap-2 border-2 border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              {t("reassignOrder.button")}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => navigate("/orders")}
+            className="gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            {t("orderDetail.back")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -1691,6 +1722,16 @@ export default function OrderDetailPage() {
           </Card>
         )}
       </div>
+
+      {canReassign && (
+        <ReassignOrderDialog
+          orderId={order.id}
+          referenceNumber={order.referenceNumber}
+          open={reassignOpen}
+          onOpenChange={setReassignOpen}
+          onActionDone={() => loadOrder(true)}
+        />
+      )}
     </div>
   );
 }

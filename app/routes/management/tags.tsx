@@ -19,7 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useTagsStore } from "@/stores/tagsStore";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { TAG_TYPES, type TagType } from "@/lib/services/tags.service";
-import type { Tag } from "@/lib/services/tags.service";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableItem, useDragSensors } from "@/components/SortableItem";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   name: z.string().min(2).max(100),
@@ -48,8 +54,7 @@ export default function TagsManagementPage() {
   const clearError = useTagsStore((s) => s.clearError);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [draggedTag, setDraggedTag] = useState<Tag | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const sensors = useDragSensors();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues, unknown>,
@@ -166,47 +171,18 @@ export default function TagsManagementPage() {
     );
   };
 
-  const handleDragStart = (tag: Tag) => {
-    setDraggedTag(tag);
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const handleDragOver = (e: React.DragEvent<HTMLLIElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+    const targetIndex = displayedTags.findIndex((tg) => tg.id === over.id);
+    if (targetIndex === -1) return;
 
-  const handleDragEnd = () => {
-    setDraggedTag(null);
-    setDragOverId(null);
-  };
-
-  const handleDrop = async (targetTag: Tag) => {
-    if (!draggedTag || draggedTag.id === targetTag.id) {
-      setDraggedTag(null);
-      return;
-    }
-
-    // Find positions
-    const displayedTags = [...tags].sort((a, b) => a.displayOrder - b.displayOrder);
-    const draggedIndex = displayedTags.findIndex((t) => t.id === draggedTag.id);
-    const targetIndex = displayedTags.findIndex((t) => t.id === targetTag.id);
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedTag(null);
-      return;
-    }
-
-    // Calculate new order (1-indexed)
-    const newOrder = targetIndex + 1;
-
-    // Send request to update backend (fire-and-forget).
-    // The store performs an optimistic update immediately and will rollback on error.
-    changeTagOrder(draggedTag.id, newOrder).catch((error) => {
+    // Order is 1-indexed. Fire-and-forget: the store applies an optimistic
+    // update immediately and rolls back on error.
+    changeTagOrder(active.id as string, targetIndex + 1).catch((error) => {
       console.error("Failed to change tag order:", error);
     });
-
-    // Clear drag state immediately so UI is responsive
-    setDraggedTag(null);
   };
 
   // Compute displayed tags sorted by order
@@ -376,65 +352,72 @@ export default function TagsManagementPage() {
                     {t("tags.noTags")}
                   </div>
                 ) : (
-                  <ul className="space-y-2">
-                    {displayedTags.map((tag) => (
-                      <li
-                        key={tag.id}
-                        draggable
-                        onDragStart={() => handleDragStart(tag)}
-                        onDragOver={handleDragOver}
-                        onDragEnd={handleDragEnd}
-                        onDragEnter={() => setDragOverId(tag.id)}
-                        onDragLeave={() => setDragOverId(null)}
-                        onDrop={() => handleDrop(tag)}
-                        className={`
-                          cursor-grab active:cursor-grabbing transition-all flex items-center justify-between p-3 rounded bg-slate-100 dark:bg-slate-800
-                          ${draggedTag?.id === tag.id 
-                            ? "opacity-50 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-500" 
-                            : ""}
-                          ${dragOverId === tag.id && draggedTag?.id !== tag.id
-                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500"
-                            : ""}
-                          ${draggedTag?.id !== tag.id && dragOverId !== tag.id
-                            ? "hover:bg-slate-200 dark:hover:bg-slate-700"
-                            : ""}
-                        `}
-                      >
-                        <div>
-                          <div className="font-medium">{tag.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {t("tags.order")}: {tag.displayOrder}
-                          </div>
-                          {Array.isArray(tag.types) &&
-                            tag.types.length > 0 && (
-                              <div className="flex gap-1 flex-wrap mt-2">
-                                {tag.types.map((type) => (
-                                  <Badge key={type} variant="secondary">
-                                    {t(`tags.typeLabels.${type}`)}
-                                  </Badge>
-                                ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={displayedTags.map((tg) => tg.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ul className="space-y-2">
+                        {displayedTags.map((tag) => (
+                          <SortableItem
+                            key={tag.id}
+                            id={tag.id}
+                            as="li"
+                            className={({ isDragging, isOver }) =>
+                              cn(
+                                "transition-all flex items-center justify-between p-3 rounded bg-slate-100 dark:bg-slate-800",
+                                isDragging &&
+                                  "opacity-50 bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 dark:border-yellow-500",
+                                isOver &&
+                                  !isDragging &&
+                                  "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500",
+                                !isDragging &&
+                                  !isOver &&
+                                  "hover:bg-slate-200 dark:hover:bg-slate-700",
+                              )
+                            }
+                          >
+                            <div>
+                              <div className="font-medium">{tag.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {t("tags.order")}: {tag.displayOrder}
                               </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(tag.id)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(tag)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                              {Array.isArray(tag.types) &&
+                                tag.types.length > 0 && (
+                                  <div className="flex gap-1 flex-wrap mt-2">
+                                    {tag.types.map((type) => (
+                                      <Badge key={type} variant="secondary">
+                                        {t(`tags.typeLabels.${type}`)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(tag.id)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(tag)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </SortableItem>
+                        ))}
+                      </ul>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             </div>

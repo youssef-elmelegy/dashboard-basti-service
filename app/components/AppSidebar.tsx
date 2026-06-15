@@ -6,6 +6,7 @@ import {
   Users,
   Package,
   PackageCheck,
+  Truck,
   Boxes,
   Star,
   Cake,
@@ -171,6 +172,11 @@ const AppSidebar = () => {
       url: "/completed-orders",
       icon: PackageCheck,
     },
+    {
+      title: t("sidebar.dispatch"),
+      url: "/dispatch",
+      icon: Truck,
+    },
   ];
 
   const managerOrderItems = admin?.bakeryId
@@ -194,6 +200,11 @@ const AppSidebar = () => {
           title: t("sidebar.reviews") || "Reviews",
           url: "/bakery-reviews",
           icon: Star,
+        },
+        {
+          title: t("sidebar.finance"),
+          url: "/finance/bakery",
+          icon: ReceiptText,
         },
       ]
     : [];

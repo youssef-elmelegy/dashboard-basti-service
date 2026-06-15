@@ -334,9 +334,13 @@ export function DecorationForm({
             <FormItem>
               <FormLabel>{t("customCakes.minPrepHours")}</FormLabel>
               <Select
-                value={field.value ? field.value.toString() : ""}
+                value={
+                  field.value !== undefined && field.value !== null
+                    ? field.value.toString()
+                    : ""
+                }
                 onValueChange={(value) =>
-                  field.onChange(value ? parseFloat(value) : undefined)
+                  field.onChange(value !== "" ? parseFloat(value) : undefined)
                 }
               >
                 <FormControl>
@@ -347,6 +351,7 @@ export function DecorationForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="0">0 hours</SelectItem>
                   <SelectItem value="24">24 hours</SelectItem>
                   <SelectItem value="48">48 hours</SelectItem>
                   <SelectItem value="72">72 hours</SelectItem>

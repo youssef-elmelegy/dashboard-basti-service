@@ -29,6 +29,13 @@ interface AssignedOrdersState {
 
   setFilters: (next: Partial<AssignedFiltersState>) => void;
   reload: () => Promise<void>;
+  /** Add an order to a bakery's column in memory (no refetch). */
+  addOrder: (bakeryId: string, order: Order) => void;
+  /**
+   * Remove an order from whichever bakery column holds it (no refetch).
+   * Returns the removed order so the caller can move it elsewhere / revert.
+   */
+  removeOrder: (orderId: string) => Order | undefined;
   reset: () => void;
 }
 
@@ -92,6 +99,37 @@ export const useAssignedOrdersStore = create<AssignedOrdersState>(
         console.error("[AssignedOrdersStore] reload error:", message);
         set({ error: message, isLoading: false });
       }
+    },
+
+    addOrder: (bakeryId, order) => {
+      set((state) => {
+        const list = state.ordersByBakery[bakeryId] || [];
+        if (list.some((o) => o.id === order.id)) return state;
+        return {
+          ordersByBakery: {
+            ...state.ordersByBakery,
+            [bakeryId]: [...list, { ...order, assignedBakeryId: bakeryId }],
+          },
+        };
+      });
+    },
+
+    removeOrder: (orderId) => {
+      let removed: Order | undefined;
+      set((state) => {
+        const next: Record<string, Order[]> = {};
+        for (const [bakeryId, list] of Object.entries(state.ordersByBakery)) {
+          const idx = list.findIndex((o) => o.id === orderId);
+          if (idx >= 0) {
+            removed = list[idx];
+            next[bakeryId] = [...list.slice(0, idx), ...list.slice(idx + 1)];
+          } else {
+            next[bakeryId] = list;
+          }
+        }
+        return removed ? { ordersByBakery: next } : state;
+      });
+      return removed;
     },
 
     reset: () => {

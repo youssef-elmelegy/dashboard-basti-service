@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Sidebar,
@@ -217,7 +217,7 @@ export function OrdersSidebarRight({
   };
 
   // Infinite scroll — load the next page when we approach the bottom.
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const handleScroll = React.useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -227,6 +227,19 @@ export function OrdersSidebarRight({
       void fetchMore();
     }
   }, [fetchMore]);
+
+  // Droppable target so an assigned order can be dragged back here to return
+  // it to the unassigned pool. Shares one element with the scroll container.
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: "unassigned-sidebar",
+  });
+  const setListRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollRef.current = node;
+      setDropRef(node);
+    },
+    [setDropRef],
+  );
 
   return (
     <Sidebar
@@ -365,9 +378,11 @@ export function OrdersSidebarRight({
           </Select>
         </div>
         <div
-          ref={scrollRef}
+          ref={setListRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto custom-scrollbar mb-2"
+          className={`flex-1 overflow-y-auto custom-scrollbar mb-2 rounded-md transition-shadow ${
+            isOver ? "ring-2 ring-primary ring-inset" : ""
+          }`}
         >
           {isLoading ? (
             <div className="flex items-center justify-center flex-1 py-8">

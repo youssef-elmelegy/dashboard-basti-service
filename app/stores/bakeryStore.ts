@@ -222,8 +222,10 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         throw new Error(response.message || "Failed to delete bakery");
       }
     } catch (error) {
+      // apiClient throws a plain ApiError object (not an Error), so read its
+      // `message` directly to surface backend validations (e.g. active orders).
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete bakery";
+        (error as { message?: string })?.message || "Failed to delete bakery";
       set({ error: errorMessage, isLoading: false });
       throw error;
     }

@@ -10,7 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBakeryStore } from "@/stores/bakeryStore";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Select,
   SelectContent,
@@ -30,10 +30,8 @@ import {
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
   orderApi,
@@ -56,26 +54,33 @@ const fmt = (n: number) =>
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-// Column color tokens — `print:` variants render stronger in PDF
-const COL_GREEN =
-  "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 print:!bg-emerald-200 print:!text-emerald-900";
-const COL_BASTI = COL_GREEN;
-const COL_ADDON = COL_GREEN;
-const COL_BAKERY =
-  "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 print:!bg-amber-200 print:!text-amber-900";
-const COL_DELIVERY =
-  "bg-violet-50 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 print:!bg-violet-200 print:!text-violet-900";
+// Status badge tint — `print:` variants render stronger in PDF
+const STATUS_TINT: Record<string, string> = {
+  ready:
+    "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 print:!bg-amber-200 print:!text-amber-900",
+  out_for_delivery:
+    "bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 print:!bg-blue-200 print:!text-blue-900",
+  delivered:
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 print:!bg-emerald-200 print:!text-emerald-900",
+};
 
-const HDR_GREEN =
-  "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 print:!bg-emerald-300 print:!text-emerald-950";
-const HDR_BASTI = HDR_GREEN;
-const HDR_ADDON = HDR_GREEN;
-const HDR_BAKERY =
-  "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 print:!bg-amber-300 print:!text-amber-950";
-const HDR_DELIVERY =
-  "bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 print:!bg-violet-300 print:!text-violet-950";
+function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const tint = STATUS_TINT[status] ?? "bg-muted text-muted-foreground";
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${tint}`}>
+      {t(`orderStatus.${status}`)}
+    </span>
+  );
+}
 
-function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
+function BakeryTableBody({
+  rows,
+  formatDate,
+}: {
+  rows: OrderFinancialsRow[];
+  formatDate: (iso: string) => string;
+}) {
   return (
     <>
       {rows.map((order) => (
@@ -83,28 +88,24 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
           <TableCell className="font-mono font-medium">
             #{order.referenceNumber || order.orderId.slice(0, 8)}
           </TableCell>
-          <TableCell>{order.bakeryName}</TableCell>
-          <TableCell className="text-right tabular-nums">{fmt(order.totalPrice)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
+          <TableCell className="whitespace-nowrap">{formatDate(order.createdAt)}</TableCell>
+          <TableCell>
+            <StatusBadge status={order.orderStatus} />
+          </TableCell>
+          <TableCell className="text-right tabular-nums">{fmt(order.finalPrice)}</TableCell>
         </TableRow>
       ))}
     </>
   );
 }
 
-export default function FinanceOrdersPage() {
+export default function BakeryFinancePage() {
   const { t, i18n } = useTranslation();
+  const { admin } = useAuth();
   const isRTL = i18n.language === "ar";
-
-  const bakeries = useBakeryStore((state) => state.bakeries);
-  const fetchBakeries = useBakeryStore((state) => state.fetchBakeries);
+  const bakeryId = admin?.bakeryId;
 
   const defaultRange = getDefaultRange();
-  const [selectedBakery, setSelectedBakery] = useState("all");
   const [startDate, setStartDate] = useState(defaultRange.start);
   const [endDate, setEndDate] = useState(defaultRange.end);
   const [page, setPage] = useState(1);
@@ -118,9 +119,8 @@ export default function FinanceOrdersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBakeries();
-  }, [fetchBakeries]);
+  const formatDate = (iso: string) =>
+    iso ? new Date(iso).toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-GB") : "—";
 
   // Debounce date changes (typing or picker fiddling)
   useEffect(() => {
@@ -131,20 +131,20 @@ export default function FinanceOrdersPage() {
     return () => clearTimeout(handle);
   }, [startDate, endDate]);
 
-  // Reset to page 1 whenever filters change (use debounced dates so we don't reset mid-pick)
+  // Reset to page 1 whenever filters change
   useEffect(() => {
     setPage(1);
-  }, [selectedBakery, debouncedStart, debouncedEnd, pageSize]);
+  }, [debouncedStart, debouncedEnd, pageSize]);
 
   // Fetch financials whenever filters or pagination change
   useEffect(() => {
+    if (!bakeryId) return;
     let cancelled = false;
     const load = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await orderApi.getFinancials({
-          bakeryId: selectedBakery === "all" ? undefined : selectedBakery,
+        const response = await orderApi.getBakeryFinancials(bakeryId, {
           from: debouncedStart || undefined,
           to: debouncedEnd || undefined,
           page,
@@ -171,7 +171,7 @@ export default function FinanceOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedBakery, debouncedStart, debouncedEnd, page, pageSize, t]);
+  }, [bakeryId, debouncedStart, debouncedEnd, page, pageSize, t]);
 
   const rows = data?.rows ?? [];
   const totals = data?.total;
@@ -179,18 +179,11 @@ export default function FinanceOrdersPage() {
   const totalPages = Math.max(1, data?.pagination.totalPages ?? 1);
   const safePage = Math.min(page, totalPages);
 
-  const selectedBakeryName =
-    selectedBakery === "all"
-      ? null
-      : bakeries.find((b) => b.id === selectedBakery)?.name ?? null;
-
   const handleDownload = () => {
     // Browsers use document.title as the suggested PDF filename when printing.
-    // Sanitize anything that breaks filenames on common OSes.
     const sanitize = (s: string) =>
       s.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").replace(/\s+/g, " ").trim();
-    const bakeryPart = sanitize(selectedBakeryName ?? t("finance.allBakeries"));
-    const filename = `Basti Service - ${bakeryPart} - ${startDate}_${endDate}`;
+    const filename = `Basti Service - ${sanitize(t("finance.myBakeryTitle"))} - ${startDate}_${endDate}`;
 
     const originalTitle = document.title;
     const restore = () => {
@@ -209,24 +202,12 @@ export default function FinanceOrdersPage() {
           {t("finance.columns.orderId")}
         </TableHead>
         <TableHead className={isRTL ? "text-right" : "text-left"}>
-          {t("finance.columns.bakery")}
+          {t("finance.columns.date")}
         </TableHead>
-        <TableHead className="text-right">{t("finance.columns.total")}</TableHead>
-        <TableHead className={`text-right ${HDR_BASTI}`}>
-          {t("finance.columns.bastiAmount")}
+        <TableHead className={isRTL ? "text-right" : "text-left"}>
+          {t("finance.columns.status")}
         </TableHead>
-        <TableHead className={`text-right ${HDR_ADDON}`}>
-          {t("finance.columns.addonValue")}
-        </TableHead>
-        <TableHead className={`text-right ${HDR_BAKERY}`}>
-          {t("finance.columns.bakeryAmount")}
-        </TableHead>
-        <TableHead className={`text-right ${HDR_DELIVERY}`}>
-          {t("finance.columns.delivery")}
-        </TableHead>
-        <TableHead className={`text-right ${HDR_BASTI}`}>
-          {t("finance.columns.bastiDelivery")}
-        </TableHead>
+        <TableHead className="text-right">{t("finance.columns.amount")}</TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -234,24 +215,31 @@ export default function FinanceOrdersPage() {
   const sumFooter = totals && rows.length > 0 && (
     <TableFooter>
       <TableRow>
-        <TableCell colSpan={2} className="font-semibold">
+        <TableCell colSpan={3} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
-        <TableCell className="text-right font-semibold tabular-nums">{fmt(totals.totalPrice)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_ADDON}`}>{fmt(totals.addonsTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BAKERY}`}>{fmt(totals.bakeryTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_DELIVERY}`}>{fmt(totals.deliveryAmount)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiDeliveryAmount)}</TableCell>
+        <TableCell className="text-right font-semibold tabular-nums">
+          {fmt(totals.finalPrice)}
+        </TableCell>
       </TableRow>
     </TableFooter>
   );
+
+  // Manager has no bakery assigned — nothing to show.
+  if (!bakeryId) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+        <AlertCircle className="w-6 h-6" />
+        <p>{t("finance.noBakeryAssigned")}</p>
+      </div>
+    );
+  }
 
   return (
     <>
       <style>{`
         @media print {
-          @page { margin: 12mm; size: A4 landscape; }
+          @page { margin: 12mm; size: A4 portrait; }
           body > * { visibility: hidden; }
           .finance-print-area, .finance-print-area * { visibility: visible; }
           .finance-print-area {
@@ -266,7 +254,7 @@ export default function FinanceOrdersPage() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .finance-print-area table { border-collapse: collapse; width: 100%; font-size: 11px; }
+          .finance-print-area table { border-collapse: collapse; width: 100%; font-size: 12px; }
           .finance-print-area thead { display: table-header-group; }
           .finance-print-area tfoot { display: table-footer-group; }
           .finance-print-area tr { page-break-inside: avoid; }
@@ -281,19 +269,12 @@ export default function FinanceOrdersPage() {
       <div className="finance-print-area hidden print:block">
         <div className="flex items-end justify-between mb-3 pb-2 border-b-2 border-slate-900">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-              Basti Service
-            </h1>
-            <p className="text-sm text-slate-700">{t("finance.title")}</p>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight">Basti Service</h1>
+            <p className="text-sm text-slate-700">{t("finance.myBakeryTitle")}</p>
           </div>
           <div className="text-right text-xs text-slate-700 leading-relaxed">
-            <p className="font-semibold text-sm text-slate-900">
-              {selectedBakeryName ?? t("finance.allBakeries")}
-            </p>
             <p>{startDate} — {endDate}</p>
-            <p>
-              {t("finance.sum")}: {totalCount}
-            </p>
+            <p>{t("finance.sum")}: {totalCount}</p>
           </div>
         </div>
         <Table>
@@ -301,12 +282,12 @@ export default function FinanceOrdersPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-400">
+                <TableCell colSpan={4} className="text-center py-8 text-gray-400">
                   {t("finance.noOrders")}
                 </TableCell>
               </TableRow>
             ) : (
-              <OrderTableBody rows={rows} />
+              <BakeryTableBody rows={rows} formatDate={formatDate} />
             )}
           </TableBody>
           {sumFooter}
@@ -319,36 +300,16 @@ export default function FinanceOrdersPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/finance/orders">
-                  {t("finance.breadcrumbFinance")}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{t("finance.breadcrumbOrders")}</BreadcrumbPage>
+                <BreadcrumbPage>{t("finance.breadcrumbFinance")}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
 
-          <h1 className="text-3xl font-bold">{t("finance.title")}</h1>
+          <h1 className="text-3xl font-bold">{t("finance.myBakeryTitle")}</h1>
         </div>
 
         {/* Filters + Download */}
         <div className={`flex flex-wrap items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
-          <Select value={selectedBakery} onValueChange={setSelectedBakery}>
-            <SelectTrigger className="w-52">
-              <SelectValue placeholder={t("finance.allBakeries")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("finance.allBakeries")}</SelectItem>
-              {bakeries.map((bakery) => (
-                <SelectItem key={bakery.id} value={bakery.id}>
-                  {bakery.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <div className="flex items-center gap-2 border rounded-lg px-3 py-2 bg-background text-sm">
             <input
               type="date"
@@ -393,7 +354,7 @@ export default function FinanceOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
+                  <TableCell colSpan={4} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{t("common.loading")}</span>
@@ -402,12 +363,12 @@ export default function FinanceOrdersPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                     {t("finance.noOrders")}
                   </TableCell>
                 </TableRow>
               ) : (
-                <OrderTableBody rows={rows} />
+                <BakeryTableBody rows={rows} formatDate={formatDate} />
               )}
             </TableBody>
             {sumFooter}
@@ -424,10 +385,7 @@ export default function FinanceOrdersPage() {
             <div className={`flex items-center gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
               <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                 <span className="text-muted-foreground">{t("finance.rowsPerPage")}</span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(v) => setPageSize(Number(v))}
-                >
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                   <SelectTrigger className="h-8 w-16">
                     <SelectValue />
                   </SelectTrigger>

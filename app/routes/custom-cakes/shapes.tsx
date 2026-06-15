@@ -33,12 +33,14 @@ import type {
 import { Plus, Loader2 } from "lucide-react";
 import { ShapeForm } from "@/components/custom-cakes/ShapeForm";
 import { ShapeCard } from "@/components/custom-cakes/ShapeCard";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
+import { SortableItem, useDragSensors } from "@/components/SortableItem";
 
 export default function ShapesPage() {
   const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingShape, setEditingShape] = useState<Shape | null>(null);
-  const [draggedShape, setDraggedShape] = useState<Shape | null>(null);
 
   const shapes = useShapeStore((state) => state.shapes) || [];
   const isLoading = useShapeStore((state) => state.isLoading);
@@ -123,48 +125,20 @@ export default function ShapesPage() {
     }
   };
 
-  const handleDragStart = (shape: Shape) => {
-    setDraggedShape(shape);
-  };
+  const sensors = useDragSensors();
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const handleDragEnd = () => {
-    setDraggedShape(null);
-  };
+    const targetIndex = displayedShapes.findIndex((s) => s.id === over.id);
+    if (targetIndex === -1) return;
 
-  const handleDrop = async (targetShape: Shape) => {
-    if (!draggedShape || draggedShape.id === targetShape.id) {
-      setDraggedShape(null);
-      return;
-    }
-
-    // Find positions
-    const draggedIndex = displayedShapes.findIndex(
-      (s) => s.id === draggedShape.id,
-    );
-    const targetIndex = displayedShapes.findIndex(
-      (s) => s.id === targetShape.id,
-    );
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedShape(null);
-      return;
-    }
-
-    // Calculate new order (1-indexed)
-    const newOrder = targetIndex + 1;
-
-    // Fire-and-forget API call. Store handles optimistic update and rollback.
-    changeShapeOrder(draggedShape.id, newOrder).catch((error) => {
+    // Order is 1-indexed. Fire-and-forget: the store applies an optimistic
+    // update immediately and rolls back on error.
+    changeShapeOrder(active.id as string, targetIndex + 1).catch((error) => {
       console.error("Failed to change shape order:", error);
     });
-
-    // Clear drag state immediately for responsive UI
-    setDraggedShape(null);
   };
 
   if (error) {
@@ -175,7 +149,12 @@ export default function ShapesPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{error}</p>
-          <Button onClick={() => fetchShapes()} className="mt-4">
+          {/* Force a refresh: bypasses the cache guard so the retry actually
+              clears the error and re-fetches, instead of returning early. */}
+          <Button
+            onClick={() => fetchShapes(undefined, undefined, undefined, true)}
+            className="mt-4"
+          >
             {t("common.tryAgain")}
           </Button>
         </div>
@@ -214,35 +193,42 @@ export default function ShapesPage() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {displayedShapes.map((shape) => (
-            <div
-              key={shape.id}
-              draggable
-              onDragStart={() => handleDragStart(shape)}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-              onDrop={() => handleDrop(shape)}
-              className={`relative transition-opacity ${
-                draggedShape?.id === shape.id ? "opacity-50" : ""
-              }`}
-            >
-              <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
-                {shape.order}
-              </div>
-              <ShapeCard
-                shape={shape}
-                onEdit={() => setEditingShape(shape)}
-                onDelete={() => handleDeleteShape(shape)}
-                onToggleFeatured={(id) =>
-                  toggleShapeFeatured(id).catch((err) =>
-                    console.error("Failed to toggle best seller:", err),
-                  )
-                }
-              />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={displayedShapes.map((s) => s.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayedShapes.map((shape) => (
+                <SortableItem
+                  key={shape.id}
+                  id={shape.id}
+                  className={({ isDragging }) =>
+                    `relative transition-opacity ${isDragging ? "opacity-50" : ""}`
+                  }
+                >
+                  <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
+                    {shape.order}
+                  </div>
+                  <ShapeCard
+                    shape={shape}
+                    onEdit={() => setEditingShape(shape)}
+                    onDelete={() => handleDeleteShape(shape)}
+                    onToggleFeatured={(id) =>
+                      toggleShapeFeatured(id).catch((err) =>
+                        console.error("Failed to toggle best seller:", err),
+                      )
+                    }
+                  />
+                </SortableItem>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>

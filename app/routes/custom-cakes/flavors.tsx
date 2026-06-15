@@ -33,12 +33,14 @@ import type {
 import { Plus, Loader2 } from "lucide-react";
 import { FlavorForm } from "@/components/custom-cakes/FlavorForm";
 import { FlavorCard } from "@/components/custom-cakes/FlavorCard";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
+import { SortableItem, useDragSensors } from "@/components/SortableItem";
 
 export default function FlavorsPage() {
   const { t } = useTranslation();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingFlavor, setEditingFlavor] = useState<Flavor | null>(null);
-  const [draggedFlavor, setDraggedFlavor] = useState<Flavor | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false);
 
@@ -163,48 +165,20 @@ export default function FlavorsPage() {
     }
   };
 
-  const handleDragStart = (flavor: Flavor) => {
-    setDraggedFlavor(flavor);
-  };
+  const sensors = useDragSensors();
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const handleDragEnd = () => {
-    setDraggedFlavor(null);
-  };
+    const targetIndex = displayedFlavors.findIndex((f) => f.id === over.id);
+    if (targetIndex === -1) return;
 
-  const handleDrop = async (targetFlavor: Flavor) => {
-    if (!draggedFlavor || draggedFlavor.id === targetFlavor.id) {
-      setDraggedFlavor(null);
-      return;
-    }
-
-    // Find positions
-    const draggedIndex = displayedFlavors.findIndex(
-      (f) => f.id === draggedFlavor.id,
-    );
-    const targetIndex = displayedFlavors.findIndex(
-      (f) => f.id === targetFlavor.id,
-    );
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      setDraggedFlavor(null);
-      return;
-    }
-
-    // Calculate new order (1-indexed)
-    const newOrder = targetIndex + 1;
-
-    // Fire-and-forget API call. Store handles optimistic update and rollback.
-    changeFlavorOrder(draggedFlavor.id, newOrder).catch((error) => {
+    // Order is 1-indexed. Fire-and-forget: the store applies an optimistic
+    // update immediately and rolls back on error.
+    changeFlavorOrder(active.id as string, targetIndex + 1).catch((error) => {
       console.error("Failed to change flavor order:", error);
     });
-
-    // Clear drag state immediately for responsive UI
-    setDraggedFlavor(null);
   };
 
   if (error) {
@@ -215,7 +189,12 @@ export default function FlavorsPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{t(error)}</p>
-          <Button onClick={() => fetchFlavors()} className="mt-4">
+          {/* Force a refresh: bypasses the cache guard so the retry actually
+              clears the error and re-fetches, instead of returning early. */}
+          <Button
+            onClick={() => fetchFlavors(undefined, undefined, undefined, true)}
+            className="mt-4"
+          >
             {t("common.tryAgain")}
           </Button>
         </div>
@@ -255,35 +234,42 @@ export default function FlavorsPage() {
         </Empty>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {displayedFlavors.map((flavor) => (
-              <div
-                key={flavor.id}
-                draggable
-                onDragStart={() => handleDragStart(flavor)}
-                onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
-                onDrop={() => handleDrop(flavor)}
-                className={`relative transition-opacity ${
-                  draggedFlavor?.id === flavor.id ? "opacity-50" : ""
-                }`}
-              >
-                <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
-                  {flavor.order}
-                </div>
-                <FlavorCard
-                  flavor={flavor}
-                  onEdit={() => setEditingFlavor(flavor)}
-                  onDelete={() => handleDeleteFlavor(flavor)}
-                  onToggleFeatured={(id) =>
-                    toggleFlavorFeatured(id).catch((err) =>
-                      console.error("Failed to toggle best seller:", err),
-                    )
-                  }
-                />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={displayedFlavors.map((f) => f.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayedFlavors.map((flavor) => (
+                  <SortableItem
+                    key={flavor.id}
+                    id={flavor.id}
+                    className={({ isDragging }) =>
+                      `relative transition-opacity ${isDragging ? "opacity-50" : ""}`
+                    }
+                  >
+                    <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
+                      {flavor.order}
+                    </div>
+                    <FlavorCard
+                      flavor={flavor}
+                      onEdit={() => setEditingFlavor(flavor)}
+                      onDelete={() => handleDeleteFlavor(flavor)}
+                      onToggleFeatured={(id) =>
+                        toggleFlavorFeatured(id).catch((err) =>
+                          console.error("Failed to toggle best seller:", err),
+                        )
+                      }
+                    />
+                  </SortableItem>
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Infinite scroll trigger element */}
           <div ref={observerTarget} className="flex justify-center py-8">

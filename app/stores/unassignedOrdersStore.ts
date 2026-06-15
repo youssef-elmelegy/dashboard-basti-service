@@ -57,6 +57,13 @@ interface UnassignedOrdersState {
   fetchMore: () => Promise<void>;
   /** Clear the cache (and current view). */
   invalidate: () => void;
+  /** Insert an order at the top of the pool in memory (no refetch). */
+  addOrder: (order: Order) => void;
+  /**
+   * Remove an order from the pool in memory (no refetch). Returns the removed
+   * order so the caller can move it elsewhere / revert.
+   */
+  removeOrder: (orderId: string) => Order | undefined;
   reset: () => void;
 }
 
@@ -222,6 +229,38 @@ export const useUnassignedOrdersStore = create<UnassignedOrdersState>(
 
     invalidate: () => {
       set({ cache: {} });
+    },
+
+    addOrder: (order) => {
+      set((state) => {
+        if (state.orders.some((o) => o.id === order.id)) return state;
+        const pooled = { ...order, assignedBakeryId: undefined };
+        return {
+          orders: [pooled, ...state.orders],
+          pagination: state.pagination
+            ? { ...state.pagination, total: state.pagination.total + 1 }
+            : state.pagination,
+          // Drop cached pages — the live `orders` list is now the source of
+          // truth; other filter combos refetch lazily on the next switch.
+          cache: {},
+        };
+      });
+    },
+
+    removeOrder: (orderId) => {
+      let removed: Order | undefined;
+      set((state) => {
+        removed = state.orders.find((o) => o.id === orderId);
+        if (!removed) return state;
+        return {
+          orders: state.orders.filter((o) => o.id !== orderId),
+          pagination: state.pagination
+            ? { ...state.pagination, total: Math.max(0, state.pagination.total - 1) }
+            : state.pagination,
+          cache: {},
+        };
+      });
+      return removed;
     },
 
     reset: () => {

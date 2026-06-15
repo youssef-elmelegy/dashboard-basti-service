@@ -7,7 +7,7 @@ import { useDeleteDialog } from "@/components/useDeleteDialog";
 import React from "react";
 import { RegionHeader } from "@/components/RegionHeader";
 import { ProductSelectionSheet } from "@/components/ProductSelectionSheet";
-import { Plus } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 
 import { ProductTypeSelectionSheet } from "./components/ProductTypeSelectionSheet";
 import { SelectedProductsTable } from "./components/SelectedProductsTable";
@@ -136,6 +136,24 @@ export default function RegionDetailPage() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <RegionHeader regionName={region.name} />
+
+      {/* Region Drivers entry */}
+      <div className="flex items-center justify-between rounded-lg border p-4">
+        <div>
+          <h2 className="text-lg font-semibold">{t("drivers.title")}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("drivers.regionDriversHint")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => navigate(`/management/regions/${id}/drivers`)}
+        >
+          <Truck className="w-4 h-4" />
+          {t("drivers.manageDrivers")}
+        </Button>
+      </div>
 
       {/* Add Products Button Section */}
       <div className="flex items-center justify-between">

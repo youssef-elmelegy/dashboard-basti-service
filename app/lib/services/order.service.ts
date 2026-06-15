@@ -110,6 +110,7 @@ export interface OrderFinancialsRow {
   bastiPercentage: number;
   bastiAmount: number;
   deliveryAmount: number;
+  bastiDeliveryAmount: number;
   totalPrice: number;
   discountAmount: number;
   finalPrice: number;
@@ -117,7 +118,9 @@ export interface OrderFinancialsRow {
   bakeryName: string;
   orderId: string;
   referenceNumber: string;
+  orderStatus: string;
   deliveredAt: string;
+  createdAt: string;
 }
 
 export interface OrderFinancialsTotal {
@@ -125,6 +128,7 @@ export interface OrderFinancialsTotal {
   bastiTotal: number;
   bakeryTotal: number;
   deliveryAmount: number;
+  bastiDeliveryAmount: number;
   totalPrice: number;
   discountAmount: number;
   finalPrice: number;
@@ -209,6 +213,89 @@ export interface BakeryOrdersFilters {
   q?: string;
   status?: string[];
   sort?: "asc" | "desc";
+}
+
+/**
+ * Driver snapshot stored on the order once a driver accepts (name shows in the
+ * board's driver chip). Null until acceptance.
+ */
+export interface DispatchDriverData {
+  name: string;
+  profileImage: string;
+  phoneNumber: string;
+}
+
+export type DispatchDriverState = "unassigned" | "assigned" | "accepted";
+
+/**
+ * An order as shown on the driver-dispatch board. Carries the driver
+ * assignment state so the board can render the assignment chip.
+ * `assignedDriverName` is a client-only hint set right after assigning, so the
+ * chip can show the chosen driver's name before they accept (the server clears
+ * driverData on assign and only repopulates it on acceptance).
+ */
+export interface DispatchOrder {
+  id: string;
+  referenceNumber: string;
+  bakeryId: string | null;
+  regionId: string;
+  regionName: string;
+  orderStatus:
+    | "pending"
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "out_for_delivery"
+    | "delivered"
+    | "cancelled";
+  driverId: string | null;
+  driverData: DispatchDriverData | null;
+  driverAssignedAt: string | null;
+  wantedDeliveryDate: string | null;
+  willDeliverAt: string | null;
+  createdAt: string;
+  assignedDriverName?: string | null;
+}
+
+export interface DispatchOrdersPage {
+  items: DispatchOrder[];
+  pagination: OrdersPagination;
+}
+
+export interface DispatchOrdersFilters {
+  page?: number;
+  limit?: number;
+  regionId?: string;
+  bakeryId?: string;
+  q?: string;
+  driverState?: DispatchDriverState;
+  sort?: "asc" | "desc";
+}
+
+/**
+ * A bakery the admin can move an order to: same region as the order, handles the
+ * order's type, with its current capacity usage. Returned by
+ * `GET /orders/:id/available-bakeries`. `isCurrent` flags the order's current bakery.
+ */
+export interface AvailableBakery {
+  id: string;
+  name: string;
+  types: string[];
+  capacity: number;
+  usedCapacity: number;
+  availableCapacity: number;
+  isCurrent: boolean;
+}
+
+/**
+ * One order item the target bakery can't fully reserve, returned in the
+ * `BAKERY_STOCK_ISSUE` error payload when a non-forced reassign is blocked.
+ */
+export interface BakeryStockIssue {
+  name: string;
+  reason: "not_stocked" | "insufficient";
+  requested: number;
+  available: number;
 }
 
 export const orderApi = {
@@ -298,6 +385,43 @@ export const orderApi = {
   },
 
   /**
+   * Paginated feed for the driver-dispatch board: bakery-assigned orders that
+   * aren't delivered/cancelled yet. Filters: regionId, bakeryId, q, driverState
+   * (unassigned | assigned | accepted), sort, page, limit.
+   */
+  getDispatch: (
+    filters: DispatchOrdersFilters,
+  ): Promise<ApiResponse<DispatchOrdersPage>> => {
+    const params = new URLSearchParams();
+    if (filters.page != null) params.append("page", String(filters.page));
+    if (filters.limit != null) params.append("limit", String(filters.limit));
+    if (filters.regionId) params.append("regionId", filters.regionId);
+    if (filters.bakeryId) params.append("bakeryId", filters.bakeryId);
+    if (filters.q && filters.q.trim()) params.append("q", filters.q.trim());
+    if (filters.driverState) params.append("driverState", filters.driverState);
+    if (filters.sort) params.append("sort", filters.sort);
+    const queryString = params.toString();
+    const url = `/orders/dispatch${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<DispatchOrdersPage>(url);
+  },
+
+  /**
+   * Assign a delivery driver to an order, or unassign by passing driverId null.
+   */
+  assignDriver: (
+    orderId: string,
+    driverId: string | null,
+  ): Promise<
+    ApiResponse<{
+      id: string;
+      driverId: string | null;
+      driverAssignedAt: string | null;
+    }>
+  > => {
+    return apiClient.patch(`/orders/${orderId}/assign-driver`, { driverId });
+  },
+
+  /**
    * Get single order by ID
    */
   getOne: (
@@ -366,6 +490,37 @@ export const orderApi = {
   },
 
   /**
+   * Assign (or reassign) an order to a bakery. Reassigning resets the order to
+   * pending so the new bakery confirms it fresh.
+   *
+   * Without `force`, the backend blocks the move when the target bakery can't
+   * fully stock the order (it throws an ApiError with `error === "BAKERY_STOCK_ISSUE"`
+   * and `data.data.issues`). Retry with `force: true` to move it anyway.
+   */
+  assignToBakery: (
+    orderId: string,
+    bakeryId: string,
+    force = false,
+  ): Promise<ApiResponse<{ id: string; bakeryId: string }>> => {
+    return apiClient.patch(`/orders/${orderId}/assign-bakery`, {
+      bakeryId,
+      force,
+    });
+  },
+
+  /**
+   * Bakeries this order can be moved to: same region, same order type, with each
+   * bakery's current capacity usage. The current bakery is flagged `isCurrent`.
+   */
+  getAvailableBakeries: (
+    orderId: string,
+  ): Promise<ApiResponse<AvailableBakery[]>> => {
+    return apiClient.get<AvailableBakery[]>(
+      `/orders/${orderId}/available-bakeries`,
+    );
+  },
+
+  /**
    * Change order status
    */
   changeOrderStatus: (
@@ -396,7 +551,8 @@ export const orderApi = {
   },
 
   /**
-   * Get orders financials report
+   * Get orders financials report (admin view).
+   * Includes orders from "ready" through "delivered", filtered by creation date.
    */
   getFinancials: (
     filters?: OrderFinancialsFilters,
@@ -410,6 +566,25 @@ export const orderApi = {
 
     const queryString = params.toString();
     const url = `/orders/financials${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<OrderFinancialsResponse>(url);
+  },
+
+  /**
+   * Get financials for a single bakery (bakery manager view).
+   * Includes orders from "ready" through "delivered", filtered by creation date.
+   */
+  getBakeryFinancials: (
+    bakeryId: string,
+    filters?: Omit<OrderFinancialsFilters, "bakeryId">,
+  ): Promise<ApiResponse<OrderFinancialsResponse>> => {
+    const params = new URLSearchParams();
+    if (filters?.from) params.append("from", filters.from);
+    if (filters?.to) params.append("to", filters.to);
+    if (filters?.page) params.append("page", String(filters.page));
+    if (filters?.limit) params.append("limit", String(filters.limit));
+
+    const queryString = params.toString();
+    const url = `/orders/bakery/${bakeryId}/financials${queryString ? `?${queryString}` : ""}`;
     return apiClient.get<OrderFinancialsResponse>(url);
   },
 };

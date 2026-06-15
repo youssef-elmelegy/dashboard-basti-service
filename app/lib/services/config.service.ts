@@ -16,6 +16,7 @@ export interface ConfigResponseDto {
   closureMessage: string | null;
   bastiPercentage: number;
   deliveryAmount: number;
+  bastiDeliveryAmount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +36,7 @@ export interface UpdateConfigRequest {
   closureMessage?: string | null;
   bastiPercentage?: number;
   deliveryAmount?: number;
+  bastiDeliveryAmount?: number;
 }
 
 export const configApi = {

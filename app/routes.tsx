@@ -3,6 +3,7 @@ import Root from "@/root";
 import ManagerDashboard from "@/routes/manager-dashboard";
 import Orders from "@/routes/orders";
 import CompletedOrders from "@/routes/completed-orders";
+import DispatchPage from "@/routes/dispatch";
 import BakeryOrders from "@/routes/bakery-orders";
 import BakeryCompletedOrders from "@/routes/bakery-completed-orders";
 import BakeryOrderDetail from "@/routes/bakery-order-detail";
@@ -15,6 +16,8 @@ import Support from "@/routes/support";
 import PaymentsPage from "@/routes/payments";
 import RegionsPage from "@/routes/management/regions";
 import RegionDetailPage from "@/routes/management/region-detail";
+import RegionDriversPage from "@/routes/management/region-drivers";
+import DriverDetailPage from "@/routes/management/driver-detail";
 import BakeriesPage from "@/routes/management/bakeries";
 import BakeryDetailPage from "@/routes/management/bakery-detail";
 import ChefsPage from "@/routes/management/chefs";
@@ -32,6 +35,7 @@ import PredesignedCakesPage from "@/routes/custom-cakes/predesigned-cakes";
 import CouponsPage from "@/routes/advertisement/coupons";
 import OffersPage from "@/routes/advertisement/offers";
 import FinanceOrdersPage from "@/routes/finance/orders";
+import BakeryFinancePage from "@/routes/finance/bakery";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
 import ForgotPasswordPage from "@/routes/auth/forgot-password";
@@ -101,6 +105,10 @@ export const router = createBrowserRouter([
         element: <CompletedOrders />,
       },
       {
+        path: "dispatch",
+        element: <DispatchPage />,
+      },
+      {
         path: "orders/:id",
         element: <OrderDetailPage />,
       },
@@ -159,6 +167,14 @@ export const router = createBrowserRouter([
       {
         path: "management/regions/:id",
         element: <RegionDetailPage />,
+      },
+      {
+        path: "management/regions/:id/drivers",
+        element: <RegionDriversPage />,
+      },
+      {
+        path: "management/regions/:id/drivers/:driverId",
+        element: <DriverDetailPage />,
       },
       {
         path: "management/bakeries",
@@ -227,6 +243,10 @@ export const router = createBrowserRouter([
       {
         path: "finance/orders",
         element: <FinanceOrdersPage />,
+      },
+      {
+        path: "finance/bakery",
+        element: <BakeryFinancePage />,
       },
     ],
   },

@@ -29,6 +29,7 @@ const formSchema = z.object({
   holidays: z.array(z.string()),
   bastiPercentage: z.number().int().min(0).max(100),
   deliveryAmount: z.number().int().min(0),
+  bastiDeliveryAmount: z.number().int().min(0),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -66,6 +67,7 @@ export default function AppConfigPage() {
       holidays: [],
       bastiPercentage: 20,
       deliveryAmount: 10,
+      bastiDeliveryAmount: 0,
     },
   });
 
@@ -87,6 +89,7 @@ export default function AppConfigPage() {
           holidays: config.holidays,
           bastiPercentage: config.bastiPercentage,
           deliveryAmount: config.deliveryAmount,
+          bastiDeliveryAmount: config.bastiDeliveryAmount,
         });
 
         // Convert holidays to dates for calendar
@@ -101,6 +104,14 @@ export default function AppConfigPage() {
   }, [config]);
 
   const onSubmit = async (values: FormValues) => {
+    // Basti's delivery slice can't exceed the total delivery fee (backend enforces this too).
+    if (values.bastiDeliveryAmount > values.deliveryAmount) {
+      form.setError("bastiDeliveryAmount", {
+        message: t("appConfig.bastiDeliveryExceeds"),
+      });
+      return;
+    }
+
     try {
       const updateData: UpdateConfigRequest = {
         openingHour: values.openingHour,
@@ -110,6 +121,7 @@ export default function AppConfigPage() {
         holidays: values.holidays,
         bastiPercentage: values.bastiPercentage,
         deliveryAmount: values.deliveryAmount,
+        bastiDeliveryAmount: values.bastiDeliveryAmount,
         // These fields are not managed by the form UI
         emergencyClosures: [],
         isOpen: true,
@@ -132,6 +144,7 @@ export default function AppConfigPage() {
         holidays: config.holidays,
         bastiPercentage: config.bastiPercentage,
         deliveryAmount: config.deliveryAmount,
+        bastiDeliveryAmount: config.bastiDeliveryAmount,
       });
       const holidaysAsDate = config.holidays.map((h) =>
         parse(h, "yyyy-MM-dd", new Date()),
@@ -307,6 +320,32 @@ export default function AppConfigPage() {
                       </FormControl>
                       <FormDescription>
                         {t("appConfig.deliveryAmountDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bastiDeliveryAmount"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>
+                        {t("appConfig.bastiDeliveryAmount")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.bastiDeliveryAmountDesc")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

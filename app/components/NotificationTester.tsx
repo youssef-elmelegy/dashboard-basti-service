@@ -25,7 +25,9 @@ import { cn } from "@/lib/utils";
 import {
   notificationApi,
   NOTIFICATION_TYPES,
+  BROADCAST_AUDIENCES,
   type NotificationType,
+  type BroadcastAudience,
 } from "@/lib/api/notification.api";
 import { useRegionStore } from "@/stores/regionStore";
 
@@ -50,6 +52,7 @@ export function NotificationTester() {
   const regions = useRegionStore((state) => state.regions);
   const fetchRegions = useRegionStore((state) => state.fetchRegions);
   const [mode, setMode] = useState<SendMode>("broadcast");
+  const [audience, setAudience] = useState<BroadcastAudience>("all");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [regionId, setRegionId] = useState<string>(REGION_NONE);
   const [type, setType] = useState<NotificationType>(DEFAULT_TYPE);
@@ -103,6 +106,7 @@ export function NotificationTester() {
           title: title.trim(),
           body: body.trim(),
           type,
+          audience,
           redirectId: redirectId.trim() || undefined,
           data: Object.keys(data).length > 0 ? data : undefined,
         });
@@ -198,7 +202,28 @@ export function NotificationTester() {
           </Select>
         </div>
 
-        {mode !== "broadcast" && (
+        {mode === "broadcast" ? (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nt-audience">
+              {t("notifications.tester.audience")}
+            </Label>
+            <Select
+              value={audience}
+              onValueChange={(value) => setAudience(value as BroadcastAudience)}
+            >
+              <SelectTrigger id="nt-audience">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BROADCAST_AUDIENCES.map((audienceOption) => (
+                  <SelectItem key={audienceOption} value={audienceOption}>
+                    {t(`notifications.tester.audiences.${audienceOption}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nt-recipient">
               {mode === "user"

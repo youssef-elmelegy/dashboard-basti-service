@@ -75,6 +75,11 @@ export interface NotificationsListProps {
   pageSize?: number;
   /** Custom title to display in the header. */
   title?: string;
+  /**
+   * When true, request only notifications that need admin action.
+   * Also hides the type filter (the set is fixed server-side). Defaults to false.
+   */
+  actionRequired?: boolean;
 }
 
 export function NotificationsList({
@@ -83,6 +88,7 @@ export function NotificationsList({
   enableInfiniteScroll = true,
   pageSize = DEFAULT_PAGE_SIZE,
   title,
+  actionRequired = false,
 }: NotificationsListProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -122,7 +128,11 @@ export function NotificationsList({
               : readFilter === "read"
                 ? true
                 : undefined,
-          type: typeFilter === "all" ? undefined : typeFilter,
+          // When actionRequired is on, the server fixes the type set, so we
+          // don't also send a single `type` filter.
+          type:
+            actionRequired || typeFilter === "all" ? undefined : typeFilter,
+          actionRequired: actionRequired || undefined,
         });
         if (!response.success || !response.data) {
           throw new Error(response.message || "Failed to load");
@@ -148,7 +158,7 @@ export function NotificationsList({
         }
       }
     },
-    [readFilter, typeFilter, pageSize],
+    [readFilter, typeFilter, pageSize, actionRequired],
   );
 
   useEffect(() => {
@@ -295,24 +305,26 @@ export function NotificationsList({
                 </SelectContent>
               </Select>
 
-              <Select
-                value={typeFilter}
-                onValueChange={(value) => setTypeFilter(value as TypeFilter)}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    {t("notifications.types.all")}
-                  </SelectItem>
-                  {NOTIFICATION_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {t(`notifications.types.${type}`)}
+              {!actionRequired && (
+                <Select
+                  value={typeFilter}
+                  onValueChange={(value) => setTypeFilter(value as TypeFilter)}
+                >
+                  <SelectTrigger className="w-44">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("notifications.types.all")}
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {NOTIFICATION_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {t(`notifications.types.${type}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
 
               <Button
                 variant="outline"

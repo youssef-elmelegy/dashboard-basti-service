@@ -22,11 +22,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { OrdersSidebarRight } from "@/components/orders-sidebar-right";
 import { useBakeryStore } from "@/stores/bakeryStore";
-import { useOrderStore } from "@/stores/orderStore";
 import { useAssignedOrdersStore } from "@/stores/assignedOrdersStore";
 import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import type { Order } from "@/data/orders";
 import type { Bakery } from "@/lib/services/bakery.service";
+import { orderApi } from "@/lib/services/order.service";
 import { httpRequest } from "@/lib/http-handler";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -430,7 +430,6 @@ const Orders = () => {
   const { t } = useTranslation();
   const bakeries = useBakeryStore((state) => state.bakeries);
   const fetchBakeries = useBakeryStore((state) => state.fetchBakeries);
-  const updateOrder = useOrderStore((state) => state.updateOrder);
 
   // Kanban data comes from the backend `/orders/assigned` endpoint, grouped
   // by bakeryId. No client-side filtering / regrouping.
@@ -438,11 +437,18 @@ const Orders = () => {
     (s) => s.ordersByBakery,
   );
   const reloadAssigned = useAssignedOrdersStore((s) => s.reload);
+  const addAssignedOrder = useAssignedOrdersStore((s) => s.addOrder);
+  const removeAssignedOrder = useAssignedOrdersStore((s) => s.removeOrder);
   const isLoading = useAssignedOrdersStore((s) => s.isLoading);
 
   // Unassigned sidebar store — page 1 also fetches on mount.
   const reloadUnassigned = useUnassignedOrdersStore((s) => s.reload);
-  const invalidateUnassigned = useUnassignedOrdersStore((s) => s.invalidate);
+  const addUnassignedOrder = useUnassignedOrdersStore((s) => s.addOrder);
+  const removeUnassignedOrder = useUnassignedOrdersStore((s) => s.removeOrder);
+  // The region filter is owned by the sidebar and written into the unassigned
+  // store's filters. We read it here so it also scopes the bakery columns to
+  // bakeries in the selected region. Undefined = "all regions".
+  const selectedRegionId = useUnassignedOrdersStore((s) => s.filters.regionId);
 
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(
@@ -510,6 +516,17 @@ const Orders = () => {
     return out;
   }, [bakeries, ordersByBakeryFromApi, orderPositions]);
 
+  // Columns shown on the board. When a region is selected in the sidebar
+  // filter, only bakeries in that region are rendered. `bakeries` itself stays
+  // the full list so drag/assign lookups and validation are unaffected.
+  const visibleBakeries = useMemo(
+    () =>
+      selectedRegionId
+        ? bakeries.filter((b) => b.regionId === selectedRegionId)
+        : bakeries,
+    [bakeries, selectedRegionId],
+  );
+
   // Flat list of every order currently visible on the page (assigned + unassigned).
   // Used by the drag handlers to look up the order being dragged.
   const unassignedOrders = useUnassignedOrdersStore((s) => s.orders);
@@ -530,7 +547,9 @@ const Orders = () => {
     });
   };
 
-  // API function to assign order to bakery
+  // API call to assign / reassign an order to a bakery. The board itself is
+  // updated optimistically in the drag handler — this only talks to the server
+  // and reports success so the handler can keep or revert the in-memory move.
   const assignOrderToBakery = async (orderId: string, bakeryId: string) => {
     try {
       const response = await httpRequest(
@@ -557,26 +576,35 @@ const Orders = () => {
         return false;
       }
 
-      const result = await response.json();
-      // Clear any previous assign error on success
+      // Clear any previous assign error on success.
       setAssignError(null);
-      const bakery = bakeries.find((b) => b.id === bakeryId);
-      updateOrder(orderId, {
-        assignedBakeryId: result.data.bakeryId,
-        assignedBakeryName: bakery?.name || "",
-        assignedAt: new Date().toISOString(),
-      });
-      // The just-assigned order should drop out of the sidebar across all
-      // filter combinations — bust the unassigned cache, then refetch both
-      // feeds so the Kanban and the sidebar reflect the new assignment.
-      invalidateUnassigned();
-      void reloadAssigned();
-      void reloadUnassigned({ force: true });
       return true;
     } catch (error) {
       console.error("Error assigning order:", error);
       const message =
         error instanceof Error ? error.message : "Failed to assign order";
+      setAssignError(message);
+      return false;
+    }
+  };
+
+  // API call to return an order to the unassigned pool (admin unassign). Board
+  // state is updated optimistically in the drag handler, same as assignment.
+  const returnOrderToPool = async (orderId: string) => {
+    try {
+      const response = await orderApi.unassignFromBakery(orderId);
+      if (!response.success) {
+        const message = response.message || "Failed to return order";
+        console.error("Failed to return order:", message);
+        setAssignError(message);
+        return false;
+      }
+      setAssignError(null);
+      return true;
+    } catch (error) {
+      console.error("Error returning order:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to return order";
       setAssignError(message);
       return false;
     }
@@ -696,143 +724,116 @@ const Orders = () => {
 
     const activeId = active.id as string;
     const overId = over.id as string;
-
     if (activeId === overId) return;
 
-    // Find orders
     const activeOrder = orders.find((o) => o.id === activeId);
-    const overOrder = orders.find((o) => o.id === overId);
-
     if (!activeOrder) return;
 
-    // Check if we're dropping on a bakery column
+    // Work out the drop intent: a bakery column (or a card inside one) means
+    // assign/reassign; the sidebar (or a card inside it) means return to pool.
     const overBakery = bakeries.find((b) => b.id === overId);
+    const overOrder = orders.find((o) => o.id === overId);
 
+    let targetBakeryId: string | null = null;
+    let returnToPool = false;
     if (overBakery) {
-      // Validate if order can be assigned to this bakery
-      const validation = canAssignOrderToBakery(activeOrder, overBakery);
-      if (!validation.valid) {
-        console.error("Cannot assign order:", validation.reason);
-        return; // Don't allow drop on incompatible bakery
-      }
+      targetBakeryId = overBakery.id;
+    } else if (overOrder?.assignedBakeryId) {
+      targetBakeryId = overOrder.assignedBakeryId;
+    } else if (
+      overId === "unassigned-sidebar" ||
+      (overOrder && !overOrder.assignedBakeryId)
+    ) {
+      returnToPool = true;
+    }
 
-      // --- Optimistic update: snapshot previous state ---
-      const prevPositions = { ...orderPositions };
-      const prevAssigned = {
-        assignedBakeryId: activeOrder.assignedBakeryId,
-        assignedBakeryName: activeOrder.assignedBakeryName,
-        assignedAt: activeOrder.assignedAt,
-      };
-
-      // Place the order at the end of the target bakery list locally
-      const targetListLength = (bakeryOrders[overBakery.id] || []).length;
-      const newPositions = { ...orderPositions };
-      newPositions[activeId] = targetListLength;
-      // Decrement indices in source bakery if needed
-      if (activeOrder.assignedBakeryId) {
-        const sourceList = bakeryOrders[activeOrder.assignedBakeryId] || [];
-        sourceList.forEach((o) => {
-          if (o.id === activeId) return; // skip the moved one
-          // compact indices if necessary
-          const pos = newPositions[o.id];
-          if (typeof pos === "number" && pos > (prevPositions[activeId] || 0)) {
-            newPositions[o.id] = pos - 1;
-          }
-        });
-      }
-
-      // Apply optimistic local changes
-      updateOrder(activeId, {
-        assignedBakeryId: overBakery.id,
-        assignedBakeryName: overBakery.name || "",
-        assignedAt: new Date().toISOString(),
-      });
-      setOrderPositions(newPositions);
-
-      // Call API and revert on failure
-      const ok = await assignOrderToBakery(activeId, overBakery.id);
-      if (!ok) {
-        console.error("Assign API failed, reverting optimistic update");
-        // revert assignment and positions
-        updateOrder(activeId, prevAssigned);
-        setOrderPositions(prevPositions);
-      }
-    } else if (overOrder && overOrder.assignedBakeryId) {
-      // Dropping on another order - reorder within the same bakery
-      const bakeryId = overOrder.assignedBakeryId;
-      const bakeryOrderList = bakeryOrders[bakeryId] || [];
-      const oldIndex = bakeryOrderList.findIndex((o) => o.id === activeId);
-      const newIndex = bakeryOrderList.findIndex((o) => o.id === overId);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reordered = arrayMove(bakeryOrderList, oldIndex, newIndex);
-
-        // Update positions for all orders in this bakery
-        const newPositions = { ...orderPositions };
-        reordered.forEach((order, index) => {
-          newPositions[order.id] = index;
-        });
-        setOrderPositions(newPositions);
-      }
-
-      // Make sure the active order is assigned to this bakery
-      if (activeOrder.assignedBakeryId !== bakeryId) {
-        const bakery = bakeries.find((b) => b.id === bakeryId);
-        if (bakery) {
-          // Validate before assigning to the bakery
-          const validation = canAssignOrderToBakery(activeOrder, bakery);
-          if (!validation.valid) {
-            console.error("Cannot assign order:", validation.reason);
-            return;
-          }
-
-          // --- Optimistic assign + API call ---
-          const prevPositions = { ...orderPositions };
-          const prevAssigned = {
-            assignedBakeryId: activeOrder.assignedBakeryId,
-            assignedBakeryName: activeOrder.assignedBakeryName,
-            assignedAt: activeOrder.assignedAt,
-          };
-
-          // Place at target index (where overOrder is)
-          const targetBakeryList = bakeryOrders[bakeryId] || [];
-          const targetIndex = targetBakeryList.findIndex(
-            (o) => o.id === overId,
-          );
+    // Reorder within the same bakery column — local only, no API call.
+    if (targetBakeryId && activeOrder.assignedBakeryId === targetBakeryId) {
+      if (overOrder && overOrder.id !== activeId) {
+        const list = bakeryOrders[targetBakeryId] || [];
+        const oldIndex = list.findIndex((o) => o.id === activeId);
+        const newIndex = list.findIndex((o) => o.id === overId);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const reordered = arrayMove(list, oldIndex, newIndex);
           const newPositions = { ...orderPositions };
-          // shift others to make room
-          Object.keys(newPositions).forEach((id) => {
-            const pos = newPositions[id];
-            if (typeof pos === "number" && pos >= targetIndex) {
-              newPositions[id] = pos + 1;
-            }
-          });
-          newPositions[activeId] = targetIndex;
-
-          // Apply optimistic change
-          updateOrder(activeId, {
-            assignedBakeryId: bakery.id,
-            assignedBakeryName: bakery.name || "",
-            assignedAt: new Date().toISOString(),
+          reordered.forEach((o, index) => {
+            newPositions[o.id] = index;
           });
           setOrderPositions(newPositions);
-
-          const ok = await assignOrderToBakery(activeId, bakery.id);
-          if (!ok) {
-            console.error("Assign API failed, reverting optimistic update");
-            updateOrder(activeId, prevAssigned);
-            setOrderPositions(prevPositions);
-          }
         }
       }
-    } else if (overId === "unassigned-sidebar") {
-      // Dropping on the unassigned sidebar - remove bakery assignment
-      // For now, just update local state as there may not be an unassign endpoint
-      updateOrder(activeId, {
+      return;
+    }
+
+    // Assign a pool order, or reassign an order from another bakery.
+    if (targetBakeryId) {
+      const bakery = bakeries.find((b) => b.id === targetBakeryId);
+      if (!bakery) return;
+
+      const validation = canAssignOrderToBakery(activeOrder, bakery);
+      if (!validation.valid) {
+        console.error("Cannot assign order:", validation.reason);
+        setAssignError(
+          validation.reason ?? "Cannot assign order to this bakery",
+        );
+        return;
+      }
+      setAssignError(null);
+
+      const sourceBakeryId = activeOrder.assignedBakeryId ?? null;
+      const targetIndex = (bakeryOrders[targetBakeryId] || []).length;
+      const movedOrder: Order = {
+        ...activeOrder,
+        assignedBakeryId: targetBakeryId,
+        assignedBakeryName: bakery.name || "",
+        assignedAt: new Date().toISOString(),
+      };
+
+      // --- Optimistic in-memory move (no refetch) ---
+      if (sourceBakeryId) {
+        removeAssignedOrder(activeId);
+      } else {
+        removeUnassignedOrder(activeId);
+      }
+      addAssignedOrder(targetBakeryId, movedOrder);
+      setOrderPositions((prev) => ({ ...prev, [activeId]: targetIndex }));
+
+      const ok = await assignOrderToBakery(activeId, targetBakeryId);
+      if (!ok) {
+        // Revert: pull it back out of the target and restore the source.
+        removeAssignedOrder(activeId);
+        if (sourceBakeryId) {
+          addAssignedOrder(sourceBakeryId, activeOrder);
+        } else {
+          addUnassignedOrder(activeOrder);
+        }
+      }
+      return;
+    }
+
+    // Return an assigned order to the unassigned pool (admin unassign).
+    if (returnToPool) {
+      if (!activeOrder.assignedBakeryId) return; // already unassigned
+      setAssignError(null);
+
+      const sourceBakeryId = activeOrder.assignedBakeryId;
+      const pooledOrder: Order = {
+        ...activeOrder,
         assignedBakeryId: undefined,
         assignedBakeryName: undefined,
         assignedAt: undefined,
-      });
+      };
+
+      // --- Optimistic in-memory move (no refetch) ---
+      removeAssignedOrder(activeId);
+      addUnassignedOrder(pooledOrder);
+
+      const ok = await returnOrderToPool(activeId);
+      if (!ok) {
+        // Revert: pull it back out of the pool and restore the bakery column.
+        removeUnassignedOrder(activeId);
+        addAssignedOrder(sourceBakeryId, activeOrder);
+      }
     }
   };
 
@@ -883,10 +884,18 @@ const Orders = () => {
             </div>
           )}
 
-          {!isLoading && (
+          {!isLoading && visibleBakeries.length === 0 && (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                {t("orders.noBakeriesInRegion")}
+              </p>
+            </div>
+          )}
+
+          {!isLoading && visibleBakeries.length > 0 && (
             <div className="flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
               <div className="flex gap-4 h-full pb-4 min-h-fit">
-                {bakeries.map((bakery) => {
+                {visibleBakeries.map((bakery) => {
                   // Check if bakery is compatible with active order
                   const isIncompatible =
                     activeOrder && !bakery.types.includes(activeOrder.type);
