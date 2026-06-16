@@ -423,10 +423,19 @@ export default function OrderDetailPage() {
 
   const order = (fetchedOrder || orders.find((o) => o.id === id)) as OrderData;
 
+  // Send the Back button to the list this order actually belongs to: the
+  // completed-orders page for terminal/in-delivery statuses, otherwise the
+  // normal (active) orders page.
+  const completedStatuses = ["ready", "out_for_delivery", "delivered", "cancelled"];
+  const backTo =
+    order && completedStatuses.includes(order.orderStatus)
+      ? "/completed-orders"
+      : "/orders";
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-e-transparent" />
         <p className="text-muted-foreground">
           {t("common.loading") || "Loading order..."}
         </p>
@@ -439,8 +448,8 @@ export default function OrderDetailPage() {
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <h1 className="text-2xl font-bold text-red-500">Error</h1>
         <p className="text-muted-foreground">{error}</p>
-        <Button onClick={() => navigate("/orders")}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
+        <Button onClick={() => navigate(backTo)}>
+          <ChevronLeft className="w-4 h-4 me-2" />
           {t("orderDetail.backToOrders")}
         </Button>
       </div>
@@ -454,8 +463,8 @@ export default function OrderDetailPage() {
         <p className="text-muted-foreground">
           {t("orderDetail.orderNotFoundDesc")}
         </p>
-        <Button onClick={() => navigate("/orders")}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
+        <Button onClick={() => navigate(backTo)}>
+          <ChevronLeft className="w-4 h-4 me-2" />
           {t("orderDetail.backToOrders")}
         </Button>
       </div>
@@ -509,7 +518,7 @@ export default function OrderDetailPage() {
               </Badge>
             )}
             {/* Reference number with copy button */}
-            <div className="ml-4 flex items-center gap-2">
+            <div className="ms-4 flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 {t("orderDetail.reference") || "Ref:"}
               </span>
@@ -538,7 +547,7 @@ export default function OrderDetailPage() {
                     setTimeout(() => setCopied(false), 2000);
                   }
                 }}
-                className="ml-2 gap-2"
+                className="ms-2 gap-2"
               >
                 <Copy className="w-4 h-4" />{" "}
                 {copied
@@ -562,7 +571,7 @@ export default function OrderDetailPage() {
           )}
           <Button
             variant="outline"
-            onClick={() => navigate("/orders")}
+            onClick={() => navigate(backTo)}
             className="gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -578,7 +587,7 @@ export default function OrderDetailPage() {
               <Package className="w-5 h-5" />
               {t("orderDetail.orderItems") || "Order Items"}
               {order && (
-                <Badge variant="secondary" className="ml-auto">
+                <Badge variant="secondary" className="ms-auto">
                   {(order.customCakes?.length || 0) +
                     (order.predesignedCakes?.length || 0) +
                     (order.featuredCakes?.length || 0) +
@@ -597,7 +606,7 @@ export default function OrderDetailPage() {
               order.addons?.length ||
               order.sweets?.length) ? (
               <div
-                className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
+                className="space-y-4 max-h-96 overflow-y-auto pe-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
                 style={{ scrollbarWidth: "thin" }}
               >
                 {/* Custom Cakes */}
@@ -1323,7 +1332,7 @@ export default function OrderDetailPage() {
                       {order.addOns.map((addon: CartItem) => (
                         <div
                           key={addon.id}
-                          className="flex justify-between pl-2"
+                          className="flex justify-between ps-2"
                         >
                           <span className="text-sm text-muted-foreground">
                             {addon.name} x{addon.quantity}

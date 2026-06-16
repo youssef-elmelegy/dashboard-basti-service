@@ -1,6 +1,4 @@
 import { Outlet } from "react-router";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import Navbar from "@/components/Navbar";
 import AppSidebar from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -8,14 +6,7 @@ import { getSidebarState } from "@/lib/sidebar-cookies";
 
 export default function Root() {
   const defaultOpen = getSidebarState();
-  const { i18n } = useTranslation();
-
-  useEffect(() => {
-    // Apply saved language and direction on page load
-    const savedLanguage = localStorage.getItem("i18nextLng") || "en";
-    document.documentElement.dir = savedLanguage === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = savedLanguage;
-  }, [i18n.language]);
+  // Direction/lang on <html> is owned centrally by i18n/config.ts.
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>

@@ -211,7 +211,7 @@ export default function ShapesPage() {
                     `relative transition-opacity ${isDragging ? "opacity-50" : ""}`
                   }
                 >
-                  <div className="absolute bottom-2 right-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
+                  <div className="absolute bottom-2 end-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
                     {shape.order}
                   </div>
                   <ShapeCard

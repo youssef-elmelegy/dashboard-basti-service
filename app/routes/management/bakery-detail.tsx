@@ -85,8 +85,7 @@ function ReviewCard({ review }: { review: Review }) {
 export default function BakeryDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const { t } = useTranslation();
 
   // Bakery store
   const bakeries = useBakeryStore((state) => state.bakeries);
@@ -204,7 +203,7 @@ export default function BakeryDetailPage() {
           {t("bakeriesManagement.noBakeries")}
         </h1>
         <Button onClick={() => navigate("/management/bakeries")}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
+          <ChevronLeft className="w-4 h-4 me-2" />
           {t("bakeriesManagement.backToBakeries")}
         </Button>
       </div>
@@ -264,12 +263,7 @@ export default function BakeryDetailPage() {
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
         {/* Left Column - Bakery Details */}
-        <div
-          className={cn(
-            "lg:col-span-2 space-y-6 overflow-y-auto pr-4",
-            isRTL && "pl-4 pr-0",
-          )}
-        >
+        <div className="lg:col-span-2 space-y-6 overflow-y-auto pe-4">
           {/* Header Card */}
           <Card>
             <CardHeader>
@@ -339,11 +333,7 @@ export default function BakeryDetailPage() {
         {/* Right Column - Reviews Sidebar */}
         <div
           ref={reviewsContainerRef}
-          className={cn(
-            "overflow-y-auto space-y-4",
-            isRTL && "pl-4",
-            !isRTL && "pr-4",
-          )}
+          className="overflow-y-auto space-y-4 pe-4"
         >
           {/* Rating Summary Card */}
           <Card className="relative overflow-hidden border-yellow-400/40 bg-linear-to-br from-yellow-400/15 via-amber-300/5 to-transparent shadow-sm">

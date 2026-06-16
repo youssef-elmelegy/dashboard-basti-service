@@ -171,7 +171,7 @@ const BakeryReviewsPage = () => {
             size="sm"
             onClick={() => navigate(`/orders/bakery/${bakeryId}`)}
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
+            <ArrowLeft className="w-4 h-4 me-1" />
             {t("bakeryOrders.backToActive") || "Back to orders"}
           </Button>
         </div>

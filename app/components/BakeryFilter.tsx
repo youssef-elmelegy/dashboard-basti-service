@@ -97,7 +97,7 @@ export function BakeryFilter({
             onClick={handleClearFilters}
             className="h-8 px-2 text-xs"
           >
-            <X className="w-3 h-3 mr-1" />
+            <X className="w-3 h-3 me-1" />
             {t("bakeriesManagement.clearAllFilters")}
           </Button>
         </div>

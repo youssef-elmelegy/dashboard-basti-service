@@ -61,7 +61,7 @@ export function TagSelector({
                 onClick={() => handleTagClick(tagName)}
               >
                 {tagName}
-                <span className="ml-1">×</span>
+                <span className="ms-1">×</span>
               </Badge>
             ))
           )}

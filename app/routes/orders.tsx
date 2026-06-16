@@ -289,7 +289,7 @@ function BakeryColumn({
           <div className="h-24 w-full bg-muted rounded-full overflow-hidden relative">
             <div
               className={cn(
-                "absolute bottom-0 left-0 right-0 transition-all",
+                "absolute bottom-0 start-0 end-0 transition-all",
                 getCapacityColor(capacityPercentage),
                 isIncompatible && "opacity-50",
               )}
@@ -860,7 +860,7 @@ const Orders = () => {
             <p className="text-muted-foreground">{t("orders.description")}</p>
             {assignError && (
               <div className="rounded-md bg-red-50 p-3 mt-4 text-sm text-red-800 flex items-start justify-between">
-                <div className="mr-4">{assignError}</div>
+                <div className="me-4">{assignError}</div>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -876,7 +876,7 @@ const Orders = () => {
           {isLoading && (
             <div className="flex items-center justify-center flex-1">
               <div className="flex flex-col items-center gap-4">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-e-transparent" />
                 <p className="text-sm text-muted-foreground">
                   {t("orders.loadingOrders")}
                 </p>
@@ -935,7 +935,7 @@ const Orders = () => {
           variant="ghost"
           size="sm"
           className={cn(
-            "lg:hidden fixed bottom-6 right-6 rounded-full w-12 h-12 p-0 flex items-center justify-center shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 z-50 transition-opacity",
+            "lg:hidden fixed bottom-6 end-6 rounded-full w-12 h-12 p-0 flex items-center justify-center shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 z-50 transition-opacity",
             isSidebarOpen && "opacity-0 pointer-events-none",
           )}
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -955,12 +955,12 @@ const Orders = () => {
         {/* Right Sidebar - Responsive */}
         <div
           className={cn(
-            "w-88 border-l bg-sidebar overflow-hidden transition-transform duration-300 ease-in-out",
+            "w-88 border-s bg-sidebar overflow-hidden transition-transform duration-300 ease-in-out",
             // Desktop: always visible
             "hidden lg:flex lg:flex-col lg:relative",
             // Mobile: slides in/out from right
             isSidebarOpen &&
-              "flex! fixed! right-0 top-16 h-[calc(100vh-4rem)] z-40 w-full max-w-xs flex-col",
+              "flex! fixed! end-0 top-16 h-[calc(100vh-4rem)] z-40 w-full max-w-xs flex-col",
           )}
         >
           <OrdersSidebarRight onClose={() => setIsSidebarOpen(false)} />

@@ -7,16 +7,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
-import { useEffect } from "react";
 
 export function LanguageToggle() {
   const { i18n, t } = useTranslation();
 
-  useEffect(() => {
-    document.documentElement.dir = i18n.language === "ar" ? "rtl" : "ltr";
-    document.documentElement.lang = i18n.language;
-  }, [i18n.language]);
-
+  // <html dir/lang> is kept in sync centrally in i18n/config.ts via the
+  // "languageChanged" listener, so we only need to switch the language here.
   const toggleLanguage = (lang: string) => {
     i18n.changeLanguage(lang);
     localStorage.setItem("i18nextLng", lang);
@@ -48,7 +44,7 @@ export function LanguageToggle() {
             onClick={() => toggleLanguage(item.lang)}
           >
             {item.label}
-            {i18n.language === item.lang && <span className="ml-2">✓</span>}
+            {i18n.language === item.lang && <span className="ms-2">✓</span>}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

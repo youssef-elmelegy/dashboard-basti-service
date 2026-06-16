@@ -97,7 +97,7 @@ export function ProductImageCarousel({
             </Button>
 
             {/* Image Counter */}
-            <div className="absolute bottom-2 right-2 bg-background/80 text-foreground text-xs px-2 py-1 rounded">
+            <div className="absolute bottom-2 end-2 bg-background/80 text-foreground text-xs px-2 py-1 rounded">
               {currentIndex + 1} / {images.length}
             </div>
           </>

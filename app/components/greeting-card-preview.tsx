@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { QRCodeSVG as QRCode } from "qrcode.react";
 
 interface GreetingCardPreviewProps {
@@ -11,13 +10,11 @@ interface GreetingCardPreviewProps {
 }
 
 export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
-  const { i18n } = useTranslation();
-
   return (
     <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+      <div className="absolute top-0 end-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
+      <div className="absolute bottom-0 start-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
 
       {/* Top - To field */}
       <div className="relative z-10">
@@ -45,9 +42,7 @@ export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
 
       {/* Bottom - Signature */}
       <div className="relative z-10 flex items-end justify-end">
-        <div
-          className={`${i18n.language === "ar" ? "text-left" : "text-right"}`}
-        >
+        <div className="text-end">
           <p className="text-sm text-amber-700/70">With warm wishes,</p>
           <p className="text-lg font-serif text-amber-900">
             {cardMessage.from}

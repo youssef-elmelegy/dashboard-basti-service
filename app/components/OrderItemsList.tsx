@@ -242,7 +242,7 @@ export function OrderItemsList({
 
   return (
     <div
-      className="space-y-4 max-h-[40rem] overflow-y-auto pr-2"
+      className="space-y-4 max-h-[40rem] overflow-y-auto pe-2"
       style={{ scrollbarWidth: "thin" }}
     >
       {customCakes && customCakes.length > 0 && (

@@ -42,7 +42,6 @@ import type {
 
 export default function CouponsPage() {
   const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
 
   const coupons = useCouponStore((s) => s.coupons);
   const isLoading = useCouponStore((s) => s.isLoading);
@@ -215,25 +214,25 @@ export default function CouponsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.code")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.name")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.discount")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.region")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.expiryDate")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.usage")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("coupons.status")}
                 </TableHead>
                 <TableHead className="text-end">

@@ -81,7 +81,7 @@ export function SingleImageUploader({
             type="button"
             onClick={removeImage}
             disabled={isLoading}
-            className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 disabled:opacity-50"
+            className="absolute -top-2 -end-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 disabled:opacity-50"
           >
             <X className="w-3 h-3" />
           </button>

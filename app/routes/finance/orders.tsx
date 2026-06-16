@@ -84,12 +84,12 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
             #{order.referenceNumber || order.orderId.slice(0, 8)}
           </TableCell>
           <TableCell>{order.bakeryName}</TableCell>
-          <TableCell className="text-right tabular-nums">{fmt(order.totalPrice)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
-          <TableCell className={`text-right tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
+          <TableCell className="text-end tabular-nums">{fmt(order.totalPrice)}</TableCell>
+          <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
+          <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
+          <TableCell className={`text-end tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
+          <TableCell className={`text-end tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
+          <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
         </TableRow>
       ))}
     </>
@@ -205,26 +205,26 @@ export default function FinanceOrdersPage() {
   const tableHeaders = (
     <TableHeader>
       <TableRow>
-        <TableHead className={isRTL ? "text-right" : "text-left"}>
+        <TableHead className="text-start">
           {t("finance.columns.orderId")}
         </TableHead>
-        <TableHead className={isRTL ? "text-right" : "text-left"}>
+        <TableHead className="text-start">
           {t("finance.columns.bakery")}
         </TableHead>
-        <TableHead className="text-right">{t("finance.columns.total")}</TableHead>
-        <TableHead className={`text-right ${HDR_BASTI}`}>
+        <TableHead className="text-end">{t("finance.columns.total")}</TableHead>
+        <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiAmount")}
         </TableHead>
-        <TableHead className={`text-right ${HDR_ADDON}`}>
+        <TableHead className={`text-end ${HDR_ADDON}`}>
           {t("finance.columns.addonValue")}
         </TableHead>
-        <TableHead className={`text-right ${HDR_BAKERY}`}>
+        <TableHead className={`text-end ${HDR_BAKERY}`}>
           {t("finance.columns.bakeryAmount")}
         </TableHead>
-        <TableHead className={`text-right ${HDR_DELIVERY}`}>
+        <TableHead className={`text-end ${HDR_DELIVERY}`}>
           {t("finance.columns.delivery")}
         </TableHead>
-        <TableHead className={`text-right ${HDR_BASTI}`}>
+        <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiDelivery")}
         </TableHead>
       </TableRow>
@@ -237,12 +237,12 @@ export default function FinanceOrdersPage() {
         <TableCell colSpan={2} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
-        <TableCell className="text-right font-semibold tabular-nums">{fmt(totals.totalPrice)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_ADDON}`}>{fmt(totals.addonsTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BAKERY}`}>{fmt(totals.bakeryTotal)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_DELIVERY}`}>{fmt(totals.deliveryAmount)}</TableCell>
-        <TableCell className={`text-right font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiDeliveryAmount)}</TableCell>
+        <TableCell className="text-end font-semibold tabular-nums">{fmt(totals.totalPrice)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiTotal)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_ADDON}`}>{fmt(totals.addonsTotal)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BAKERY}`}>{fmt(totals.bakeryTotal)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_DELIVERY}`}>{fmt(totals.deliveryAmount)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiDeliveryAmount)}</TableCell>
       </TableRow>
     </TableFooter>
   );
@@ -286,7 +286,7 @@ export default function FinanceOrdersPage() {
             </h1>
             <p className="text-sm text-slate-700">{t("finance.title")}</p>
           </div>
-          <div className="text-right text-xs text-slate-700 leading-relaxed">
+          <div className="text-end text-xs text-slate-700 leading-relaxed">
             <p className="font-semibold text-sm text-slate-900">
               {selectedBakeryName ?? t("finance.allBakeries")}
             </p>
@@ -334,7 +334,7 @@ export default function FinanceOrdersPage() {
         </div>
 
         {/* Filters + Download */}
-        <div className={`flex flex-wrap items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={selectedBakery} onValueChange={setSelectedBakery}>
             <SelectTrigger className="w-52">
               <SelectValue placeholder={t("finance.allBakeries")} />
@@ -369,7 +369,7 @@ export default function FinanceOrdersPage() {
             variant="outline"
             onClick={handleDownload}
             disabled={isLoading || rows.length === 0}
-            className={`gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 ${isRTL ? "" : "ml-auto"}`}
+            className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 ms-auto"
           >
             <Download className="w-4 h-4" />
             {t("finance.download")}
@@ -416,13 +416,13 @@ export default function FinanceOrdersPage() {
 
         {/* Pagination controls */}
         {totalCount > 0 && (
-          <div className={`flex items-center justify-between text-sm ${isRTL ? "flex-row-reverse" : ""}`}>
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {t("finance.showing")} {Math.min((safePage - 1) * pageSize + 1, totalCount)}–{Math.min(safePage * pageSize, totalCount)} {t("finance.of")} {totalCount}
             </span>
 
-            <div className={`flex items-center gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
-              <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">{t("finance.rowsPerPage")}</span>
                 <Select
                   value={String(pageSize)}

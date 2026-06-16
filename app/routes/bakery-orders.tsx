@@ -35,8 +35,6 @@ import {
   Calendar,
   Package,
   User,
-  Phone,
-  Mail,
   Clock,
   Check,
   X,
@@ -405,11 +403,11 @@ const PendingOrderStatusCard = memo(function PendingOrderStatusCard({
           className="flex-1 bg-green-600 hover:bg-green-700"
           onClick={onConfirm}
         >
-          <Check className="w-4 h-4 mr-2" />
+          <Check className="w-4 h-4 me-2" />
           {t("bakeryOrders.acceptOrder")}
         </Button>
         <Button variant="destructive" className="flex-1" onClick={onDecline}>
-          <X className="w-4 h-4 mr-2" />
+          <X className="w-4 h-4 me-2" />
           {t("bakeryOrders.declineOrder")}
         </Button>
       </div>
@@ -455,7 +453,7 @@ function CancellationDialog({
     >
       <Card
         className="w-full max-w-md mx-4 shadow-lg"
-        dir={isArabic ? "ltr" : "auto"}
+        dir={isArabic ? "rtl" : "ltr"}
         onClick={(e) => e.stopPropagation()}
       >
         <CardHeader>
@@ -643,11 +641,13 @@ export default function BakeryOrdersPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { i18n, t } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const { t } = useTranslation();
   const currentBakery = useBakeryStore((state) => state.currentBakery);
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
   const setBakeryOrders = useBakeryStore((state) => state.setBakeryOrders);
+  const getCachedBakeryOrders = useBakeryStore(
+    (state) => state.getBakeryOrders,
+  );
   const updateOrder = useOrderStore((state) => state.updateOrder);
   const invalidateCompletedOrders = useBakeryCompletedOrdersStore(
     (state) => state.invalidate,
@@ -1174,7 +1174,7 @@ export default function BakeryOrdersPage() {
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <h1 className="text-2xl font-bold">{t("bakeries.bakeryNotFound")}</h1>
         <Button onClick={() => navigate("/management/bakeries")}>
-          <ChevronLeft className="w-4 h-4 mr-2" />
+          <ChevronLeft className="w-4 h-4 me-2" />
           {t("bakeries.backToBakeries")}
         </Button>
       </div>
@@ -1194,8 +1194,7 @@ export default function BakeryOrdersPage() {
       {/* Mobile FAB Toggle Button */}
       <button
         className={cn(
-          "lg:hidden fixed bottom-6 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all",
-          isRTL ? "left-6" : "right-6",
+          "lg:hidden fixed bottom-6 z-50 p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all end-6",
         )}
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         aria-label="Toggle sidebar"
@@ -1210,8 +1209,7 @@ export default function BakeryOrdersPage() {
       {/* Main Content */}
       <div
         className={cn(
-          "flex-1 flex flex-col overflow-hidden",
-          isRTL ? "lg:pl-88 order-last" : "lg:pr-88 order-first",
+          "flex-1 flex flex-col overflow-hidden lg:pe-88 order-first",
         )}
       >
         {/* Header */}
@@ -1285,14 +1283,14 @@ export default function BakeryOrdersPage() {
         <div className="flex-1 overflow-hidden px-6 py-6">
           {selectedOrder ? (
             <ScrollArea className="h-full w-full">
-              <div className="grid gap-6 md:grid-cols-2 pb-4 pr-4">
+              <div className="grid gap-6 md:grid-cols-2 pb-4 pe-4">
                 {/* Order Items */}
                 <Card className="md:col-span-2">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Package className="w-5 h-5" />
                       {t("bakeryOrders.orderItems")}
-                      <div className="ml-auto flex items-center gap-2">
+                      <div className="ms-auto flex items-center gap-2">
                         {selectedOrder.orderItems &&
                           selectedOrder.orderItems.length > 0 && (
                             <Badge variant="secondary">
@@ -1334,7 +1332,7 @@ export default function BakeryOrdersPage() {
                     {selectedOrder.orderItems &&
                     selectedOrder.orderItems.length > 0 ? (
                       <div
-                        className="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
+                        className="space-y-4 max-h-96 overflow-y-auto pe-2 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-transparent"
                         style={{ scrollbarWidth: "thin" }}
                       >
                         {selectedOrder.orderItems.map((item, index) => {
@@ -1533,22 +1531,6 @@ export default function BakeryOrdersPage() {
                         {selectedOrder.customerName}
                       </span>
                     </div>
-                    {selectedOrder.customerPhone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {selectedOrder.customerPhone}
-                        </span>
-                      </div>
-                    )}
-                    {selectedOrder.customerEmail && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {selectedOrder.customerEmail}
-                        </span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
 
@@ -1648,7 +1630,7 @@ export default function BakeryOrdersPage() {
                         >
                           {isChangingStatus ? (
                             <>
-                              <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                              <RotateCw className="w-4 h-4 me-2 animate-spin" />
                               {t("bakeryOrders.processing")}
                             </>
                           ) : (
@@ -1744,12 +1726,12 @@ export default function BakeryOrdersPage() {
                           >
                             {isChangingStatus ? (
                               <>
-                                <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                                <RotateCw className="w-4 h-4 me-2 animate-spin" />
                                 {t("bakeryOrders.processing")}
                               </>
                             ) : !selectedOrder.finalImage ? (
                               <>
-                                <Upload className="w-4 h-4 mr-2" />
+                                <Upload className="w-4 h-4 me-2" />
                                 {t("bakeryOrders.uploadImageFirst")}
                               </>
                             ) : (
@@ -1792,19 +1774,19 @@ export default function BakeryOrdersPage() {
                         )}
                       {selectedOrder.status === "ready" && (
                         <Button className="flex-1" disabled variant="secondary">
-                          <Check className="w-4 h-4 mr-2" />
+                          <Check className="w-4 h-4 me-2" />
                           {t("bakeryOrders.ready")}
                         </Button>
                       )}
                       {selectedOrder.status === "out_for_delivery" && (
                         <Button className="flex-1" disabled variant="secondary">
-                          <Check className="w-4 h-4 mr-2" />
+                          <Check className="w-4 h-4 me-2" />
                           {t("bakeryOrders.outForDelivery")}
                         </Button>
                       )}
                       {selectedOrder.status === "delivered" && (
                         <Button className="flex-1" disabled variant="secondary">
-                          <Check className="w-4 h-4 mr-2" />
+                          <Check className="w-4 h-4 me-2" />
                           {t("bakeryOrders.delivered")}
                         </Button>
                       )}
@@ -1907,41 +1889,15 @@ export default function BakeryOrdersPage() {
                           <Separator />
 
                           {selectedOrder.recipientData && (
-                            <>
-                              <div className="space-y-2">
-                                <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  {t("bakeryOrders.recipientName")}
-                                </label>
-                                <p className="text-sm font-medium flex items-center gap-2">
-                                  <User className="w-4 h-4 text-muted-foreground" />
-                                  {selectedOrder.recipientData.name}
-                                </p>
-                              </div>
-
-                              <Separator />
-
-                              <div className="space-y-2">
-                                <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  {t("bakeryOrders.email")}
-                                </label>
-                                <p className="text-sm font-medium flex items-center gap-2">
-                                  <Mail className="w-4 h-4 text-muted-foreground" />
-                                  {selectedOrder.recipientData.email}
-                                </p>
-                              </div>
-
-                              <Separator />
-
-                              <div className="space-y-2">
-                                <label className="text-xs font-semibold text-muted-foreground uppercase">
-                                  {t("bakeryOrders.phone")}
-                                </label>
-                                <p className="text-sm font-medium flex items-center gap-2">
-                                  <Phone className="w-4 h-4 text-muted-foreground" />
-                                  {selectedOrder.recipientData.phoneNumber}
-                                </p>
-                              </div>
-                            </>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold text-muted-foreground uppercase">
+                                {t("bakeryOrders.recipientName")}
+                              </label>
+                              <p className="text-sm font-medium flex items-center gap-2">
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                {selectedOrder.recipientData.name}
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1964,16 +1920,10 @@ export default function BakeryOrdersPage() {
         className={cn(
           "h-[calc(100vh-4rem)] w-88 bg-sidebar z-30 flex flex-col overflow-hidden transition-transform duration-300",
           "lg:fixed lg:top-16 lg:translate-x-0",
-          isRTL
-            ? "lg:left-0 lg:right-auto lg:border-r order-first"
-            : "lg:right-0 lg:left-auto lg:border-l order-last",
+          "lg:end-0 lg:start-auto lg:border-e order-last",
           isSidebarOpen
-            ? isRTL
-              ? "fixed top-16 left-0 right-auto border-r shadow-lg translate-x-0"
-              : "fixed top-16 right-0 left-auto border-l shadow-lg translate-x-0"
-            : isRTL
-              ? "fixed top-16 left-0 right-auto -translate-x-full"
-              : "fixed top-16 right-0 left-auto translate-x-full",
+            ? "fixed top-16 end-0 start-auto border-e shadow-lg translate-x-0"
+            : "fixed top-16 end-0 start-auto max-lg:ltr:translate-x-full max-lg:rtl:-translate-x-full",
         )}
       >
         <div className="shrink-0 border-b px-4 py-3">

@@ -54,7 +54,7 @@ export const ThemeToggle = () => {
             onClick={() => setTheme(item.value)}
           >
             {item.label}
-            {theme === item.value && <span className="ml-2">✓</span>}
+            {theme === item.value && <span className="ms-2">✓</span>}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

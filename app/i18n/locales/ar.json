@@ -733,7 +733,11 @@
       "lowercase": "يحتوي على حرف صغير",
       "uppercase": "يحتوي على حرف كبير",
       "digit": "يحتوي على رقم"
-    }
+    },
+    "pageOf": "صفحة {{page}} من {{totalPages}}",
+    "totalShown": "مسؤول",
+    "previousPage": "الصفحة السابقة",
+    "nextPage": "الصفحة التالية"
   },
   "filters": {
     "status": "الحالة",

@@ -28,7 +28,6 @@ import type { Offer, CreateOfferPayload, ToggleItemOfferPayload } from "@/lib/se
 
 export default function OffersPage() {
   const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
 
   const offers = useOfferStore((s) => s.offers);
   const isLoading = useOfferStore((s) => s.isLoading);
@@ -178,22 +177,22 @@ export default function OffersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.name")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.percentage")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.startDate")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.expiryDate")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.connectedItems")}
                 </TableHead>
-                <TableHead className={isRTL ? "text-right" : "text-left"}>
+                <TableHead className="text-start">
                   {t("offers.status")}
                 </TableHead>
                 <TableHead className="text-end">

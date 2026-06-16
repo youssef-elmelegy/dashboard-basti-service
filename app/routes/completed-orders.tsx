@@ -240,7 +240,7 @@ const CompletedOrders = () => {
             size="sm"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="ml-auto"
+            className="ms-auto"
           >
             <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
             {t("common.refresh") || "Refresh"}
@@ -251,7 +251,7 @@ const CompletedOrders = () => {
         {isLoading && (
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-e-transparent" />
               <p className="text-sm text-muted-foreground">
                 {t("common.loading") || "Loading orders..."}
               </p>

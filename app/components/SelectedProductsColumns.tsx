@@ -124,7 +124,7 @@ export const selectedProductsColumns = (
                 if (typeof onEdit === "function") onEdit(row.original);
               }}
             >
-              <Pencil className="w-4 h-4 mr-2" /> {t("regions.tableEdit")}
+              <Pencil className="w-4 h-4 me-2" /> {t("regions.tableEdit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -132,7 +132,7 @@ export const selectedProductsColumns = (
               }}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="w-4 h-4 mr-2" /> {t("regions.tableDelete")}
+              <Trash2 className="w-4 h-4 me-2" /> {t("regions.tableDelete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

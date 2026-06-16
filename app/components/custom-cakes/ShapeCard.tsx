@@ -71,18 +71,18 @@ export function ShapeCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onToggleFeatured(shape.id)}>
-              <Star className="h-4 w-4 mr-2" />
+              <Star className="h-4 w-4 me-2" />
               {t("common.toggleBestSeller")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(shape)}>
-              <Pencil className="h-4 w-4 mr-2" />
+              <Pencil className="h-4 w-4 me-2" />
               {t("customCakes.edit")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(shape)}
               className="text-destructive"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="h-4 w-4 me-2" />
               {t("customCakes.delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>

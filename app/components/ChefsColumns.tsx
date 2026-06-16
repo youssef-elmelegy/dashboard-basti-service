@@ -100,7 +100,7 @@ export const columns = (
     id: "actions",
     cell: ({ row }) => {
       return (
-        <div className="sticky right-0 ">
+        <div className="sticky end-0 ">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">

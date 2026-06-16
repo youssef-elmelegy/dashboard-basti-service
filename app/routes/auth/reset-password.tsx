@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
                       disabled={isLoading}
                     >
                       {showPassword ? (
@@ -159,7 +159,7 @@ export default function ResetPasswordPage() {
                           ? "Hide confirm password"
                           : "Show confirm password"
                       }
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+                      className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
                       disabled={isLoading}
                     >
                       {showConfirmPassword ? (

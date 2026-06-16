@@ -1,4 +1,11 @@
-import { Plus, AlertCircle, Loader2, Trash2 } from "lucide-react";
+import {
+  Plus,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -42,12 +49,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Edit2, Lock, LockOpen } from "lucide-react";
 
 export default function AdminsPage() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const { t } = useTranslation();
   const admins = useAdminStore((state) => state.admins);
+  const pagination = useAdminStore((state) => state.pagination);
+  const page = useAdminStore((state) => state.page);
   const isLoading = useAdminStore((state) => state.isLoading);
   const error = useAdminStore((state) => state.error);
   const fetchAdmins = useAdminStore((state) => state.fetchAdmins);
+  const goToPage = useAdminStore((state) => state.goToPage);
   const addAdmin = useAdminStore((state) => state.addAdmin);
   const updateAdmin = useAdminStore((state) => state.updateAdmin);
   const blockAdmin = useAdminStore((state) => state.blockAdmin);
@@ -229,29 +238,22 @@ export default function AdminsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isRTL && (
-                    <TableHead className="text-right">
-                      {t("adminTable.actions")}
-                    </TableHead>
-                  )}
                   <TableHead className="w-12" />
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("adminTable.email")}
                   </TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("adminTable.role")}
                   </TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("adminTable.bakery")}
                   </TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("adminTable.status")}
                   </TableHead>
-                  {!isRTL && (
-                    <TableHead className="text-right">
-                      {t("adminTable.actions")}
-                    </TableHead>
-                  )}
+                  <TableHead className="text-end">
+                    {t("adminTable.actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -265,41 +267,6 @@ export default function AdminsPage() {
                   const roleLabel = t(roleKeyMap[admin.role]);
                   return (
                     <TableRow key={admin.id}>
-                      {isRTL && (
-                        <TableCell className="text-left">
-                          <div className="flex justify-start gap-2">
-                            <button
-                              onClick={() => handleEditAdmin(admin)}
-                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleBlockAdmin(admin)}
-                              className={`p-2 rounded-lg transition-colors ${
-                                admin.isBlocked
-                                  ? "hover:bg-orange-100"
-                                  : "hover:bg-green-100"
-                              }`}
-                              title={admin.isBlocked ? "Unblock" : "Block"}
-                            >
-                              {admin.isBlocked ? (
-                                <Lock className="w-4 h-4 text-orange-600" />
-                              ) : (
-                                <LockOpen className="w-4 h-4 text-green-600" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAdmin(admin)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      )}
                       <TableCell>
                         <Avatar key={admin.profileImage ?? admin.id} className="size-9">
                           {admin.profileImage && (
@@ -323,47 +290,79 @@ export default function AdminsPage() {
                           ? t("adminTable.blocked")
                           : t("adminTable.active")}
                       </TableCell>
-                      {!isRTL && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleEditAdmin(admin)}
-                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleBlockAdmin(admin)}
-                              className={`p-2 rounded-lg transition-colors ${
-                                admin.isBlocked
-                                  ? "hover:bg-orange-100"
-                                  : "hover:bg-green-100"
-                              }`}
-                              title={admin.isBlocked ? "Unblock" : "Block"}
-                            >
-                              {admin.isBlocked ? (
-                                <Lock className="w-4 h-4 text-orange-600" />
-                              ) : (
-                                <LockOpen className="w-4 h-4 text-green-600" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAdmin(admin)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell className="text-end">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEditAdmin(admin)}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleBlockAdmin(admin)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              admin.isBlocked
+                                ? "hover:bg-orange-100"
+                                : "hover:bg-green-100"
+                            }`}
+                            title={admin.isBlocked ? "Unblock" : "Block"}
+                          >
+                            {admin.isBlocked ? (
+                              <Lock className="w-4 h-4 text-orange-600" />
+                            ) : (
+                              <LockOpen className="w-4 h-4 text-green-600" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAdmin(admin)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                {t("admins.pageOf", {
+                  page: pagination.page,
+                  totalPages: pagination.totalPages,
+                  defaultValue: `Page ${pagination.page} of ${pagination.totalPages}`,
+                })}{" "}
+                · {pagination.total} {t("admins.totalShown")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1 || isLoading}
+                  aria-label={t("admins.previousPage")}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={isLoading || page >= pagination.totalPages}
+                  aria-label={t("admins.nextPage")}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

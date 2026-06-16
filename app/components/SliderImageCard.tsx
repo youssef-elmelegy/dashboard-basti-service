@@ -32,7 +32,7 @@ export function SliderImageCard({
           className="w-full h-full object-cover"
         />
         {/* Action Menu */}
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 end-2 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -45,14 +45,14 @@ export function SliderImageCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit(image)}>
-                <Pencil className="h-4 w-4 mr-2" />
+                <Pencil className="h-4 w-4 me-2" />
                 {t("sliderImages.edit")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(image)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 me-2" />
                 {t("sliderImages.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>

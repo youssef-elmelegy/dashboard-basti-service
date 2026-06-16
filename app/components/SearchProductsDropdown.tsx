@@ -32,7 +32,7 @@ export function SearchProductsDropdown({
   }
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+    <div className="absolute top-full start-0 end-0 mt-2 bg-slate-900 border border-slate-700 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
       {/* Small Cakes Section */}
       {filteredCakes.length > 0 && (
         <div className="border-b border-slate-700">
@@ -47,7 +47,7 @@ export function SearchProductsDropdown({
                   onSelectCake(cake);
                   onClose();
                 }}
-                className="w-full text-left px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
+                className="w-full text-start px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
               >
                 <img
                   src={cake.images?.[0]}
@@ -91,7 +91,7 @@ export function SearchProductsDropdown({
                   onSelectSweet(sweet);
                   onClose();
                 }}
-                className="w-full text-left px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
+                className="w-full text-start px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
               >
                 <img
                   src={sweet.images?.[0]}
@@ -129,7 +129,7 @@ export function SearchProductsDropdown({
                   onSelectAddOn(addOn);
                   onClose();
                 }}
-                className="w-full text-left px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
+                className="w-full text-start px-4 py-4 hover:bg-slate-800 transition-colors border-b border-slate-700 last:border-b-0 flex items-start gap-3"
               >
                 <img
                   src={addOn.images?.[0]}

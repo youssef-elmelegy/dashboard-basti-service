@@ -150,7 +150,7 @@ export default function ItemDetailPage() {
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <h1 className="text-2xl font-bold">{t("itemDetail.itemNotFound")}</h1>
         <Button onClick={() => navigate("/")}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-4 h-4 me-2" />
           {t("itemDetail.goBack")}
         </Button>
       </div>
@@ -310,7 +310,7 @@ export default function ItemDetailPage() {
                                 <img
                                   src={option.imageUrl}
                                   alt={option.label}
-                                  className="w-12 h-12 rounded ml-3 object-cover border shrink-0"
+                                  className="w-12 h-12 rounded ms-3 object-cover border shrink-0"
                                 />
                               )}
                             </div>

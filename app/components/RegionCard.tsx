@@ -30,7 +30,7 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
       onClick={handleCardClick}
     >
       {/* Order Badge - Top Left */}
-      <div className="absolute top-4 left-4 z-40">
+      <div className="absolute top-4 start-4 z-40">
         <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
           {region.order}
         </div>
@@ -38,7 +38,7 @@ export function RegionCard({ region, onEdit, onDelete }: RegionCardProps) {
 
       {/* Action Menu */}
       <div
-        className="absolute top-4 right-4 z-50"
+        className="absolute top-4 end-4 z-50"
         onClick={(e) => e.stopPropagation()}
       >
         <DropdownMenu>

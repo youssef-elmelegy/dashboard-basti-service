@@ -140,7 +140,7 @@ export default function DispatchPage() {
       </div>
 
       {/* Filters */}
-      <div className={cn("flex flex-wrap items-center gap-3", isRTL && "flex-row-reverse")}>
+      <div className="flex flex-wrap items-center gap-3">
         <Select value={regionFilter} onValueChange={setRegionFilter}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder={t("dispatch.region")} />
@@ -199,7 +199,7 @@ export default function DispatchPage() {
           size="sm"
           onClick={() => void reload({ force: true })}
           disabled={isLoading}
-          className={isRTL ? "" : "ms-auto"}
+          className="ms-auto"
         >
           <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
           {t("common.refresh")}

@@ -211,7 +211,7 @@ export default function CouponForm({
                           {...field}
                           disabled={mode === "edit"}
                           maxLength={6}
-                          className="pr-10 font-mono uppercase tracking-widest"
+                          className="pe-10 font-mono uppercase tracking-widest"
                           onChange={(e) => {
                             const next = e.target.value
                               .toUpperCase()
@@ -228,7 +228,7 @@ export default function CouponForm({
                             }
                             aria-label={t("coupons.generateCode")}
                             title={t("coupons.generateCode")}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                            className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Sparkles className="w-4 h-4" />
                           </button>

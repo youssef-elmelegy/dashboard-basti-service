@@ -25,12 +25,12 @@ interface DataTableProps<TData, TValue> {
 }
 
 function SortIcon({ direction }: { direction?: "asc" | "desc" }) {
-  if (direction === "asc") return <ChevronUp className="w-4 h-4 inline ml-1" />;
+  if (direction === "asc") return <ChevronUp className="w-4 h-4 inline ms-1" />;
   if (direction === "desc")
-    return <ChevronDown className="w-4 h-4 inline ml-1" />;
+    return <ChevronDown className="w-4 h-4 inline ms-1" />;
   // faded icon for sortable columns
   return (
-    <ChevronsUpDown className="w-4 h-4 inline ml-1 text-muted-foreground opacity-50" />
+    <ChevronsUpDown className="w-4 h-4 inline ms-1 text-muted-foreground opacity-50" />
   );
 }
 

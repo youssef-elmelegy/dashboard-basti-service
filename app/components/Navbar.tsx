@@ -59,15 +59,15 @@ const Navbar = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <User className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              <User className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
               {t("common.profile")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/settings")}>
-              <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              <Settings className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
               {t("common.settings")}
             </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-              <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" />{" "}
+              <LogOut className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
               {t("common.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -92,7 +92,7 @@ function BakeryTableBody({
           <TableCell>
             <StatusBadge status={order.orderStatus} />
           </TableCell>
-          <TableCell className="text-right tabular-nums">{fmt(order.finalPrice)}</TableCell>
+          <TableCell className="text-end tabular-nums">{fmt(order.finalPrice)}</TableCell>
         </TableRow>
       ))}
     </>
@@ -198,16 +198,16 @@ export default function BakeryFinancePage() {
   const tableHeaders = (
     <TableHeader>
       <TableRow>
-        <TableHead className={isRTL ? "text-right" : "text-left"}>
+        <TableHead className="text-start">
           {t("finance.columns.orderId")}
         </TableHead>
-        <TableHead className={isRTL ? "text-right" : "text-left"}>
+        <TableHead className="text-start">
           {t("finance.columns.date")}
         </TableHead>
-        <TableHead className={isRTL ? "text-right" : "text-left"}>
+        <TableHead className="text-start">
           {t("finance.columns.status")}
         </TableHead>
-        <TableHead className="text-right">{t("finance.columns.amount")}</TableHead>
+        <TableHead className="text-end">{t("finance.columns.amount")}</TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -218,7 +218,7 @@ export default function BakeryFinancePage() {
         <TableCell colSpan={3} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
-        <TableCell className="text-right font-semibold tabular-nums">
+        <TableCell className="text-end font-semibold tabular-nums">
           {fmt(totals.finalPrice)}
         </TableCell>
       </TableRow>
@@ -272,7 +272,7 @@ export default function BakeryFinancePage() {
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">Basti Service</h1>
             <p className="text-sm text-slate-700">{t("finance.myBakeryTitle")}</p>
           </div>
-          <div className="text-right text-xs text-slate-700 leading-relaxed">
+          <div className="text-end text-xs text-slate-700 leading-relaxed">
             <p>{startDate} — {endDate}</p>
             <p>{t("finance.sum")}: {totalCount}</p>
           </div>
@@ -309,7 +309,7 @@ export default function BakeryFinancePage() {
         </div>
 
         {/* Filters + Download */}
-        <div className={`flex flex-wrap items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 border rounded-lg px-3 py-2 bg-background text-sm">
             <input
               type="date"
@@ -330,7 +330,7 @@ export default function BakeryFinancePage() {
             variant="outline"
             onClick={handleDownload}
             disabled={isLoading || rows.length === 0}
-            className={`gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 ${isRTL ? "" : "ml-auto"}`}
+            className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 ms-auto"
           >
             <Download className="w-4 h-4" />
             {t("finance.download")}
@@ -377,13 +377,13 @@ export default function BakeryFinancePage() {
 
         {/* Pagination controls */}
         {totalCount > 0 && (
-          <div className={`flex items-center justify-between text-sm ${isRTL ? "flex-row-reverse" : ""}`}>
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {t("finance.showing")} {Math.min((safePage - 1) * pageSize + 1, totalCount)}–{Math.min(safePage * pageSize, totalCount)} {t("finance.of")} {totalCount}
             </span>
 
-            <div className={`flex items-center gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
-              <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">{t("finance.rowsPerPage")}</span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                   <SelectTrigger className="h-8 w-16">

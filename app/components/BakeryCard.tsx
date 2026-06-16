@@ -55,7 +55,7 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
       onClick={handleCardClick}
     >
       {/* Action Menu */}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 end-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
@@ -85,7 +85,7 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
       </div>
 
       {/* Header */}
-      <div className="mb-4 pr-12">
+      <div className="mb-4 pe-12">
         <h3 className="text-lg font-semibold text-card-foreground mb-1">
           {bakery.name}
         </h3>

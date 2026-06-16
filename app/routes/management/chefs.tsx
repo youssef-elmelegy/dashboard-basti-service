@@ -37,8 +37,7 @@ import {
 import { Trash2, Edit2 } from "lucide-react";
 
 export default function ChefsPage() {
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const { t } = useTranslation();
   const chefs = useChefStore((state) => state.chefs);
   const isLoading = useChefStore((state) => state.isLoading);
   const error = useChefStore((state) => state.error);
@@ -261,25 +260,18 @@ export default function ChefsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isRTL && (
-                    <TableHead className="text-right">
-                      {t("chefTable.actions")}
-                    </TableHead>
-                  )}
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("chefTable.name")}
                   </TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("chefTable.specialization")}
                   </TableHead>
-                  <TableHead className={isRTL ? "text-right" : "text-left"}>
+                  <TableHead className="text-start">
                     {t("chefTable.bakery")}
                   </TableHead>
-                  {!isRTL && (
-                    <TableHead className="text-right">
-                      {t("chefTable.actions")}
-                    </TableHead>
-                  )}
+                  <TableHead className="text-end">
+                    {t("chefTable.actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -287,26 +279,6 @@ export default function ChefsPage() {
                   const bakery = bakeries.find((b) => b.id === chef.bakeryId);
                   return (
                     <TableRow key={chef.id}>
-                      {isRTL && (
-                        <TableCell className="text-left">
-                          <div className="flex justify-start gap-2">
-                            <button
-                              onClick={() => handleEditChef(chef)}
-                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteChef(chef)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      )}
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-3">
                           {chef.image ? (
@@ -327,26 +299,24 @@ export default function ChefsPage() {
                       <TableCell>
                         {bakery?.name || t("chefTable.unknown")}
                       </TableCell>
-                      {!isRTL && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleEditChef(chef)}
-                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteChef(chef)}
-                              className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </button>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell className="text-end">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEditChef(chef)}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteChef(chef)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}

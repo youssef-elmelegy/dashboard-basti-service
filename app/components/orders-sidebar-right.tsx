@@ -125,7 +125,7 @@ function DraggableOrderCard({
               {format(new Date(order.deliverDay), "MMM d, yyyy")}
             </span>
             <span
-              className="ml-1 px-1.5 py-0.5 rounded bg-accent text-foreground/80 truncate max-w-24"
+              className="ms-1 px-1.5 py-0.5 rounded bg-accent text-foreground/80 truncate max-w-24"
               title={order.region}
             >
               {order.region}
@@ -283,7 +283,7 @@ export function OrdersSidebarRight({
                   e.stopPropagation();
                   onClose();
                 }}
-                className="lg:hidden p-2 -mr-2 hover:bg-accent rounded-md transition-colors"
+                className="lg:hidden p-2 -me-2 hover:bg-accent rounded-md transition-colors"
                 title={t("buttons.close")}
               >
                 <X className="w-5 h-5" />
@@ -387,7 +387,7 @@ export function OrdersSidebarRight({
           {isLoading ? (
             <div className="flex items-center justify-center flex-1 py-8">
               <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-e-transparent" />
                 <p className="text-xs text-muted-foreground">
                   {t("common.loading") || "Loading..."}
                 </p>
@@ -411,7 +411,7 @@ export function OrdersSidebarRight({
                   ))}
                   {isLoadingMore && (
                     <div className="flex items-center justify-center py-4">
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-e-transparent" />
                     </div>
                   )}
                   {pagination &&

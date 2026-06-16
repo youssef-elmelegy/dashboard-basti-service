@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Package,
   User,
-  Phone,
   ImageIcon,
   StickyNote,
   Gift,
@@ -101,7 +100,7 @@ const BakeryOrderDetail = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-e-transparent" />
       </div>
     );
   }
@@ -110,7 +109,7 @@ const BakeryOrderDetail = () => {
     return (
       <div className="p-6">
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-1" />
+          <ArrowLeft className="w-4 h-4 me-1" />
           {t("bakeryOrders.backToCompleted") || "Back"}
         </Button>
         <Card>
@@ -163,7 +162,7 @@ const BakeryOrderDetail = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4">
-        <ArrowLeft className="w-4 h-4 mr-1" />
+        <ArrowLeft className="w-4 h-4 me-1" />
         {t("bakeryOrders.backToCompleted") || "Back to completed orders"}
       </Button>
 
@@ -192,12 +191,6 @@ const BakeryOrderDetail = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="font-medium">{customerName}</p>
-            {order.userData?.phoneNumber && (
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5" />
-                {order.userData.phoneNumber}
-              </p>
-            )}
           </CardContent>
         </Card>
 
@@ -224,7 +217,7 @@ const BakeryOrderDetail = () => {
             <CardTitle className="flex items-center gap-2 text-base">
               <Package className="w-4 h-4" />
               {t("orderDetail.orderItems") || "Order Items"}
-              <Badge variant="secondary" className="ml-auto">
+              <Badge variant="secondary" className="ms-auto">
                 {(order.customCakes?.length || 0) +
                   (order.predesignedCakes?.length || 0) +
                   (order.featuredCakes?.length || 0) +

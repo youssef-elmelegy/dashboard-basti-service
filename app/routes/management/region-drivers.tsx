@@ -57,8 +57,7 @@ const LIMIT = 10;
 export default function RegionDriversPage() {
   const { id: regionId = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const { t } = useTranslation();
 
   const drivers = useDriverStore((s) => s.drivers);
   const pagination = useDriverStore((s) => s.listPagination);
@@ -175,7 +174,7 @@ export default function RegionDriversPage() {
   };
 
   const actionButtons = (driver: Driver) => (
-    <div className={`flex gap-2 ${isRTL ? "justify-start" : "justify-end"}`}>
+    <div className="flex gap-2 justify-end">
       <button
         onClick={() => handleEdit(driver)}
         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -206,7 +205,7 @@ export default function RegionDriversPage() {
     </div>
   );
 
-  const align = isRTL ? "text-right" : "text-left";
+  const align = "text-start";
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -310,30 +309,20 @@ export default function RegionDriversPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isRTL && (
-                    <TableHead className="text-right">
-                      {t("driverTable.actions")}
-                    </TableHead>
-                  )}
                   <TableHead className="w-12" />
                   <TableHead className={align}>{t("driverTable.name")}</TableHead>
                   <TableHead className={align}>{t("driverTable.email")}</TableHead>
                   <TableHead className={align}>{t("driverTable.phone")}</TableHead>
                   <TableHead className={align}>{t("driverTable.dueAmount")}</TableHead>
                   <TableHead className={align}>{t("driverTable.status")}</TableHead>
-                  {!isRTL && (
-                    <TableHead className="text-right">
-                      {t("driverTable.actions")}
-                    </TableHead>
-                  )}
+                  <TableHead className="text-end">
+                    {t("driverTable.actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {drivers.map((driver) => (
                   <TableRow key={driver.id} className="cursor-pointer">
-                    {isRTL && (
-                      <TableCell className="text-left">{actionButtons(driver)}</TableCell>
-                    )}
                     <TableCell onClick={() => openDriver(driver)}>
                       <Avatar key={driver.profileImage ?? driver.id} className="size-9">
                         {driver.profileImage && (
@@ -371,9 +360,7 @@ export default function RegionDriversPage() {
                           : t("driverTable.active")}
                       </span>
                     </TableCell>
-                    {!isRTL && (
-                      <TableCell className="text-right">{actionButtons(driver)}</TableCell>
-                    )}
+                    <TableCell className="text-end">{actionButtons(driver)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

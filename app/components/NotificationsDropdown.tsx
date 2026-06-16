@@ -133,7 +133,7 @@ function NotificationItem({
         </p>
         <div className="flex items-center gap-2 mt-1.5">
           <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
-          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <div className="ms-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             {!notification.isRead && (
               <Button
                 type="button"
@@ -229,7 +229,7 @@ export function NotificationsDropdown() {
           {unreadCount > 0 && (
             <span
               className={cn(
-                "absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full",
+                "absolute -top-0.5 -end-0.5 min-w-[1.1rem] h-[1.1rem] px-1 rounded-full",
                 "bg-red-500 text-white text-[10px] font-semibold",
                 "flex items-center justify-center leading-none",
               )}

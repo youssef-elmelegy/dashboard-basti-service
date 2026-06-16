@@ -2,10 +2,13 @@ import { create } from "zustand";
 import {
   adminService,
   type Admin,
+  type AdminsPagination,
   type CreateAdminPayload,
   type UpdateAdminPayload,
   type BlockAdminPayload,
 } from "@/lib/services/admin.service";
+
+const DEFAULT_LIMIT = 10;
 
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object") {
@@ -26,10 +29,13 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 
 interface AdminStore {
   admins: Admin[];
+  pagination: AdminsPagination | null;
+  page: number;
+  limit: number;
   isLoading: boolean;
   error: string | null;
-  isCached: boolean;
-  fetchAdmins: (forceRefresh?: boolean) => Promise<void>;
+  fetchAdmins: (page?: number) => Promise<void>;
+  goToPage: (page: number) => Promise<void>;
   addAdmin: (payload: CreateAdminPayload) => Promise<void>;
   updateAdmin: (id: string, payload: UpdateAdminPayload) => Promise<void>;
   blockAdmin: (id: string, payload: BlockAdminPayload) => Promise<void>;
@@ -39,22 +45,25 @@ interface AdminStore {
 
 export const useAdminStore = create<AdminStore>((set, get) => ({
   admins: [],
+  pagination: null,
+  page: 1,
+  limit: DEFAULT_LIMIT,
   isLoading: false,
   error: null,
-  isCached: false,
 
-  fetchAdmins: async (forceRefresh = false) => {
-    const state = get();
-
-    // Return cached data if available and not forcing refresh
-    if (state.isCached && state.admins.length > 0 && !forceRefresh) {
-      return;
-    }
-
+  fetchAdmins: async (page = get().page) => {
     set({ isLoading: true, error: null });
     try {
-      const admins = await adminService.getAll();
-      set({ admins, isLoading: false, isCached: true });
+      const { items, pagination } = await adminService.getAll({
+        page,
+        limit: get().limit,
+      });
+      set({
+        admins: items,
+        pagination,
+        page: pagination.page,
+        isLoading: false,
+      });
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to fetch admins");
       set({ error: message, isLoading: false });
@@ -62,14 +71,19 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     }
   },
 
+  goToPage: async (page: number) => {
+    const { pagination, isLoading } = get();
+    if (isLoading || page < 1) return;
+    if (pagination && page > pagination.totalPages) return;
+    await get().fetchAdmins(page);
+  },
+
   addAdmin: async (payload: CreateAdminPayload) => {
     set({ isLoading: true, error: null });
     try {
-      const newAdmin = await adminService.create(payload);
-      set((state) => ({
-        admins: [...state.admins, newAdmin],
-        isLoading: false,
-      }));
+      await adminService.create(payload);
+      // New admins sort to the top (newest first), so jump to the first page.
+      await get().fetchAdmins(1);
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to create admin");
       set({ error: message, isLoading: false });
@@ -80,13 +94,8 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   updateAdmin: async (id: string, payload: UpdateAdminPayload) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedAdmin = await adminService.update(id, payload);
-      set((state) => ({
-        admins: state.admins.map((admin) =>
-          admin.id === id ? updatedAdmin : admin,
-        ),
-        isLoading: false,
-      }));
+      await adminService.update(id, payload);
+      await get().fetchAdmins(get().page);
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to update admin");
       set({ error: message, isLoading: false });
@@ -97,13 +106,8 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
   blockAdmin: async (id: string, payload: BlockAdminPayload) => {
     set({ isLoading: true, error: null });
     try {
-      const updatedAdmin = await adminService.block(id, payload);
-      set((state) => ({
-        admins: state.admins.map((admin) =>
-          admin.id === id ? updatedAdmin : admin,
-        ),
-        isLoading: false,
-      }));
+      await adminService.block(id, payload);
+      await get().fetchAdmins(get().page);
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to block admin");
       set({ error: message, isLoading: false });
@@ -115,10 +119,10 @@ export const useAdminStore = create<AdminStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await adminService.delete(id);
-      set((state) => ({
-        admins: state.admins.filter((admin) => admin.id !== id),
-        isLoading: false,
-      }));
+      // If the last item on a page is removed, step back to the previous page.
+      const { page, admins } = get();
+      const nextPage = admins.length <= 1 && page > 1 ? page - 1 : page;
+      await get().fetchAdmins(nextPage);
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to delete admin");
       set({ error: message, isLoading: false });

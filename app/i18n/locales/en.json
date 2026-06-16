@@ -733,7 +733,11 @@
       "lowercase": "Contains a lowercase letter",
       "uppercase": "Contains an uppercase letter",
       "digit": "Contains a number"
-    }
+    },
+    "pageOf": "Page {{page}} of {{totalPages}}",
+    "totalShown": "admins",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "filters": {
     "status": "Status",

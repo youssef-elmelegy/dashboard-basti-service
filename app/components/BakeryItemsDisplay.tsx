@@ -153,10 +153,7 @@ function ItemCard({
         {item.product?.type && (
           <Badge
             variant="secondary"
-            className={cn(
-              "absolute top-2 capitalize",
-              isRTL ? "left-2" : "right-2",
-            )}
+            className="absolute top-2 end-2 capitalize"
           >
             {item.product.type.replace("_", " ")}
           </Badge>
@@ -166,8 +163,7 @@ function ItemCard({
         {isLowStock && (
           <Badge
             variant="destructive"
-            className={cn("absolute top-2", isRTL ? "right-2" : "left-2")}
-            dir={isRTL ? "rtl" : "ltr"}
+            className="absolute top-2 start-2"
           >
             {t("bakeriesManagement.lowStock")}
           </Badge>
@@ -175,7 +171,7 @@ function ItemCard({
 
         {/* Options Menu */}
         {onEdit && (
-          <div className={cn("absolute top-2", isRTL ? "left-2" : "right-2")}>
+          <div className="absolute top-2 end-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -189,7 +185,7 @@ function ItemCard({
               <DropdownMenuContent align={isRTL ? "start" : "end"}>
                 <DropdownMenuItem
                   onClick={() => onEdit(item)}
-                  className={isRTL ? "text-right" : "text-left"}
+                  className="text-start"
                 >
                   {t("bakeriesManagement.editStock")}
                 </DropdownMenuItem>
@@ -220,14 +216,7 @@ function ItemCard({
         <div className="space-y-2">
           {/* Show total stock only for non-addon items or addons without options */}
           {item.product?.type !== "addon" || !item.optionsStock?.length ? (
-            <div
-              className={cn(
-                "flex items-center",
-                isRTL
-                  ? "flex-row-reverse justify-start gap-2"
-                  : "justify-between",
-              )}
-            >
+            <div className="flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
                 {t("bakeriesManagement.stock")}:
               </span>

@@ -62,14 +62,14 @@ export function PredesignedCakeCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onToggleFeatured(cake.id)}>
-                <Star className="mr-2 h-4 w-4" />
+                <Star className="me-2 h-4 w-4" />
                 {t("common.toggleBestSeller")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(cake)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="me-2 h-4 w-4" />
                 {t("common.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>

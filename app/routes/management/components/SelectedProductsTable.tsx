@@ -42,7 +42,7 @@ export function SelectedProductsTable({
           className="w-2 h-2 bg-primary rounded-full animate-bounce"
           style={{ animationDelay: "0.2s" }}
         ></div>
-        <span className="text-sm text-muted-foreground ml-2">
+        <span className="text-sm text-muted-foreground ms-2">
           {t("regions.tableLoading")}
         </span>
       </div>

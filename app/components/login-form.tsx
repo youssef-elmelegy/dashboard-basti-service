@@ -48,7 +48,10 @@ export function LoginForm({
       }
     } catch (err) {
       console.error("Login error:", err);
-      const errMsg = err instanceof Error ? err.message : null;
+      const errMsg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: unknown }).message ?? "")
+          : null;
       setLocalError(errMsg || t("auth.login.loginFailed"));
     } finally {
       setLocalLoading(false);
@@ -95,7 +98,7 @@ export function LoginForm({
             <button
               type="button"
               onClick={() => navigate("/auth/forgot-password")}
-              className="ml-auto text-sm underline-offset-4 hover:underline"
+              className="ms-auto text-sm underline-offset-4 hover:underline"
               disabled={localLoading}
             >
               {t("auth.login.forgotPassword")}
@@ -115,7 +118,7 @@ export function LoginForm({
               type="button"
               onClick={() => setShowPassword((s) => !s)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
+              className="absolute end-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground"
               disabled={localLoading}
             >
               {showPassword ? (
