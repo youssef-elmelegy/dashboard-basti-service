@@ -1,12 +1,17 @@
 /* eslint-disable no-undef */
 // Bump this when changing the SW so caches/devtools pick up the new version.
-const SW_VERSION = "2026-04-26-broadcast";
+const SW_VERSION = "2026-06-18-fcm-project-fix";
 
+// Keep this SDK version in lockstep with the `firebase` npm package used by the
+// app (see package.json). A mismatch makes the SW and the app open the same
+// IndexedDB stores at different schema versions, which throws
+// "VersionError: The requested version (1) is less than the existing version (2)"
+// and blocks getToken().
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/12.12.1/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js",
+  "https://www.gstatic.com/firebasejs/12.12.1/firebase-messaging-compat.js",
 );
 
 self.addEventListener("install", (event) => {
@@ -19,13 +24,17 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Must match app/config/firebase.ts and the backend's FIREBASE_PROJECT_ID
+// (basty-notifications). The old `baasti` project here meant the SW was wired
+// to a different sender than the token the app minted, so background pushes
+// never matched.
 firebase.initializeApp({
-  apiKey: "AIzaSyBcdFzCjsn1pkR0QXg2qTeKN9R5Knv-u2E",
-  authDomain: "baasti.firebaseapp.com",
-  projectId: "baasti",
-  storageBucket: "baasti.firebasestorage.app",
-  messagingSenderId: "333213415683",
-  appId: "1:333213415683:web:72192481ae6a304cb95136",
+  apiKey: "AIzaSyDS87lgVSCSvjaAMd1ieYLJHPmt-MefQqk",
+  authDomain: "basty-notifications.firebaseapp.com",
+  projectId: "basty-notifications",
+  storageBucket: "basty-notifications.firebasestorage.app",
+  messagingSenderId: "492102922262",
+  appId: "1:492102922262:web:8bd8ad2919512e06a64537",
 });
 
 const messaging = firebase.messaging();
