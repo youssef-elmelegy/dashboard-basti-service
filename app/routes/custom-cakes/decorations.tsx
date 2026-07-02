@@ -42,7 +42,6 @@ export default function DecorationsPage() {
     null,
   );
   const observerTarget = useRef<HTMLDivElement>(null);
-  const isLoadingRef = useRef(false);
 
   const decorations = useDecorationStore((state) => state.decorations);
   const isLoading = useDecorationStore((state) => state.isLoading);
@@ -81,45 +80,32 @@ export default function DecorationsPage() {
     fetchDecorations();
   }, [fetchDecorations]);
 
-  // Handle infinite scroll
+  // Handle infinite scroll — the store's isLoadingMore guard prevents
+  // concurrent fetches, so this effect just observes the sentinel and calls
+  // loadMoreDecorations() whenever it becomes visible. Re-runs when
+  // pagination.page changes so a new observer fires on already-visible
+  // sentinels (IntersectionObserver only fires on state changes, not on
+  // "still intersecting" ticks).
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (isLoadingRef.current || isLoadingMore) {
-      return;
-    }
+    const target = observerTarget.current;
+    if (!target) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          !isLoadingMore &&
-          pagination.page < pagination.totalPages
-        ) {
-          isLoadingRef.current = true;
-          loadMoreDecorations().finally(() => {
-            isLoadingRef.current = false;
-          });
+        if (entries[0].isIntersecting) {
+          loadMoreDecorations();
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "200px" },
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [
-    isLoadingMore,
-    pagination.page,
-    pagination.totalPages,
-    loadMoreDecorations,
-  ]);
+    observer.observe(target);
+    return () => observer.unobserve(target);
+    // decorations.length is needed for the first-fetch case: on refresh
+    // the sentinel div isn't mounted while isLoading is true, so the ref
+    // is null on the first effect run. When items arrive it flips 0 → N
+    // and the effect re-runs with the ref now populated.
+  }, [pagination.page, decorations.length, loadMoreDecorations]);
 
   const handleAddDecoration = async (
     values:

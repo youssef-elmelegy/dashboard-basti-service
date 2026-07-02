@@ -30,6 +30,32 @@ export interface ApiError {
   data?: Record<string, unknown>;
 }
 
+/**
+ * Extracts a human-readable message from a thrown value.
+ *
+ * The response interceptor rejects with a plain `ApiError` object (not an
+ * `Error` instance), so callers can't rely on `error instanceof Error`. This
+ * pulls the real backend message — preferring the granular validation
+ * `details` list, then the normalized `message` — falling back to `fallback`.
+ */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object") {
+    const e = error as { message?: unknown; details?: unknown };
+    if (Array.isArray(e.details)) {
+      const joined = e.details
+        .filter((d): d is string => typeof d === "string" && d.trim() !== "")
+        .join("; ");
+      if (joined) return joined;
+    } else if (typeof e.details === "string" && e.details.trim() !== "") {
+      return e.details;
+    }
+    if (typeof e.message === "string" && e.message.trim() !== "") {
+      return e.message;
+    }
+  }
+  return fallback;
+}
+
 class ApiClient {
   private axiosInstance: AxiosInstance;
   private isRefreshing = false;
@@ -72,9 +98,11 @@ class ApiClient {
           | Record<string, unknown>
           | undefined;
 
-        // Endpoints that should NOT trigger a token refresh on 401
+        // Endpoints that should NOT trigger a token refresh on 401.
+        // check-auth IS included in refresh-on-401 because its whole purpose is
+        // "am I still authenticated — and if my access token expired, refresh
+        // it transparently using the refresh-token cookie."
         const noRefreshEndpoints = [
-          "/admin-auth/check-auth",
           "/admin-auth/refresh",
           "/admin-auth/login",
         ];
@@ -109,8 +137,17 @@ class ApiClient {
             } catch (refreshError) {
               this.isRefreshing = false;
               console.error("[Token Refresh] Failed to refresh tokens");
-              // Redirect to login on refresh failure
-              if (typeof window !== "undefined") {
+              // Redirect to login on refresh failure — but NOT when we're
+              // already on an auth page. The auth screens probe session state
+              // via check-auth on mount; a hard window redirect there reloads
+              // the page, re-triggers the probe, and loops forever. On auth
+              // pages the rejection propagates to the caller (e.g. the store's
+              // checkAuth), which sets isAuthenticated:false and lets the
+              // router keep the user on the login screen via client nav.
+              if (
+                typeof window !== "undefined" &&
+                !window.location.pathname.startsWith("/auth")
+              ) {
                 window.location.href = "/auth/login";
               }
               throw refreshError;

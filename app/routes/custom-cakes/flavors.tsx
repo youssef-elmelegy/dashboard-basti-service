@@ -42,7 +42,6 @@ export default function FlavorsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingFlavor, setEditingFlavor] = useState<Flavor | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
-  const isLoadingRef = useRef(false);
 
   const flavors = useFlavorStore((state) => state.flavors);
   const isLoading = useFlavorStore((state) => state.isLoading);
@@ -75,40 +74,26 @@ export default function FlavorsPage() {
     fetchFlavors();
   }, [fetchFlavors]);
 
-  // Handle infinite scroll
+  // Handle infinite scroll — store's isLoadingMore guard prevents concurrent
+  // fetches. Effect re-runs on flavors.length so the sentinel picks up its
+  // observer once the div actually mounts (on refresh, isLoading gates the
+  // list render so the ref is null on first effect run).
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (isLoadingRef.current || isLoadingMore) {
-      return;
-    }
+    const target = observerTarget.current;
+    if (!target) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          !isLoadingMore &&
-          pagination.page < pagination.totalPages
-        ) {
-          isLoadingRef.current = true;
-          loadMoreFlavors().finally(() => {
-            isLoadingRef.current = false;
-          });
+        if (entries[0].isIntersecting) {
+          loadMoreFlavors();
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "200px" },
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [isLoadingMore, pagination.page, pagination.totalPages, loadMoreFlavors]);
+    observer.observe(target);
+    return () => observer.unobserve(target);
+  }, [pagination.page, flavors.length, loadMoreFlavors]);
 
   const handleAddFlavor = async (
     values: CreateFlavorWithVariantImagesFormValues,

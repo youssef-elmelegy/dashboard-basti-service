@@ -63,6 +63,9 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
   ) => {
     const state = get();
 
+    // Re-entrance guard for strict-mode double-mount
+    if (state.isLoading) return;
+
     // Return cached data if available and not forcing refresh
     if (state.isCached && state.flavors.length > 0 && !forceRefresh) {
       return;
@@ -88,6 +91,9 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
 
   loadMoreFlavors: async (search?: string) => {
     const state = get();
+    // Re-entrance guard: prevents double-fetch when the observer fires
+    // twice before isLoadingMore has propagated back to the component.
+    if (state.isLoadingMore) return;
     const nextPage = state.pagination.page + 1;
 
     // Don't load more if we're already at the last page

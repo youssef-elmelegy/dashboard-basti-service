@@ -39,52 +39,32 @@ export default function PredesignedCakesPage() {
   const [editingCake, setEditingCake] = useState<PredesignedCake | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
-  const isLoadingRef = useRef(false);
 
   // Fetch initial data (use cached data if available)
   useEffect(() => {
     fetchPredesignedCakes();
   }, [fetchPredesignedCakes]);
 
-  // Handle infinite scroll
+  // Handle infinite scroll — store's isLoadingMore guard prevents concurrent
+  // fetches. Effect re-runs on predesignedCakes.length so the sentinel picks
+  // up its observer once the div actually mounts (on refresh, isLoading
+  // gates the list render so the ref is null on first effect run).
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (isLoadingRef.current || isLoadingMore) {
-      return;
-    }
+    const target = observerTarget.current;
+    if (!target) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          !isLoadingMore &&
-          pagination.page < pagination.totalPages
-        ) {
-          isLoadingRef.current = true;
-          loadMorePredesignedCakes().finally(() => {
-            isLoadingRef.current = false;
-          });
+        if (entries[0].isIntersecting) {
+          loadMorePredesignedCakes();
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "200px" },
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [
-    isLoadingMore,
-    pagination.page,
-    pagination.totalPages,
-    loadMorePredesignedCakes,
-  ]);
+    observer.observe(target);
+    return () => observer.unobserve(target);
+  }, [pagination.page, predesignedCakes.length, loadMorePredesignedCakes]);
 
   const handleEditSubmit = async (data: UpdatePredesignedCakeFormValues) => {
     if (!editingCake) return;
