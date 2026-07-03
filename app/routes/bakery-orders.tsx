@@ -223,28 +223,43 @@ async function downloadCardAsImage(cardMessage: {
 
 // Function to download image properly
 async function downloadImage(imageUrl: string, fileName: string) {
+  const safeName = fileName || "image.png";
+
+  // Primary path: fetch the bytes and save them via a blob URL. Works when the
+  // host (e.g. Cloudinary) allows CORS, and forces a real file download.
   try {
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, { mode: "cors" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = fileName || "image.png";
+    link.download = safeName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // Revoke only after the click has been processed — revoking synchronously
+    // can abort the download before it starts in some browsers.
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    return;
   } catch (error) {
-    console.error("Error downloading image:", error);
-    // Fallback to simple download
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = fileName || "image.png";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.error("Blob download failed, falling back:", error);
   }
+
+  // Fallback: the `download` attribute is ignored for cross-origin URLs, so a
+  // plain <a> just opens the image in a new tab. For Cloudinary URLs, inject
+  // `fl_attachment` so the CDN responds with Content-Disposition: attachment,
+  // which forces a real download regardless of origin.
+  const downloadUrl = imageUrl.includes("/upload/")
+    ? imageUrl.replace("/upload/", "/upload/fl_attachment/")
+    : imageUrl;
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = safeName;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // function ImageUpload({
@@ -645,6 +660,9 @@ export default function BakeryOrdersPage() {
   const currentBakery = useBakeryStore((state) => state.currentBakery);
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
   const setBakeryOrders = useBakeryStore((state) => state.setBakeryOrders);
+  const getCachedBakeryOrders = useBakeryStore(
+    (state) => state.getBakeryOrders,
+  );
   const updateOrder = useOrderStore((state) => state.updateOrder);
   const invalidateCompletedOrders = useBakeryCompletedOrdersStore(
     (state) => state.invalidate,
@@ -1562,6 +1580,16 @@ export default function BakeryOrdersPage() {
                         >
                       )?.name as string | undefined) ||
                       "cake-1";
+                    // Bakery sees the printing type only (fee is admin-only).
+                    const printingType =
+                      ((firstCake?.data as unknown as Record<string, unknown>)
+                        ?.printingType as "paper" | "suger" | undefined) ||
+                      ((
+                        firstCake?.customCake as unknown as Record<
+                          string,
+                          unknown
+                        >
+                      )?.printingType as "paper" | "suger" | undefined);
 
                     return imageUrl ? (
                       <Card>
@@ -1573,8 +1601,8 @@ export default function BakeryOrdersPage() {
                             </CardTitle>
                           </div>
                         </CardHeader>
-                        <CardContent className="flex items-center justify-center p-4 h-64">
-                          <div className="w-full h-full">
+                        <CardContent className="p-4">
+                          <div className="w-full">
                             <div className="rounded-lg overflow-hidden border bg-muted h-48">
                               <img
                                 src={imageUrl}
@@ -1582,6 +1610,16 @@ export default function BakeryOrdersPage() {
                                 className="w-full h-full object-contain bg-white"
                               />
                             </div>
+                            {printingType && (
+                              <p className="mt-3 text-sm text-muted-foreground">
+                                {t("orderDetail.printingType")}:{" "}
+                                <span className="font-medium text-foreground">
+                                  {printingType === "suger"
+                                    ? t("orderDetail.printingSugar")
+                                    : t("orderDetail.printingPaper")}
+                                </span>
+                              </p>
+                            )}
                             <div className="flex gap-2 mt-3">
                               <Button
                                 variant="outline"

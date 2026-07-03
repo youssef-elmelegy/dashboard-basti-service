@@ -151,7 +151,11 @@
     "notes": "Notes",
     "noNotes": "No notes provided",
     "totalCapacity": "Total capacity",
-    "reference": "Ref:"
+    "reference": "Ref:",
+    "printingType": "Printing type",
+    "printingFee": "Printing fee",
+    "printingPaper": "Paper",
+    "printingSugar": "Sugar"
   },
   "auth": {
     "login": {
@@ -265,7 +269,14 @@
     "totalShown": "orders",
     "pageOf": "Page {{page}} of {{totalPages}}",
     "previousPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "copyReference": "Copy reference",
+    "pasteToAssign": "Paste reference to assign",
+    "pasteReferenceHint": "Paste reference or order ID",
+    "assignByPaste": "Assign",
+    "resolvingOrder": "Finding order…",
+    "orderNotFound": "No order found for \"{{value}}\"",
+    "alreadyAssignedHere": "Order is already assigned to this bakery"
   },
   "bakeries": {
     "title": "Bakeries",
@@ -1072,6 +1083,12 @@
     "bastiPercentage": "Basti Percentage",
     "bastiPercentageDesc": "Percentage of each order kept by Basti (the rest goes to the bakery)",
     "bakeryPercentage": "Bakery",
+    "miniCakePercentage": "Mini Cake Percentage",
+    "miniCakePercentageDesc": "Percentage applied to mini cake orders",
+    "printingFeeNormal": "Normal Printing Fee",
+    "printingFeeNormalDesc": "Fee added for normal (paper) printing on custom cakes",
+    "printingFeeSuger": "Sugar Printing Fee",
+    "printingFeeSugerDesc": "Fee added for sugar printing on custom cakes",
     "save": "Save",
     "saving": "Saving..."
   },

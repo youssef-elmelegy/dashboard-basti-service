@@ -27,11 +27,14 @@ import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import type { Order } from "@/data/orders";
 import type { Bakery } from "@/lib/services/bakery.service";
 import { orderApi } from "@/lib/services/order.service";
+import { convertApiResponseToOrder } from "@/stores/orderStore";
 import { httpRequest } from "@/lib/http-handler";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CopyReferenceButton } from "@/components/CopyReferenceButton";
 import {
   CalendarIcon,
   Package,
@@ -39,6 +42,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  ClipboardPaste,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -118,16 +123,22 @@ function SortableOrderCard({
       >
         <CardHeader className="py-0 px-3">
           <div className="space-y-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/orders/${order.id}`);
-              }}
-              className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-              title={`Click to view order ${order.referenceNumber || order.id}`}
-            >
-              {order.referenceNumber || `#${order.id}`}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/orders/${order.id}`);
+                }}
+                className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
+                title={`Click to view order ${order.referenceNumber || order.id}`}
+              >
+                {order.referenceNumber || `#${order.id}`}
+              </button>
+              <CopyReferenceButton
+                value={order.referenceNumber || order.id}
+                title={t("orders.copyReference")}
+              />
+            </div>
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold text-sm truncate">
@@ -236,6 +247,7 @@ function BakeryColumn({
   t,
   activeOrderType,
   isIncompatible,
+  onPasteAssign,
 }: {
   bakeryId: string;
   bakeryName: string;
@@ -248,10 +260,29 @@ function BakeryColumn({
   t: (key: string) => string;
   activeOrderType?: string;
   isIncompatible?: boolean;
+  onPasteAssign: (bakeryId: string, value: string) => Promise<boolean>;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: bakeryId,
   });
+
+  // Paste-to-assign: a "hidden" input revealed by the clipboard icon in the
+  // header. Paste an order reference/id and submit to assign it to this bakery.
+  const [isPasteOpen, setIsPasteOpen] = useState(false);
+  const [pasteValue, setPasteValue] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const submitPaste = async () => {
+    const value = pasteValue.trim();
+    if (!value || isAssigning) return;
+    setIsAssigning(true);
+    const ok = await onPasteAssign(bakeryId, value);
+    setIsAssigning(false);
+    if (ok) {
+      setPasteValue("");
+      setIsPasteOpen(false);
+    }
+  };
 
   const orderIds = orders.map((order) => order.id);
 
@@ -351,14 +382,30 @@ function BakeryColumn({
               </div>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 shrink-0"
-            onClick={onToggleCollapse}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 w-8 p-0",
+                isPasteOpen && "bg-primary/10 text-primary",
+              )}
+              onClick={() => setIsPasteOpen((open) => !open)}
+              title={t("orders.pasteToAssign")}
+              aria-label={t("orders.pasteToAssign")}
+              aria-pressed={isPasteOpen}
+            >
+              <ClipboardPaste className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onToggleCollapse}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Capacity Progress Bar */}
@@ -398,6 +445,54 @@ function BakeryColumn({
             </span>
           </div>
         </div>
+
+        {/* Paste-to-assign input — revealed by the clipboard icon above. */}
+        {isPasteOpen && (
+          <div className="mt-3 flex items-center gap-1">
+            <Input
+              value={pasteValue}
+              onChange={(e) => setPasteValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void submitPaste();
+                } else if (e.key === "Escape") {
+                  setIsPasteOpen(false);
+                  setPasteValue("");
+                }
+              }}
+              placeholder={t("orders.pasteReferenceHint")}
+              disabled={isAssigning}
+              autoFocus
+              className="h-8 text-xs font-mono"
+            />
+            <Button
+              size="sm"
+              className="h-8 px-2 shrink-0"
+              onClick={() => void submitPaste()}
+              disabled={isAssigning || !pasteValue.trim()}
+            >
+              {isAssigning ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-e-transparent" />
+              ) : (
+                t("orders.assignByPaste")
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 shrink-0"
+              onClick={() => {
+                setIsPasteOpen(false);
+                setPasteValue("");
+              }}
+              title={t("buttons.close")}
+              aria-label={t("buttons.close")}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </CardHeader>
 
       {/* Orders List - With fixed height and internal scroll */}
@@ -663,6 +758,115 @@ const Orders = () => {
     return { valid: true };
   };
 
+  // Shared assign path used by both drag-and-drop and paste-to-assign:
+  // validate, move the card optimistically, hit the API, and revert on failure.
+  // Returns whether the server accepted the assignment.
+  const performAssign = async (
+    order: Order,
+    targetBakeryId: string,
+  ): Promise<boolean> => {
+    const bakery = bakeries.find((b) => b.id === targetBakeryId);
+    if (!bakery) return false;
+
+    const validation = canAssignOrderToBakery(order, bakery);
+    if (!validation.valid) {
+      console.error("Cannot assign order:", validation.reason);
+      setAssignError(validation.reason ?? "Cannot assign order to this bakery");
+      return false;
+    }
+    setAssignError(null);
+
+    const sourceBakeryId = order.assignedBakeryId ?? null;
+    const targetIndex = (bakeryOrders[targetBakeryId] || []).length;
+    const movedOrder: Order = {
+      ...order,
+      assignedBakeryId: targetBakeryId,
+      assignedBakeryName: bakery.name || "",
+      assignedAt: new Date().toISOString(),
+    };
+
+    // --- Optimistic in-memory move (no refetch) ---
+    if (sourceBakeryId) {
+      removeAssignedOrder(order.id);
+    } else {
+      removeUnassignedOrder(order.id);
+    }
+    addAssignedOrder(targetBakeryId, movedOrder);
+    setOrderPositions((prev) => ({ ...prev, [order.id]: targetIndex }));
+
+    const ok = await assignOrderToBakery(order.id, targetBakeryId);
+    if (!ok) {
+      // Revert: pull it back out of the target and restore the source.
+      removeAssignedOrder(order.id);
+      if (sourceBakeryId) {
+        addAssignedOrder(sourceBakeryId, order);
+      } else {
+        addUnassignedOrder(order);
+      }
+    }
+    return ok;
+  };
+
+  // Resolve a pasted reference / order id to an Order, then assign it to the
+  // given bakery. Looks in the orders already on the board first, then falls
+  // back to the backend (reference search, then id lookup) so an order that
+  // isn't on a loaded page can still be assigned.
+  const handlePasteAssign = async (
+    bakeryId: string,
+    rawValue: string,
+  ): Promise<boolean> => {
+    const value = rawValue.trim();
+    if (!value) return false;
+    const needle = value.toLowerCase();
+
+    const matches = (o: Order) =>
+      o.id === value || (o.referenceNumber?.toLowerCase() ?? "") === needle;
+
+    // 1. In-memory (covers all assigned orders + the loaded unassigned pool).
+    let order = orders.find(matches);
+
+    // 2. Backend reference search on the unassigned feed.
+    if (!order) {
+      try {
+        const res = await orderApi.getUnassigned({ q: value, limit: 10 });
+        if (res.success && res.data) {
+          const items = res.data.items;
+          const hit =
+            items.find(
+              (it) =>
+                it.id === value ||
+                (it.referenceNumber?.toLowerCase() ?? "") === needle,
+            ) ?? (items.length === 1 ? items[0] : undefined);
+          if (hit) order = convertApiResponseToOrder(hit);
+        }
+      } catch (err) {
+        console.error("Paste assign: reference lookup failed", err);
+      }
+    }
+
+    // 3. Treat the pasted value as an order id.
+    if (!order) {
+      try {
+        const res = await orderApi.getOne(value);
+        if (res.success && res.data) order = convertApiResponseToOrder(res.data);
+      } catch {
+        // getOne 404s when the value isn't an id — fall through to not-found.
+      }
+    }
+
+    if (!order) {
+      setAssignError(t("orders.orderNotFound", { value }));
+      return false;
+    }
+
+    if (order.assignedBakeryId === bakeryId) {
+      setAssignError(t("orders.alreadyAssignedHere"));
+      return false;
+    }
+
+    return performAssign(order, bakeryId);
+  };
+
   const handleDragStart = (event: DragEndEvent) => {
     const { active } = event;
     const order = orders.find((o) => o.id === active.id);
@@ -767,47 +971,7 @@ const Orders = () => {
 
     // Assign a pool order, or reassign an order from another bakery.
     if (targetBakeryId) {
-      const bakery = bakeries.find((b) => b.id === targetBakeryId);
-      if (!bakery) return;
-
-      const validation = canAssignOrderToBakery(activeOrder, bakery);
-      if (!validation.valid) {
-        console.error("Cannot assign order:", validation.reason);
-        setAssignError(
-          validation.reason ?? "Cannot assign order to this bakery",
-        );
-        return;
-      }
-      setAssignError(null);
-
-      const sourceBakeryId = activeOrder.assignedBakeryId ?? null;
-      const targetIndex = (bakeryOrders[targetBakeryId] || []).length;
-      const movedOrder: Order = {
-        ...activeOrder,
-        assignedBakeryId: targetBakeryId,
-        assignedBakeryName: bakery.name || "",
-        assignedAt: new Date().toISOString(),
-      };
-
-      // --- Optimistic in-memory move (no refetch) ---
-      if (sourceBakeryId) {
-        removeAssignedOrder(activeId);
-      } else {
-        removeUnassignedOrder(activeId);
-      }
-      addAssignedOrder(targetBakeryId, movedOrder);
-      setOrderPositions((prev) => ({ ...prev, [activeId]: targetIndex }));
-
-      const ok = await assignOrderToBakery(activeId, targetBakeryId);
-      if (!ok) {
-        // Revert: pull it back out of the target and restore the source.
-        removeAssignedOrder(activeId);
-        if (sourceBakeryId) {
-          addAssignedOrder(sourceBakeryId, activeOrder);
-        } else {
-          addUnassignedOrder(activeOrder);
-        }
-      }
+      await performAssign(activeOrder, targetBakeryId);
       return;
     }
 
@@ -920,6 +1084,7 @@ const Orders = () => {
                         t={t}
                         activeOrderType={activeOrder?.type}
                         isIncompatible={isIncompatible || false}
+                        onPasteAssign={handlePasteAssign}
                       />
                     </div>
                   );

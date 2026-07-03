@@ -48,6 +48,8 @@ interface CustomCakeData {
   color?: { name: string };
   description?: string;
   imageToPrint?: string;
+  printingType?: "paper" | "suger";
+  printingFee?: number;
   name?: string;
   [key: string]: unknown;
 }
@@ -213,28 +215,43 @@ function cartItemToOrderItem(
 
 // Function to download image properly
 async function downloadImage(imageUrl: string, fileName: string) {
+  const safeName = fileName || "image.png";
+
+  // Primary path: fetch the bytes and save them via a blob URL. Works when the
+  // host (e.g. Cloudinary) allows CORS, and forces a real file download.
   try {
-    const response = await fetch(imageUrl);
+    const response = await fetch(imageUrl, { mode: "cors" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = fileName || "image.png";
+    link.download = safeName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    // Revoke only after the click has been processed — revoking synchronously
+    // can abort the download before it starts in some browsers.
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    return;
   } catch (error) {
-    console.error("Error downloading image:", error);
-    // Fallback to simple download
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = fileName || "image.png";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.error("Blob download failed, falling back:", error);
   }
+
+  // Fallback: the `download` attribute is ignored for cross-origin URLs, so a
+  // plain <a> just opens the image in a new tab. For Cloudinary URLs, inject
+  // `fl_attachment` so the CDN responds with Content-Disposition: attachment,
+  // which forces a real download regardless of origin.
+  const downloadUrl = imageUrl.includes("/upload/")
+    ? imageUrl.replace("/upload/", "/upload/fl_attachment/")
+    : imageUrl;
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = safeName;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // Function to download greeting card as image with QR code
@@ -1403,6 +1420,10 @@ export default function OrderDetailPage() {
                   const imageToPrint =
                     cake.data?.imageToPrint || cake.customCake?.imageToPrint;
                   if (!imageToPrint) return null;
+                  const printingType =
+                    cake.data?.printingType || cake.customCake?.printingType;
+                  const printingFee =
+                    cake.data?.printingFee ?? cake.customCake?.printingFee;
 
                   return (
                     <div key={index} className="flex flex-col gap-3">
@@ -1413,6 +1434,26 @@ export default function OrderDetailPage() {
                           className="w-full h-auto max-h-64 object-contain"
                         />
                       </div>
+                      {printingType && (
+                        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1 text-xs text-muted-foreground">
+                          <span>
+                            {t("orderDetail.printingType")}:{" "}
+                            <span className="font-medium text-foreground">
+                              {printingType === "suger"
+                                ? t("orderDetail.printingSugar")
+                                : t("orderDetail.printingPaper")}
+                            </span>
+                          </span>
+                          {printingFee != null && (
+                            <span>
+                              {t("orderDetail.printingFee")}:{" "}
+                              <span className="font-medium text-foreground">
+                                {printingFee} {t("orderDetail.lyd")}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <Button
                         size="sm"
                         onClick={() =>

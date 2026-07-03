@@ -7,7 +7,7 @@ import {
 } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { CSSProperties, DragEvent, ElementType, ReactNode } from "react";
+import type { CSSProperties, ElementType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type SortableState = { isDragging: boolean; isOver: boolean };
@@ -80,7 +80,7 @@ export function SortableItem({ id, as, className, children }: SortableItemProps)
       // dnd-kit drives the drag through pointer/touch events; block the
       // browser's native HTML5 image/text drag so it can't ghost-drag on
       // desktop before our pointer threshold activates.
-      onDragStart={(e: DragEvent) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
     >
       {content}
     </Tag>

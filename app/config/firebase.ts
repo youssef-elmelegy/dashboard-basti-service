@@ -92,6 +92,58 @@ async function clearStalePushSubscription(
   return false;
 }
 
+function isIndexedDbVersionError(err: unknown): boolean {
+  if (!err) return false;
+  const name = (err as { name?: string }).name;
+  const message = (err as { message?: string }).message ?? "";
+  return (
+    name === "VersionError" || /less than the existing version/i.test(message)
+  );
+}
+
+/**
+ * Delete Firebase Messaging's IndexedDB store. A previously-installed Firebase
+ * SDK can leave `firebase-messaging-database` at a higher schema version than
+ * the SDK currently bundled with the app expects; getToken() then throws
+ * "VersionError: The requested version (1) is less than the existing version (2)"
+ * and never mints a token. Dropping the DB lets the current SDK recreate it at
+ * its own version on the next getToken(). Resolves on every outcome so a
+ * blocked/failed delete can't hang the login flow.
+ */
+async function deleteStaleMessagingDatabase(): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
+
+  const names = new Set<string>(["firebase-messaging-database"]);
+  const listDatabases = (
+    indexedDB as unknown as {
+      databases?: () => Promise<Array<{ name?: string }>>;
+    }
+  ).databases;
+  if (typeof listDatabases === "function") {
+    try {
+      const dbs = await listDatabases.call(indexedDB);
+      for (const db of dbs) {
+        if (db.name && /firebase.*messaging/i.test(db.name)) names.add(db.name);
+      }
+    } catch {
+      // databases() unsupported/blocked — fall back to the known name.
+    }
+  }
+
+  await Promise.all(
+    [...names].map(
+      (name) =>
+        new Promise<void>((resolve) => {
+          const req = indexedDB.deleteDatabase(name);
+          req.onsuccess = () => resolve();
+          req.onerror = () => resolve();
+          req.onblocked = () => resolve();
+        }),
+    ),
+  );
+  console.log("[FCM] Cleared stale firebase-messaging IndexedDB");
+}
+
 export async function requestFcmToken(): Promise<string | null> {
   const messaging = await getMessagingIfSupported();
   if (!messaging) return null;
@@ -131,6 +183,23 @@ export async function requestFcmToken(): Promise<string | null> {
     }
     return token || null;
   } catch (err) {
+    if (isIndexedDbVersionError(err)) {
+      console.warn(
+        "[FCM] getToken failed with IndexedDB VersionError — deleting stale messaging DB and retrying",
+        err,
+      );
+      await deleteStaleMessagingDatabase();
+      try {
+        const token = await tryGetToken();
+        return token || null;
+      } catch (retryErr) {
+        console.error(
+          "[FCM] getToken retry after IndexedDB reset failed:",
+          retryErr,
+        );
+        return null;
+      }
+    }
     if (isPushServiceError(err)) {
       console.warn(
         "[FCM] getToken failed with push service error — clearing stale subscription and retrying",

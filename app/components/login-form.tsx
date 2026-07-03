@@ -7,7 +7,6 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import type { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { authApi } from "@/lib/api/auth.api";
 import { useAuthStore } from "@/stores/auth.store";
 
 export function LoginForm({
@@ -16,6 +15,7 @@ export function LoginForm({
 }: React.ComponentProps<"form">) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const login = useAuthStore((state) => state.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -33,19 +33,12 @@ export function LoginForm({
 
     try {
       setLocalLoading(true);
-      const response = await authApi.login({ email, password });
-      console.log("Login response:", response);
-      if (response.success && response.data) {
-        console.log("Login successful, updating store and navigating to /");
-        // Update Zustand store with admin data
-        useAuthStore.setState({
-          admin: response.data.admin,
-          isAuthenticated: true,
-        });
-        navigate("/");
-      } else {
-        setLocalError(response.message || t("auth.login.loginFailed"));
-      }
+      // Go through the store's login action (not authApi directly) so the
+      // shared post-login side effects run — notably FCM push-token
+      // registration with the backend. It sets admin/isAuthenticated on
+      // success and throws on failure.
+      await login({ email, password });
+      navigate("/");
     } catch (err) {
       console.error("Login error:", err);
       const errMsg =

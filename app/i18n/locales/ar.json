@@ -151,7 +151,11 @@
     "notes": "ملاحظات",
     "noNotes": "لا توجد ملاحظات",
     "totalCapacity": "إجمالي السعة",
-    "reference": "المرجع:"
+    "reference": "المرجع:",
+    "printingType": "نوع الطباعة",
+    "printingFee": "رسوم الطباعة",
+    "printingPaper": "ورقية",
+    "printingSugar": "سكر"
   },
   "auth": {
     "login": {
@@ -265,7 +269,14 @@
     "totalShown": "طلب",
     "pageOf": "صفحة {{page}} من {{totalPages}}",
     "previousPage": "الصفحة السابقة",
-    "nextPage": "الصفحة التالية"
+    "nextPage": "الصفحة التالية",
+    "copyReference": "نسخ رقم المرجع",
+    "pasteToAssign": "ألصق رقم المرجع للإسناد",
+    "pasteReferenceHint": "ألصق رقم المرجع أو معرّف الطلب",
+    "assignByPaste": "إسناد",
+    "resolvingOrder": "جارٍ البحث عن الطلب…",
+    "orderNotFound": "لم يتم العثور على طلب لـ \"{{value}}\"",
+    "alreadyAssignedHere": "الطلب مُسند بالفعل إلى هذا المخبز"
   },
   "bakeries": {
     "title": "المخابز",
@@ -1072,6 +1083,12 @@
     "bastiPercentage": "نسبة باستي",
     "bastiPercentageDesc": "النسبة التي تحتفظ بها باستي من كل طلب (والباقي للمخبز)",
     "bakeryPercentage": "المخبز",
+    "miniCakePercentage": "نسبة الكيك المصغر",
+    "miniCakePercentageDesc": "النسبة المطبقة على طلبات الكيك المصغر",
+    "printingFeeNormal": "رسوم الطباعة العادية",
+    "printingFeeNormalDesc": "الرسوم المضافة للطباعة العادية (الورقية) على الكيك المخصص",
+    "printingFeeSuger": "رسوم طباعة السكر",
+    "printingFeeSugerDesc": "الرسوم المضافة لطباعة السكر على الكيك المخصص",
     "save": "حفظ",
     "saving": "جاري الحفظ..."
   },

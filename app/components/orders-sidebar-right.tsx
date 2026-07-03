@@ -11,6 +11,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyReferenceButton } from "@/components/CopyReferenceButton";
 import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import { useRegionStore } from "@/stores/regionStore";
 import { type Order } from "@/data/orders";
@@ -99,16 +100,22 @@ function DraggableOrderCard({
       onDoubleClick={() => !isDragging && onNavigate(order.id)}
     >
       <CardHeader className="py-0 px-3 flex flex-col gap-0.5">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onNavigate(order.id);
-          }}
-          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
-          title={`${t("common.viewDetails")} ${order.referenceNumber || order.id}`}
-        >
-          {order.referenceNumber || `#${order.id}`}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate(order.id);
+            }}
+            className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit cursor-pointer"
+            title={`${t("common.viewDetails")} ${order.referenceNumber || order.id}`}
+          >
+            {order.referenceNumber || `#${order.id}`}
+          </button>
+          <CopyReferenceButton
+            value={order.referenceNumber || order.id}
+            title={t("orders.copyReference")}
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <CardTitle className="text-sm font-semibold truncate">
             {formatProductName(order.productName, t)}

@@ -153,6 +153,11 @@ const BakeryOrderDetail = () => {
     ? ((customCakeImageToPrint.data as Record<string, unknown>)
         ?.imageToPrint as string | undefined)
     : undefined;
+  // Bakery sees the printing type (not the fee — that's admin-only).
+  const printingType = customCakeImageToPrint
+    ? ((customCakeImageToPrint.data as Record<string, unknown>)
+        ?.printingType as "paper" | "suger" | undefined)
+    : undefined;
 
   const finalImage =
     order.qa?.finalImages && order.qa.finalImages.length > 0
@@ -260,6 +265,16 @@ const BakeryOrderDetail = () => {
                   className="w-full h-72 object-contain"
                 />
               </div>
+              {printingType && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {t("orderDetail.printingType")}:{" "}
+                  <span className="font-medium text-foreground">
+                    {printingType === "suger"
+                      ? t("orderDetail.printingSugar")
+                      : t("orderDetail.printingPaper")}
+                  </span>
+                </p>
+              )}
             </CardContent>
           </Card>
         )}

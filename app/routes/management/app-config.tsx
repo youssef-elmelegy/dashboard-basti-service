@@ -28,6 +28,11 @@ const formSchema = z.object({
   weekendDays: z.array(z.number().int().min(0).max(6)),
   holidays: z.array(z.string()),
   bastiPercentage: z.number().int().min(0).max(100),
+  miniCakePercentage: z.number().min(0),
+  printingFee: z.object({
+    normal: z.number().int().min(0),
+    suger: z.number().int().min(0),
+  }),
   deliveryAmount: z.number().int().min(0),
   bastiDeliveryAmount: z.number().int().min(0),
 });
@@ -66,6 +71,8 @@ export default function AppConfigPage() {
       weekendDays: [5, 6],
       holidays: [],
       bastiPercentage: 20,
+      miniCakePercentage: 10,
+      printingFee: { normal: 10, suger: 20 },
       deliveryAmount: 10,
       bastiDeliveryAmount: 0,
     },
@@ -88,6 +95,8 @@ export default function AppConfigPage() {
           weekendDays: config.weekendDays,
           holidays: config.holidays,
           bastiPercentage: config.bastiPercentage,
+          miniCakePercentage: config.miniCakePercentage,
+          printingFee: config.printingFee,
           deliveryAmount: config.deliveryAmount,
           bastiDeliveryAmount: config.bastiDeliveryAmount,
         });
@@ -120,6 +129,8 @@ export default function AppConfigPage() {
         weekendDays: values.weekendDays,
         holidays: values.holidays,
         bastiPercentage: values.bastiPercentage,
+        miniCakePercentage: values.miniCakePercentage,
+        printingFee: values.printingFee,
         deliveryAmount: values.deliveryAmount,
         bastiDeliveryAmount: values.bastiDeliveryAmount,
         // These fields are not managed by the form UI
@@ -143,6 +154,8 @@ export default function AppConfigPage() {
         weekendDays: config.weekendDays,
         holidays: config.holidays,
         bastiPercentage: config.bastiPercentage,
+        miniCakePercentage: config.miniCakePercentage,
+        printingFee: config.printingFee,
         deliveryAmount: config.deliveryAmount,
         bastiDeliveryAmount: config.bastiDeliveryAmount,
       });
@@ -219,7 +232,7 @@ export default function AppConfigPage() {
               <h2 className="text-lg font-semibold">
                 {t("appConfig.operatingHours")}
               </h2>
-              <div className="flex gap-6 flex-wrap">
+              <div className="flex gap-6 flex-wrap items-start">
                 <FormField
                   control={form.control}
                   name="openingHour"
@@ -301,7 +314,7 @@ export default function AppConfigPage() {
               <h2 className="text-lg font-semibold">
                 {t("appConfig.pricingDelivery")}
               </h2>
-              <div className="flex gap-6 flex-wrap">
+              <div className="flex gap-6 flex-wrap items-start">
                 <FormField
                   control={form.control}
                   name="deliveryAmount"
@@ -363,25 +376,24 @@ export default function AppConfigPage() {
                     const bakeryPct = Math.max(0, Math.min(100, 100 - value));
                     return (
                       <FormItem className="flex-1 min-w-48">
-                        <FormLabel>
-                          {t("appConfig.bastiPercentage")}
-                        </FormLabel>
+                        <div className="flex items-center justify-between gap-2">
+                          <FormLabel>
+                            {t("appConfig.bastiPercentage")}
+                          </FormLabel>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {t("appConfig.bakeryPercentage")}: {bakeryPct}%
+                          </span>
+                        </div>
                         <FormControl>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(parseInt(e.target.value))
-                              }
-                              className="pe-40"
-                            />
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none whitespace-nowrap">
-                              {t("appConfig.bakeryPercentage")}: {bakeryPct}%
-                            </span>
-                          </div>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value))
+                            }
+                          />
                         </FormControl>
                         <FormDescription>
                           {t("appConfig.bastiPercentageDesc")}
@@ -390,6 +402,85 @@ export default function AppConfigPage() {
                       </FormItem>
                     );
                   }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="miniCakePercentage"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>
+                        {t("appConfig.miniCakePercentage")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="any"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.miniCakePercentageDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="printingFee.normal"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>
+                        {t("appConfig.printingFeeNormal")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.printingFeeNormalDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="printingFee.suger"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>
+                        {t("appConfig.printingFeeSuger")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.printingFeeSugerDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </div>

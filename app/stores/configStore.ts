@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getApiErrorMessage } from "@/lib/api-client";
 import {
   configApi,
   type ConfigResponseDto,
@@ -52,8 +53,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         throw new Error(response.message || "Failed to fetch config");
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch config";
+      const errorMessage = getApiErrorMessage(error, "Failed to fetch config");
       set({ error: errorMessage, isLoading: false, hasLoaded: true });
       throw error;
     }
@@ -74,8 +74,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         throw new Error(response.message || "Failed to update config");
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update config";
+      const errorMessage = getApiErrorMessage(error, "Failed to update config");
       set({ error: errorMessage, isSaving: false });
       throw error;
     }

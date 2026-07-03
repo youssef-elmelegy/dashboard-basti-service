@@ -15,6 +15,11 @@ export interface ConfigResponseDto {
   isOpen: boolean;
   closureMessage: string | null;
   bastiPercentage: number;
+  miniCakePercentage: number;
+  printingFee: {
+    normal: number;
+    suger: number;
+  };
   deliveryAmount: number;
   bastiDeliveryAmount: number;
   createdAt: string;
@@ -35,6 +40,11 @@ export interface UpdateConfigRequest {
   isOpen?: boolean;
   closureMessage?: string | null;
   bastiPercentage?: number;
+  miniCakePercentage?: number;
+  printingFee?: {
+    normal: number;
+    suger: number;
+  };
   deliveryAmount?: number;
   bastiDeliveryAmount?: number;
 }
