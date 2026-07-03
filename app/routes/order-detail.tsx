@@ -438,14 +438,7 @@ export default function OrderDetailPage() {
     loadOrder();
   }, [loadOrder]);
 
-  // Only trust fetchedOrder if it matches the URL id. Without this guard, a
-  // stale state (from the previous route/order-detail visit) can render the
-  // wrong order for the split second before the new fetch resolves — visible
-  // as URL /orders/A but header showing #B and Ref of B.
-  const matchedFetched =
-    fetchedOrder && fetchedOrder.id === id ? fetchedOrder : null;
-  const order = (matchedFetched ||
-    orders.find((o) => o.id === id)) as OrderData;
+  const order = (fetchedOrder || orders.find((o) => o.id === id)) as OrderData;
 
   // Send the Back button to the list this order actually belongs to: the
   // completed-orders page for terminal/in-delivery statuses, otherwise the
