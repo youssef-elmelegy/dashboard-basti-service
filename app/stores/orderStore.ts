@@ -330,8 +330,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       if (response.success && response.data) {
         // Convert API responses to internal Order format
-        const bakeryOrdersList = response.data.map((apiOrder: OrderResponse) =>
-          convertApiResponseToOrder(apiOrder),
+        const bakeryOrdersList = response.data.items.map(
+          (apiOrder: OrderResponse) => convertApiResponseToOrder(apiOrder),
         );
 
         // Cache the bakery orders

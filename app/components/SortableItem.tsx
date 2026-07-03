@@ -46,7 +46,12 @@ interface SortableItemProps {
  * whole element (drag from anywhere) and exposes `isDragging`/`isOver` so the
  * caller can style the active and hovered states.
  */
-export function SortableItem({ id, as, className, children }: SortableItemProps) {
+export function SortableItem({
+  id,
+  as,
+  className,
+  children,
+}: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -80,7 +85,7 @@ export function SortableItem({ id, as, className, children }: SortableItemProps)
       // dnd-kit drives the drag through pointer/touch events; block the
       // browser's native HTML5 image/text drag so it can't ghost-drag on
       // desktop before our pointer threshold activates.
-      onDragStart={(e) => e.preventDefault()}
+      onDragStart={(e: React.DragEvent) => e.preventDefault()}
     >
       {content}
     </Tag>
