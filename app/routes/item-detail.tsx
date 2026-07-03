@@ -260,7 +260,11 @@ export default function ItemDetailPage() {
                         <p className="text-xs text-muted-foreground uppercase font-medium">
                           {t("itemDetail.size")}
                         </p>
-                        <p className="text-2xl font-bold">{item.size}</p>
+                        <p className="text-2xl font-bold capitalize">
+                          {t(`common.sizes.${item.size}`, {
+                            defaultValue: item.size,
+                          })}
+                        </p>
                       </div>
                     )}
                     {item.flavor && (

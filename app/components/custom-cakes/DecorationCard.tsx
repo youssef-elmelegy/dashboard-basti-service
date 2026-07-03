@@ -55,11 +55,11 @@ export function DecorationCard({
           )}
           <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
-              {decoration.capacity} servings
+              {t("customCakes.servingsCount", { count: decoration.capacity })}
             </Badge>
             {decoration.minPrepHours && (
               <Badge variant="outline" className="text-xs">
-                {decoration.minPrepHours}h prep
+                {t("customCakes.prepHours", { count: decoration.minPrepHours })}
               </Badge>
             )}
           </div>

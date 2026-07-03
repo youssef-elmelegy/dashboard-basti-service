@@ -75,7 +75,13 @@
     "all": "الكل",
     "bestSeller": "الأكثر مبيعًا",
     "toggleBestSeller": "تبديل الأكثر مبيعًا",
-    "page": "صفحة"
+    "page": "صفحة",
+    "sizes": {
+      "mini": "ميني",
+      "small": "صغير",
+      "medium": "متوسط",
+      "large": "كبير"
+    }
   },
   "reassignOrder": {
     "button": "إعادة التعيين / الإرجاع",
@@ -1010,7 +1016,9 @@
     "minPrepHours": "ساعات التحضير الدنيا",
     "enterMinPrepHours": "أدخل ساعات التحضير الدنيا",
     "failedToUpdateFlavor": "فشل تحديث النكهة",
-    "failedToUpdateDecoration": "فشل تحديث الزينة"
+    "failedToUpdateDecoration": "فشل تحديث الزينة",
+    "servingsCount": "{{count}} حصة",
+    "prepHours": "{{count}} ساعة تحضير"
   },
   "sliderImages": {
     "title": "صور السلايدر",
@@ -1047,6 +1055,7 @@
     "superAdmin": "مسؤول عام",
     "admin": "مسؤول",
     "manager": "مخبز",
+    "driver": "السائق",
     "optional": "(اختياري)",
     "selectBakery": "اختر مخبزاً (اختياري)",
     "noBakeries": "لا توجد مخابز متاحة",

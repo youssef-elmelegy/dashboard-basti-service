@@ -48,14 +48,14 @@ export function ShapeCard({
           </p>
           <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="secondary" className="text-xs capitalize">
-              {shape.size}
+              {t(`common.sizes.${shape.size}`, { defaultValue: shape.size })}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {shape.capacity} servings
+              {t("customCakes.servingsCount", { count: shape.capacity })}
             </Badge>
             {shape.minPrepHours ? (
               <Badge variant="outline" className="text-xs">
-                {shape.minPrepHours}h prep
+                {t("customCakes.prepHours", { count: shape.minPrepHours })}
               </Badge>
             ) : null}
           </div>

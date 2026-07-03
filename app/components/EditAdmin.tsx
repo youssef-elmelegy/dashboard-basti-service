@@ -30,14 +30,16 @@ export default function EditAdmin({ admin, onSubmit }: EditAdminProps) {
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
     admin.profileImage || undefined,
   );
+  // Drivers are never edited from the dashboard (the edit action is hidden for
+  // them), so `driver` is not a selectable role here — guard the seed value.
   const [formData, setFormData] = useState<UpdateAdminPayload>({
-    role: admin.role,
+    role: admin.role === "driver" ? undefined : admin.role,
     bakeryId: admin.bakeryId,
   });
 
   useEffect(() => {
     setFormData({
-      role: admin.role,
+      role: admin.role === "driver" ? undefined : admin.role,
       bakeryId: admin.bakeryId,
     });
     setProfileImageUrl(admin.profileImage || undefined);

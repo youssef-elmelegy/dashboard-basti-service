@@ -263,8 +263,12 @@ export default function AdminsPage() {
                     super_admin: "adminTable.superAdmin",
                     admin: "adminTable.admin",
                     manager: "adminTable.manager",
+                    driver: "adminTable.driver",
                   };
                   const roleLabel = t(roleKeyMap[admin.role]);
+                  // Drivers are managed from the mobile app: dashboard admins
+                  // may view/block/delete them but never edit their profile.
+                  const isDriver = admin.role === "driver";
                   return (
                     <TableRow key={admin.id}>
                       <TableCell>
@@ -292,13 +296,15 @@ export default function AdminsPage() {
                       </TableCell>
                       <TableCell className="text-end">
                         <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleEditAdmin(admin)}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          {!isDriver && (
+                            <button
+                              onClick={() => handleEditAdmin(admin)}
+                              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleBlockAdmin(admin)}
                             className={`p-2 rounded-lg transition-colors ${

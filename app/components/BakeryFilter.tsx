@@ -17,12 +17,11 @@ interface BakeryFilterProps {
   onTypeToggle: (type: string) => void;
 }
 
-const BAKERY_TYPE_LABELS: Record<string, string> = {
-  basket_cakes: "Basket Cakes",
-  midume: "Midume",
-  small_cakes: "Small Cakes",
-  large_cakes: "Large Cakes",
-  custom: "Custom",
+// Maps a bakery type value to its translation key under `bakeriesManagement`.
+const BAKERY_TYPE_LABEL_KEYS: Record<string, string> = {
+  small_cakes: "smallCakes",
+  big_cakes: "bigCakes",
+  others: "othersType",
 };
 
 export function BakeryFilter({
@@ -35,6 +34,13 @@ export function BakeryFilter({
 }: BakeryFilterProps) {
   const { t } = useTranslation();
   const hasActiveFilters = selectedRegion !== "all" || selectedTypes.length > 0;
+
+  const getTypeLabel = (type: string) => {
+    const labelKey = BAKERY_TYPE_LABEL_KEYS[type];
+    return labelKey
+      ? t(`bakeriesManagement.${labelKey}`)
+      : type.replace(/_/g, " ");
+  };
 
   const handleClearFilters = () => {
     onRegionChange("all");
@@ -82,7 +88,7 @@ export function BakeryFilter({
               className="cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => onTypeToggle(type)}
             >
-              {BAKERY_TYPE_LABELS[type] || type}
+              {getTypeLabel(type)}
             </Badge>
           ))}
         </div>

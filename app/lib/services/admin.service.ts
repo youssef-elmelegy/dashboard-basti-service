@@ -3,7 +3,10 @@ import { apiClient } from "@/lib/api-client";
 export interface Admin {
   id: string;
   email: string;
-  role: "super_admin" | "admin" | "manager";
+  // Drivers live in the same `admins` table but are created/edited via the
+  // mobile onboarding flow, not this dashboard — here they are read-only
+  // (listed, blocked, or deleted only).
+  role: "super_admin" | "admin" | "manager" | "driver";
   profileImage: string | null;
   bakeryId?: string;
   isBlocked: boolean;

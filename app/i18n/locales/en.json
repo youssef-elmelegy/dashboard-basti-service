@@ -75,7 +75,13 @@
     "all": "All",
     "bestSeller": "Best Seller",
     "toggleBestSeller": "Toggle Best Seller",
-    "page": "Page"
+    "page": "Page",
+    "sizes": {
+      "mini": "Mini",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large"
+    }
   },
   "reassignOrder": {
     "button": "Reassign / Return",
@@ -1010,7 +1016,9 @@
     "minPrepHours": "Minimum Preparation Hours",
     "enterMinPrepHours": "Enter minimum preparation hours",
     "failedToUpdateFlavor": "Failed to update flavor",
-    "failedToUpdateDecoration": "Failed to update decoration"
+    "failedToUpdateDecoration": "Failed to update decoration",
+    "servingsCount": "{{count}} servings",
+    "prepHours": "{{count}}h prep"
   },
   "sliderImages": {
     "title": "Slider Images",
@@ -1047,6 +1055,7 @@
     "superAdmin": "Super Admin",
     "admin": "Admin",
     "manager": "Bakery",
+    "driver": "Driver",
     "optional": "(Optional)",
     "selectBakery": "Select a bakery (optional)",
     "noBakeries": "No bakeries available",
