@@ -12,6 +12,15 @@ import type { ApiResponse } from "@/lib/api-client";
 export type BakeryType = "big_cakes" | "small_cakes" | "others";
 
 /**
+ * Color classes for bakery type badges, matching the order type card colors
+ */
+export const BAKERY_TYPE_COLORS: Record<BakeryType, string> = {
+  big_cakes: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+  small_cakes: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  others: "bg-teal-500/10 text-teal-500 border-teal-500/20",
+};
+
+/**
  * Bakery data model
  */
 export interface Bakery {

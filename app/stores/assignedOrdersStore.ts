@@ -36,6 +36,7 @@ interface AssignedOrdersState {
    * Returns the removed order so the caller can move it elsewhere / revert.
    */
   removeOrder: (orderId: string) => Order | undefined;
+  invalidate: () => void;
   reset: () => void;
 }
 
@@ -130,6 +131,10 @@ export const useAssignedOrdersStore = create<AssignedOrdersState>(
         return removed ? { ordersByBakery: next } : state;
       });
       return removed;
+    },
+
+    invalidate: () => {
+      set({ lastFetchTime: null });
     },
 
     reset: () => {

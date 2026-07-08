@@ -2,7 +2,12 @@ import { MapPin, Package, Star, MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
+import { cn } from "@/lib/utils";
+import {
+  BAKERY_TYPE_COLORS,
+  type Bakery,
+  type BakeryType,
+} from "@/lib/services/bakery.service";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,17 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-
-const BAKERY_TYPE_CONFIG: Record<
-  BakeryType,
-  {
-    color: "default" | "secondary" | "destructive" | "outline";
-  }
-> = {
-  small_cakes: { color: "outline" },
-  big_cakes: { color: "destructive" },
-  others: { color: "default" },
-};
 
 interface BakeryCardProps {
   bakery: Bakery;
@@ -133,8 +127,8 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
             bakery.types.map((type: BakeryType) => (
               <Badge
                 key={type}
-                variant={BAKERY_TYPE_CONFIG[type]?.color || "outline"}
-                className="text-xs"
+                variant="outline"
+                className={cn("text-xs", BAKERY_TYPE_COLORS[type])}
               >
                 {getBakeryTypeLabel(type)}
               </Badge>

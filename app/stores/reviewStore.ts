@@ -23,6 +23,7 @@ interface ReviewState {
     bakeryId: string,
   ) => Promise<PaginatedReviewsResponse | null>;
   fetchReviews: () => Promise<void>;
+  invalidate: () => void;
   addReview: (review: Review) => void;
   updateReview: (id: string, updates: Partial<Review>) => void;
   deleteReview: (id: string) => void;
@@ -223,6 +224,10 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         error instanceof Error ? error.message : "Failed to fetch reviews";
       set({ error: errorMessage, isLoading: false });
     }
+  },
+
+  invalidate: () => {
+    set({ bakeryReviewsCache: new Map(), bakeryPagination: new Map() });
   },
 
   addReview: (review: Review) => {

@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import enTranslations from "./locales/en.json";
 import arTranslations from "./locales/ar.json";
+import { invalidateAllStores } from "@/stores/invalidateAllOnLanguageChange";
 
 i18n
   .use(LanguageDetector)
@@ -44,5 +45,12 @@ const applyDirection = (language?: string) => {
 applyDirection();
 i18n.on("initialized", () => applyDirection());
 i18n.on("languageChanged", (lng: string) => applyDirection(lng));
+
+// API-backed data (names, labels, etc.) is locale-dependent, so every
+// store that caches API responses must be invalidated on language change
+// to refetch in the new language. This also fires once for the initial
+// language-detection event on load, but stores are empty at that point so
+// invalidating is a harmless no-op.
+i18n.on("languageChanged", () => invalidateAllStores());
 
 export default i18n;

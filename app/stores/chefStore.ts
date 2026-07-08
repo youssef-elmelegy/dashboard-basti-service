@@ -31,6 +31,7 @@ interface ChefStore {
   deleteChefImages: (urls: string[]) => Promise<DeleteImageResult>;
   clearError: () => void;
   resetChefs: () => void;
+  invalidate: () => void;
 }
 
 export const useChefStore = create<ChefStore>((set, get) => ({
@@ -131,6 +132,8 @@ export const useChefStore = create<ChefStore>((set, get) => ({
   clearError: () => set({ error: null }),
 
   resetChefs: () => set({ chefs: [], isLoading: false, error: null }),
+
+  invalidate: () => set({ isCached: false }),
 
   uploadChefImage: async (file) => {
     console.log(

@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
 import { RestockDialog } from "@/components/RestockDialog";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
+import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
 
 function RatingStars({ rating }: { rating: number }) {
   return (
@@ -270,7 +271,14 @@ export default function BakeryDetailPage() {
               <CardTitle className="text-2xl">{bakery.name}</CardTitle>
               <div className="flex flex-wrap gap-2 mt-3">
                 {bakery.types.map((type) => (
-                  <Badge key={type} variant="secondary">
+                  <Badge
+                    key={type}
+                    variant="outline"
+                    className={cn(
+                      BAKERY_TYPE_COLORS[type as keyof typeof BAKERY_TYPE_COLORS] ||
+                        BAKERY_TYPE_COLORS.big_cakes
+                    )}
+                  >
                     {getBakeryTypeLabel(type)}
                   </Badge>
                 ))}

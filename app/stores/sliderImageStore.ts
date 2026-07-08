@@ -24,6 +24,7 @@ interface SliderImageState {
   updateSliderImages: (items: SliderImageItem[]) => Promise<void>;
   deleteSliderImage: (id: string) => Promise<void>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useSliderImageStore = create<SliderImageState>((set, get) => ({
@@ -132,4 +133,7 @@ export const useSliderImageStore = create<SliderImageState>((set, get) => ({
   clearError: () => {
     set({ error: null });
   },
+
+  // Invalidate cache so next fetch bypasses the cached-data check
+  invalidate: () => set({ isCached: false }),
 }));

@@ -30,12 +30,15 @@ const emptyPagination: PaginationMeta = {
   limit: 15,
 };
 
+const REPORT_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 interface ReportStore {
   reports: ReportListItem[];
   pagination: PaginationMeta;
   isLoading: boolean;
   isLoadingMore: boolean;
   error: string | null;
+  lastFetchTime: number | null;
 
   /**
    * Fetch a page of all driver reports. Use mode "replace" for the first page
@@ -46,16 +49,27 @@ interface ReportStore {
     mode?: "replace" | "append",
   ) => Promise<void>;
   reset: () => void;
+  invalidate: () => void;
 }
 
-export const useReportStore = create<ReportStore>((set) => ({
+export const useReportStore = create<ReportStore>((set, get) => ({
   reports: [],
   pagination: emptyPagination,
   isLoading: false,
   isLoadingMore: false,
   error: null,
+  lastFetchTime: null,
 
   fetchReports: async (params, mode = "replace") => {
+    if (
+      mode === "replace" &&
+      !params &&
+      get().lastFetchTime &&
+      Date.now() - get().lastFetchTime! < REPORT_CACHE_DURATION &&
+      get().reports.length > 0
+    ) {
+      return;
+    }
     set(
       mode === "replace"
         ? { isLoading: true, error: null }
@@ -69,6 +83,7 @@ export const useReportStore = create<ReportStore>((set) => ({
         pagination: data.pagination,
         isLoading: false,
         isLoadingMore: false,
+        lastFetchTime: Date.now(),
       }));
     } catch (error) {
       set({
@@ -86,5 +101,8 @@ export const useReportStore = create<ReportStore>((set) => ({
       isLoading: false,
       isLoadingMore: false,
       error: null,
+      lastFetchTime: null,
     }),
+
+  invalidate: () => set({ lastFetchTime: null }),
 }));

@@ -29,6 +29,7 @@ interface BakeryItemStoreState {
         },
   ) => Promise<void>;
   clearItems: () => void;
+  invalidate: () => void;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -144,5 +145,9 @@ export const useBakeryItemStore = create<BakeryItemStoreState>((set, get) => ({
       lastFetchTime: {},
       error: null,
     });
+  },
+
+  invalidate: () => {
+    set({ lastFetchTime: {} });
   },
 }));

@@ -1094,6 +1094,8 @@
     "bakeryPercentage": "المخبز",
     "miniCakePercentage": "نسبة الكيك المصغر",
     "miniCakePercentageDesc": "النسبة المطبقة على طلبات الكيك المصغر",
+    "minMiniCakesRequired": "الحد الأدنى لعدد الكيك المصغر المطلوب",
+    "minMiniCakesRequiredDesc": "الحد الأدنى لعدد الكيك المصغر الذي يمكن طلبه",
     "printingFeeNormal": "رسوم الطباعة العادية",
     "printingFeeNormalDesc": "الرسوم المضافة للطباعة العادية (الورقية) على الكيك المخصص",
     "printingFeeSuger": "رسوم طباعة السكر",

@@ -38,6 +38,7 @@ interface OfferState {
   deleteOffer: (id: string) => Promise<boolean>;
   toggleItemOffer: (payload: ToggleItemOfferPayload) => Promise<boolean>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useOfferStore = create<OfferState>((set, get) => ({
@@ -152,4 +153,6 @@ export const useOfferStore = create<OfferState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  invalidate: () => set({ isCached: false }),
 }));

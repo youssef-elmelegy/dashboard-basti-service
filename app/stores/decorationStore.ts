@@ -56,6 +56,7 @@ interface DecorationState {
   decorationConflict: (DecorationConflictData & { decorationId: string }) | null;
   clearConflict: () => void;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useDecorationStore = create<DecorationState>((set, get) => ({
@@ -295,4 +296,6 @@ export const useDecorationStore = create<DecorationState>((set, get) => ({
   clearConflict: () => set({ decorationConflict: null }),
 
   clearError: () => set({ error: null }),
+
+  invalidate: () => set({ isCached: false }),
 }));

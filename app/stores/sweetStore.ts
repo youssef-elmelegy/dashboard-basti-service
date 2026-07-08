@@ -18,6 +18,7 @@ interface SweetStore {
   isLoading: boolean;
   error: string | null;
   isCached: boolean;
+  invalidate: () => void;
   fetchSweets: (forceRefresh?: boolean) => Promise<void>;
   addSweet: (sweet: SweetInput) => Promise<void>;
   updateSweet: (id: string, sweet: SweetInput) => Promise<void>;
@@ -32,6 +33,10 @@ export const useSweetStore = create<SweetStore>((set, get) => ({
   isLoading: false,
   error: null,
   isCached: false,
+
+  invalidate: () => {
+    set({ isCached: false });
+  },
 
   fetchSweets: async (forceRefresh = false) => {
     const state = get();

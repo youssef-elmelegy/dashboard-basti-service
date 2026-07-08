@@ -36,6 +36,7 @@ interface CouponState {
   toggleCouponStatus: (id: string) => Promise<Coupon | null>;
   deleteCoupon: (id: string) => Promise<boolean>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useCouponStore = create<CouponState>((set, get) => ({
@@ -167,4 +168,5 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+  invalidate: () => set({ isCached: false }),
 }));

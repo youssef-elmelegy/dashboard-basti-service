@@ -20,6 +20,8 @@ import {
 } from "@/lib/api/cake.api";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
+const FEATURED_CAKE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 interface FeaturedCakeState {
   // Data
   featuredCakes: FeaturedCake[];
@@ -32,6 +34,7 @@ interface FeaturedCakeState {
   } | null;
   isLoading: boolean;
   error: string | null;
+  lastFetchTime: number | null;
 
   // Actions
   fetchFeaturedCakes: (page?: number, limit?: number) => Promise<void>;
@@ -50,18 +53,28 @@ interface FeaturedCakeState {
   deleteFeaturedCakeImages: (urls: string[]) => Promise<DeleteImageResult>;
   clearError: () => void;
   resetFeaturedCakes: () => void;
+  invalidate: () => void;
 }
 
-export const useFeaturedCakeStore = create<FeaturedCakeState>((set) => ({
+export const useFeaturedCakeStore = create<FeaturedCakeState>((set, get) => ({
   // Initial state
   featuredCakes: [],
   currentFeaturedCake: null,
   pagination: null,
   isLoading: false,
   error: null,
+  lastFetchTime: null,
 
   // Fetch all featured cakes from API
   fetchFeaturedCakes: async (page = 1, limit = 10) => {
+    const { lastFetchTime } = get();
+    if (
+      lastFetchTime &&
+      Date.now() - lastFetchTime < FEATURED_CAKE_CACHE_DURATION
+    ) {
+      console.log("FeaturedCakeStore: Using cached featured cakes");
+      return;
+    }
     console.log(
       `FeaturedCakeStore: Fetching featured cakes (page: ${page}, limit: ${limit})...`,
     );
@@ -79,6 +92,7 @@ export const useFeaturedCakeStore = create<FeaturedCakeState>((set) => ({
           featuredCakes: response.data.items,
           pagination: response.data.pagination,
           isLoading: false,
+          lastFetchTime: Date.now(),
         });
       } else {
         const error = response.message || "Failed to fetch featured cakes";
@@ -312,7 +326,15 @@ export const useFeaturedCakeStore = create<FeaturedCakeState>((set) => ({
 
   // Reset featured cakes to empty state
   resetFeaturedCakes: () =>
-    set({ featuredCakes: [], currentFeaturedCake: null, pagination: null }),
+    set({
+      featuredCakes: [],
+      currentFeaturedCake: null,
+      pagination: null,
+      lastFetchTime: null,
+    }),
+
+  // Invalidate cache without clearing visible data
+  invalidate: () => set({ lastFetchTime: null }),
 
   // Upload featured cake image
   uploadFeaturedCakeImage: async (file: File) => {

@@ -54,6 +54,7 @@ interface BakeryState {
   deleteBakery: (id: string) => Promise<void>;
   clearError: () => void;
   resetBakeries: () => void;
+  invalidate: () => void;
 
   // Bakery Orders Actions
   setBakeryOrders: (bakeryId: string, orders: Order[]) => void;
@@ -242,6 +243,14 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
       bakeries: [],
       isLoading: false,
       error: null,
+    });
+  },
+
+  // Invalidate cached data without clearing what's currently displayed
+  invalidate: () => {
+    set({
+      lastFetchTime: null,
+      bakeryOrdersFetchTime: {},
     });
   },
 

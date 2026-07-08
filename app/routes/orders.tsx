@@ -25,7 +25,8 @@ import { useBakeryStore } from "@/stores/bakeryStore";
 import { useAssignedOrdersStore } from "@/stores/assignedOrdersStore";
 import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import type { Order } from "@/data/orders";
-import type { Bakery } from "@/lib/services/bakery.service";
+import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
+import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
 import { orderApi } from "@/lib/services/order.service";
 import { convertApiResponseToOrder } from "@/stores/orderStore";
 import { httpRequest } from "@/lib/http-handler";
@@ -150,7 +151,13 @@ function SortableOrderCard({
                 </div>
               </div>
               <div className="flex flex-col gap-1 items-end shrink-0">
-                <Badge variant="outline" className="text-xs">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs",
+                    order.type && BAKERY_TYPE_COLORS[order.type as BakeryType],
+                  )}
+                >
                   {formatBakeryType(order.type, t)}
                 </Badge>
                 <Badge
@@ -368,9 +375,10 @@ function BakeryColumn({
                 {types.map((type) => (
                   <Badge
                     key={type}
-                    variant="secondary"
+                    variant="outline"
                     className={cn(
                       "text-xs",
+                      BAKERY_TYPE_COLORS[type as BakeryType],
                       isIncompatible &&
                         activeOrderType !== type &&
                         "opacity-50",

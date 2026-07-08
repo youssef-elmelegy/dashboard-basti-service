@@ -14,6 +14,8 @@ import {
 } from "@/lib/api/addOn.api";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
+const ADD_ON_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // Convert service AddOn (singular categories) to UI AddOn (plural categories)
 function convertServiceAddOnToUI(serviceAddOn: ServiceAddOn): AddOn {
   const singularToPluralCategory: Record<string, string> = {
@@ -49,9 +51,14 @@ interface AddOnStore {
   addOns: AddOn[];
   isLoading: boolean;
   error: string | null;
+  lastFetchTime: number | null;
 
   // Actions
-  fetchAddOns: (page?: number, limit?: number) => Promise<void>;
+  fetchAddOns: (
+    page?: number,
+    limit?: number,
+    forceRefresh?: boolean,
+  ) => Promise<void>;
   addAddOn: (addOn: CreateAddOnRequest) => Promise<AddOn>;
   updateAddOn: (id: string, addOn: UpdateAddOnRequest) => Promise<AddOn>;
   deleteAddOn: (id: string) => Promise<void>;
@@ -60,16 +67,29 @@ interface AddOnStore {
   uploadAddOnImage: (file: File) => Promise<CloudinaryUploadResult>;
   deleteAddOnImages: (urls: string[]) => Promise<DeleteImageResult>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
-export const useAddOnStore = create<AddOnStore>((set) => ({
+export const useAddOnStore = create<AddOnStore>((set, get) => ({
   // Initial state
   addOns: [],
   isLoading: false,
   error: null,
+  lastFetchTime: null,
 
   // Fetch all add-ons from API
-  fetchAddOns: async (page = 1, limit = 10) => {
+  fetchAddOns: async (page = 1, limit = 10, forceRefresh = false) => {
+    const state = get();
+    const now = Date.now();
+    if (
+      !forceRefresh &&
+      state.lastFetchTime &&
+      now - state.lastFetchTime < ADD_ON_CACHE_DURATION &&
+      state.addOns.length > 0
+    ) {
+      return; // cached data still fresh
+    }
+
     console.log(
       `AddOnStore: Fetching add-ons (page: ${page}, limit: ${limit})...`,
     );
@@ -83,6 +103,7 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
         set({
           addOns: response.data.items.map(convertServiceAddOnToUI),
           isLoading: false,
+          lastFetchTime: now,
         });
       } else {
         const error = response.message || "Failed to fetch add-ons";
@@ -291,4 +312,9 @@ export const useAddOnStore = create<AddOnStore>((set) => ({
 
   // Clear error state
   clearError: () => set({ error: null }),
+
+  // Invalidate cache freshness so the next fetchAddOns() call refetches
+  // from the API. Leaves `addOns` untouched to avoid a visual flash to
+  // empty; the UI keeps showing current data until the next fetch resolves.
+  invalidate: () => set({ lastFetchTime: null }),
 }));

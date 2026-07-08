@@ -55,6 +55,7 @@ interface DispatchState {
     driverId: string | null,
     driverName?: string | null,
   ) => Promise<void>;
+  invalidate: () => void;
   reset: () => void;
 }
 
@@ -179,7 +180,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
   reload: async ({ force = false } = {}) => {
     if (force) {
-      set({ cache: {} });
+      get().invalidate();
     }
     set({ page: 1 });
     await get().goToPage(1);
@@ -204,6 +205,10 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       }
       return { items: patch(s.items), cache };
     });
+  },
+
+  invalidate: () => {
+    set({ cache: {} });
   },
 
   reset: () => {

@@ -48,6 +48,7 @@ interface PredesignedCakeState {
   togglePredesignedCakeActive: (id: string) => Promise<boolean>;
   togglePredesignedCakeFeatured: (id: string) => Promise<boolean>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const usePredesignedCakeStore = create<PredesignedCakeState>(
@@ -304,5 +305,7 @@ export const usePredesignedCakeStore = create<PredesignedCakeState>(
     },
 
     clearError: () => set({ error: null }),
+
+    invalidate: () => set({ isCached: false }),
   }),
 );

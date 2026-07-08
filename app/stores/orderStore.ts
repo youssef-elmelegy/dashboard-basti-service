@@ -56,6 +56,7 @@ interface OrderState {
   deleteOrder: (id: string) => void;
   resetOrders: () => void;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 const ORDER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -453,6 +454,18 @@ export const useOrderStore = create<OrderState>((set, get) => ({
    */
   resetOrders: () => {
     set({ orders: ORDERS_DATA, isLoading: false, error: null, filters: {} });
+  },
+
+  /**
+   * Invalidate all order caches so the next read triggers a real refetch,
+   * without clearing currently-visible data.
+   */
+  invalidate: () => {
+    set({
+      lastFetchTime: null,
+      bakeryOrdersCache: {},
+      detailedOrdersCache: {},
+    });
   },
 
   /**

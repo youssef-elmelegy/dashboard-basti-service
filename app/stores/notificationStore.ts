@@ -15,6 +15,7 @@ export interface NotificationState {
   error: string | null;
   page: number;
   totalPages: number;
+  lastFetchTime: number | null;
 
   fetchInitial: () => Promise<void>;
   fetchMore: () => Promise<void>;
@@ -24,6 +25,7 @@ export interface NotificationState {
   markAllAsRead: () => Promise<void>;
   remove: (id: string) => Promise<void>;
   prependFromPush: (notification: NotificationData) => void;
+  invalidate: () => void;
   reset: () => void;
 }
 
@@ -45,6 +47,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   error: null,
   page: 1,
   totalPages: 1,
+  lastFetchTime: null,
 
   fetchInitial: async () => {
     set({ isLoading: true, error: null });
@@ -59,6 +62,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         page: response.data.pagination.page,
         totalPages: response.data.pagination.totalPages,
         isLoading: false,
+        lastFetchTime: Date.now(),
       });
     } catch (error) {
       set({
@@ -180,6 +184,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     });
   },
 
+  invalidate: () => {
+    set({ lastFetchTime: null });
+  },
+
   reset: () => {
     set({
       items: [],
@@ -189,6 +197,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       error: null,
       page: 1,
       totalPages: 1,
+      lastFetchTime: null,
     });
   },
 }));

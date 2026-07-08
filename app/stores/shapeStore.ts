@@ -30,6 +30,7 @@ interface ShapeState {
   clearConflict: () => void;
   uploadShapeImage: (file: File) => Promise<CloudinaryUploadResult>;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useShapeStore = create<ShapeState>((set, get) => ({
@@ -258,4 +259,6 @@ export const useShapeStore = create<ShapeState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  invalidate: () => set({ isCached: false }),
 }));

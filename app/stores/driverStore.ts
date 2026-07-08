@@ -36,11 +36,14 @@ const emptyPagination: PaginationMeta = {
   limit: 10,
 };
 
+const DRIVERS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 interface DriverStore {
   // Region drivers list
   drivers: Driver[];
   listPagination: PaginationMeta;
   isListLoading: boolean;
+  lastFetchTime: number | null;
 
   // Single driver detail
   currentDriver: Driver | null;
@@ -71,12 +74,14 @@ interface DriverStore {
 
   clearError: () => void;
   resetDetail: () => void;
+  invalidate: () => void;
 }
 
-export const useDriverStore = create<DriverStore>((set) => ({
+export const useDriverStore = create<DriverStore>((set, get) => ({
   drivers: [],
   listPagination: emptyPagination,
   isListLoading: false,
+  lastFetchTime: null,
 
   currentDriver: null,
   isDriverLoading: false,
@@ -92,6 +97,17 @@ export const useDriverStore = create<DriverStore>((set) => ({
   error: null,
 
   fetchRegionDrivers: async (regionId, params) => {
+    const state = get();
+    const now = Date.now();
+
+    if (
+      state.drivers.length > 0 &&
+      state.lastFetchTime &&
+      now - state.lastFetchTime < DRIVERS_CACHE_DURATION
+    ) {
+      return;
+    }
+
     set({ isListLoading: true, error: null });
     try {
       const data = await driverService.getByRegion(regionId, params);
@@ -99,6 +115,7 @@ export const useDriverStore = create<DriverStore>((set) => ({
         drivers: data.items,
         listPagination: data.pagination,
         isListLoading: false,
+        lastFetchTime: now,
       });
     } catch (error) {
       set({
@@ -233,4 +250,5 @@ export const useDriverStore = create<DriverStore>((set) => ({
       orders: [],
       ordersPagination: emptyPagination,
     }),
+  invalidate: () => set({ lastFetchTime: null }),
 }));

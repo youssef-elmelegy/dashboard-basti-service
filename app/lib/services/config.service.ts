@@ -16,6 +16,7 @@ export interface ConfigResponseDto {
   closureMessage: string | null;
   bastiPercentage: number;
   miniCakePercentage: number;
+  minMiniCakesRequired: number;
   printingFee: {
     normal: number;
     suger: number;
@@ -41,6 +42,7 @@ export interface UpdateConfigRequest {
   closureMessage?: string | null;
   bastiPercentage?: number;
   miniCakePercentage?: number;
+  minMiniCakesRequired?: number;
   printingFee?: {
     normal: number;
     suger: number;

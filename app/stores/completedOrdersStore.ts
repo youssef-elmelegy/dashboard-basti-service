@@ -155,7 +155,7 @@ export const useCompletedOrdersStore = create<CompletedOrdersState>(
 
     reload: async ({ force = false } = {}) => {
       if (force) {
-        set({ cache: {} });
+        get().invalidate();
       }
       set({ page: 1 });
       await get().goToPage(1);

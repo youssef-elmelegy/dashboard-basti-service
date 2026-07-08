@@ -23,6 +23,7 @@ interface TagsState {
   removeTag: (tagId: string) => void;
   setTags: (tags: Tag[]) => void;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useTagsStore = create<TagsState>((set, get) => ({
@@ -208,4 +209,7 @@ export const useTagsStore = create<TagsState>((set, get) => ({
 
   // Clear error
   clearError: () => set({ error: null }),
+
+  // Invalidate cache so next fetchTags() call refetches, without clearing visible tags
+  invalidate: () => set({ isCached: false }),
 }));

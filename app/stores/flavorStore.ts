@@ -39,6 +39,7 @@ interface FlavorState {
   toggleFlavorFeatured: (id: string) => Promise<void>;
   clearConflict: () => void;
   clearError: () => void;
+  invalidate: () => void;
 }
 
 export const useFlavorStore = create<FlavorState>((set, get) => ({
@@ -328,4 +329,6 @@ export const useFlavorStore = create<FlavorState>((set, get) => ({
   clearConflict: () => set({ flavorConflict: null }),
 
   clearError: () => set({ error: null }),
+
+  invalidate: () => set({ isCached: false }),
 }));

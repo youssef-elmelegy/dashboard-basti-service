@@ -1094,6 +1094,8 @@
     "bakeryPercentage": "Bakery",
     "miniCakePercentage": "Mini Cake Percentage",
     "miniCakePercentageDesc": "Percentage applied to mini cake orders",
+    "minMiniCakesRequired": "Minimum Mini Cakes Required",
+    "minMiniCakesRequiredDesc": "Minimum number of mini cakes that can be ordered",
     "printingFeeNormal": "Normal Printing Fee",
     "printingFeeNormalDesc": "Fee added for normal (paper) printing on custom cakes",
     "printingFeeSuger": "Sugar Printing Fee",

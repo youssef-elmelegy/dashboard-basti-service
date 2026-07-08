@@ -174,7 +174,7 @@ export const useBakeryCompletedOrdersStore = create<BakeryCompletedOrdersState>(
 
     reload: async (bakeryId, { force = false } = {}) => {
       if (force) {
-        set({ cache: {} });
+        get().invalidate();
       }
       set({ page: 1, currentBakeryId: bakeryId });
       await get().goToPage(bakeryId, 1);

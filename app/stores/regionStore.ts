@@ -42,6 +42,7 @@ interface RegionState {
   uploadRegionImage: (file: File) => Promise<CloudinaryUploadResult>;
   clearError: () => void;
   resetRegions: () => void;
+  invalidate: () => void;
 }
 
 export const useRegionStore = create<RegionState>((set, get) => ({
@@ -243,6 +244,11 @@ export const useRegionStore = create<RegionState>((set, get) => ({
   // Clear error message
   clearError: () => {
     set({ error: null });
+  },
+
+  // Invalidate cache without wiping visible data; next fetchRegions() call will refetch
+  invalidate: () => {
+    set({ isCached: false });
   },
 
   // Reset to initial state

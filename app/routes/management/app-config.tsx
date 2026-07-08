@@ -29,6 +29,7 @@ const formSchema = z.object({
   holidays: z.array(z.string()),
   bastiPercentage: z.number().int().min(0).max(100),
   miniCakePercentage: z.number().min(0),
+  minMiniCakesRequired: z.number().int().min(0),
   printingFee: z.object({
     normal: z.number().int().min(0),
     suger: z.number().int().min(0),
@@ -72,6 +73,7 @@ export default function AppConfigPage() {
       holidays: [],
       bastiPercentage: 20,
       miniCakePercentage: 10,
+      minMiniCakesRequired: 10,
       printingFee: { normal: 10, suger: 20 },
       deliveryAmount: 10,
       bastiDeliveryAmount: 0,
@@ -96,6 +98,7 @@ export default function AppConfigPage() {
           holidays: config.holidays,
           bastiPercentage: config.bastiPercentage,
           miniCakePercentage: config.miniCakePercentage,
+          minMiniCakesRequired: config.minMiniCakesRequired,
           printingFee: config.printingFee,
           deliveryAmount: config.deliveryAmount,
           bastiDeliveryAmount: config.bastiDeliveryAmount,
@@ -130,6 +133,7 @@ export default function AppConfigPage() {
         holidays: values.holidays,
         bastiPercentage: values.bastiPercentage,
         miniCakePercentage: values.miniCakePercentage,
+        minMiniCakesRequired: values.minMiniCakesRequired,
         printingFee: values.printingFee,
         deliveryAmount: values.deliveryAmount,
         bastiDeliveryAmount: values.bastiDeliveryAmount,
@@ -425,6 +429,32 @@ export default function AppConfigPage() {
                       </FormControl>
                       <FormDescription>
                         {t("appConfig.miniCakePercentageDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="minMiniCakesRequired"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>
+                        {t("appConfig.minMiniCakesRequired")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.minMiniCakesRequiredDesc")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

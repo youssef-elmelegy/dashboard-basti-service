@@ -19,6 +19,7 @@ interface ConfigState {
   updateConfig: (data: UpdateConfigRequest) => Promise<void>;
   clearError: () => void;
   resetConfig: () => void;
+  invalidate: () => void;
 }
 
 export const useConfigStore = create<ConfigState>((set, get) => ({
@@ -94,5 +95,10 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
       isSaving: false,
       hasLoaded: false,
     });
+  },
+
+  // Invalidate cache so the next fetchConfig() call re-fetches, without clearing visible config
+  invalidate: () => {
+    set({ hasLoaded: false });
   },
 }));
