@@ -21,6 +21,7 @@ export interface ConfigResponseDto {
     normal: number;
     suger: number;
   };
+  cardPrice: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
   createdAt: string;
@@ -47,6 +48,7 @@ export interface UpdateConfigRequest {
     normal: number;
     suger: number;
   };
+  cardPrice?: number;
   deliveryAmount?: number;
   bastiDeliveryAmount?: number;
 }

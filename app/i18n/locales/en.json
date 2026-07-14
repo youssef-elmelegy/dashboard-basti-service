@@ -1084,6 +1084,8 @@
     "selectedHolidays": "Selected Holidays",
     "noHolidaysSelected": "No holidays selected",
     "pricingDelivery": "Pricing & Delivery",
+    "cardPrice": "Card Price",
+    "cardPriceDesc": "Card price applied to orders that include a card message",
     "deliveryAmount": "Delivery Amount",
     "deliveryAmountDesc": "Fixed delivery fee charged on each order",
     "bastiDeliveryAmount": "Basti Delivery Amount",

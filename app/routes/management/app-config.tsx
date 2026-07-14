@@ -34,6 +34,7 @@ const formSchema = z.object({
     normal: z.number().int().min(0),
     suger: z.number().int().min(0),
   }),
+  cardPrice: z.number().int().min(0),
   deliveryAmount: z.number().int().min(0),
   bastiDeliveryAmount: z.number().int().min(0),
 });
@@ -75,6 +76,7 @@ export default function AppConfigPage() {
       miniCakePercentage: 10,
       minMiniCakesRequired: 10,
       printingFee: { normal: 10, suger: 20 },
+      cardPrice: 15,
       deliveryAmount: 10,
       bastiDeliveryAmount: 0,
     },
@@ -100,6 +102,7 @@ export default function AppConfigPage() {
           miniCakePercentage: config.miniCakePercentage,
           minMiniCakesRequired: config.minMiniCakesRequired,
           printingFee: config.printingFee,
+          cardPrice: config.cardPrice,
           deliveryAmount: config.deliveryAmount,
           bastiDeliveryAmount: config.bastiDeliveryAmount,
         });
@@ -135,6 +138,7 @@ export default function AppConfigPage() {
         miniCakePercentage: values.miniCakePercentage,
         minMiniCakesRequired: values.minMiniCakesRequired,
         printingFee: values.printingFee,
+        cardPrice: values.cardPrice,
         deliveryAmount: values.deliveryAmount,
         bastiDeliveryAmount: values.bastiDeliveryAmount,
         // These fields are not managed by the form UI
@@ -160,6 +164,7 @@ export default function AppConfigPage() {
         bastiPercentage: config.bastiPercentage,
         miniCakePercentage: config.miniCakePercentage,
         printingFee: config.printingFee,
+        cardPrice: config.cardPrice,
         deliveryAmount: config.deliveryAmount,
         bastiDeliveryAmount: config.bastiDeliveryAmount,
       });
@@ -319,6 +324,30 @@ export default function AppConfigPage() {
                 {t("appConfig.pricingDelivery")}
               </h2>
               <div className="flex gap-6 flex-wrap items-start">
+                <FormField
+                  control={form.control}
+                  name="cardPrice"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>{t("appConfig.cardPrice")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.cardPriceDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="deliveryAmount"

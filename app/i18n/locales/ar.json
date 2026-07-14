@@ -1084,6 +1084,8 @@
     "selectedHolidays": "الإجازات المحددة",
     "noHolidaysSelected": "لم يتم اختيار أي إجازات",
     "pricingDelivery": "الأسعار والتوصيل",
+    "cardPrice": "سعر الكارت",
+    "cardPriceDesc": "سعر الكارت المضاف على الطلبات التي تتضمن رسالة كارت",
     "deliveryAmount": "قيمة التوصيل",
     "deliveryAmountDesc": "رسوم التوصيل الثابتة المضافة على كل طلب",
     "bastiDeliveryAmount": "قيمة توصيل باستي",

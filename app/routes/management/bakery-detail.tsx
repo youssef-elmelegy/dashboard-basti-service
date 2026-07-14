@@ -26,6 +26,43 @@ import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
 import { RestockDialog } from "@/components/RestockDialog";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
 import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ReviewCardSkeleton() {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+          <Skeleton className="h-5 w-10 rounded-full shrink-0" />
+        </div>
+        <Skeleton className="h-4 w-24 mt-2" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5 mt-2" />
+        <Skeleton className="h-3 w-20 mt-3" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function AddOnStockSkeleton() {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-6 w-24 rounded-full shrink-0" />
+        </div>
+        <Skeleton className="h-3 w-full rounded-full" />
+      </CardContent>
+    </Card>
+  );
+}
 
 function RatingStars({ rating }: { rating: number }) {
   return (
@@ -314,7 +351,26 @@ export default function BakeryDetailPage() {
           </Card>
 
           {/* Stock Management Section */}
-          {stocks.length > 0 && (
+          {isReviewsLoading && stocks.length === 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  {t("bakeriesManagement.stock")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                  aria-busy="true"
+                >
+                  {[0, 1, 2, 3].map((i) => (
+                    <AddOnStockSkeleton key={i} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : stocks.length > 0 ? (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -326,7 +382,7 @@ export default function BakeryDetailPage() {
                 <AddOnStockGrid stocks={stocks} onEdit={handleEditStock} />
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
           {/* Stored Items Section (from API) */}
           {bakeryItems && bakeryItems.length > 0 && (
@@ -386,28 +442,17 @@ export default function BakeryDetailPage() {
               </CardContent>
             </Card>
           ) : isReviewsLoading && reviews.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {t("bakeriesManagement.loadingReviews") ||
-                    "Loading reviews..."}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="space-y-3" aria-busy="true">
+              {[0, 1, 2].map((i) => (
+                <ReviewCardSkeleton key={i} />
+              ))}
+            </div>
           ) : reviews.length > 0 ? (
             <div className="space-y-3">
               {reviews.map((review) => (
                 <ReviewCard key={review.id} review={review} />
               ))}
-              {isLoadingMore && (
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Loading more reviews...
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              {isLoadingMore && <ReviewCardSkeleton />}
             </div>
           ) : (
             <Card>
