@@ -111,6 +111,9 @@ export interface OrderFinancialsRow {
   bastiAmount: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
+  gatewayName: string; // 'masarat' | 'tadawul' | '' (cash/wallet/unknown)
+  gatewayFee: number; // finalPrice * rate, deducted from Basti share
+  bastiNet: number; // bastiAmount - gatewayFee
   totalPrice: number;
   discountAmount: number;
   finalPrice: number;
@@ -129,6 +132,8 @@ export interface OrderFinancialsTotal {
   bakeryTotal: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
+  gatewayFeeTotal: number;
+  bastiNetTotal: number;
   totalPrice: number;
   discountAmount: number;
   finalPrice: number;

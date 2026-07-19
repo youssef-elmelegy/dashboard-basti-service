@@ -1343,7 +1343,14 @@
       "bastiDelivery": "Basti Delivery",
       "bastiAmount": "Basti %",
       "bakeryAmount": "Bakery %",
-      "addonValue": "Add-ons"
+      "addonValue": "Add-ons",
+      "gatewayFee": "Gateway Fee",
+      "bastiNet": "Basti Net"
+    },
+    "gateways": {
+      "masarat": "Masarat",
+      "tadawul": "Tadawul",
+      "none": "—"
     }
   },
   "drivers": {

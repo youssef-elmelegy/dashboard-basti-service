@@ -65,6 +65,9 @@ const COL_BAKERY =
   "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 print:!bg-amber-200 print:!text-amber-900";
 const COL_DELIVERY =
   "bg-violet-50 text-violet-700 dark:bg-violet-950/20 dark:text-violet-400 print:!bg-violet-200 print:!text-violet-900";
+const COL_FEE =
+  "bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 print:!bg-rose-200 print:!text-rose-900";
+const COL_NET = COL_GREEN;
 
 const HDR_GREEN =
   "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 print:!bg-emerald-300 print:!text-emerald-950";
@@ -74,24 +77,50 @@ const HDR_BAKERY =
   "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 print:!bg-amber-300 print:!text-amber-950";
 const HDR_DELIVERY =
   "bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 print:!bg-violet-300 print:!text-violet-950";
+const HDR_FEE =
+  "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 print:!bg-rose-300 print:!text-rose-950";
+const HDR_NET = HDR_GREEN;
+
+// gatewayName from backend → i18n key under finance.gateways
+const GATEWAY_LABEL_KEY: Record<string, string> = {
+  masarat: "finance.gateways.masarat",
+  tadawul: "finance.gateways.tadawul",
+};
 
 function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
+  const { t } = useTranslation();
   return (
     <>
-      {rows.map((order) => (
-        <TableRow key={order.orderId}>
-          <TableCell className="font-mono font-medium">
-            #{order.referenceNumber || order.orderId.slice(0, 8)}
-          </TableCell>
-          <TableCell>{order.bakeryName}</TableCell>
-          <TableCell className="text-end tabular-nums">{fmt(order.totalPrice)}</TableCell>
-          <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
-          <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
-          <TableCell className={`text-end tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
-          <TableCell className={`text-end tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
-          <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
-        </TableRow>
-      ))}
+      {rows.map((order) => {
+        const gatewayLabelKey = GATEWAY_LABEL_KEY[order.gatewayName];
+        return (
+          <TableRow key={order.orderId}>
+            <TableCell className="font-mono font-medium">
+              #{order.referenceNumber || order.orderId.slice(0, 8)}
+            </TableCell>
+            <TableCell>{order.bakeryName}</TableCell>
+            <TableCell className="text-end tabular-nums">{fmt(order.totalPrice)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_FEE}`}>
+              {order.gatewayFee > 0 ? (
+                <span className="flex items-center justify-end gap-1.5">
+                  <span className="text-[10px] uppercase tracking-wide opacity-70">
+                    {gatewayLabelKey ? t(gatewayLabelKey) : order.gatewayName}
+                  </span>
+                  <span>−{fmt(order.gatewayFee)}</span>
+                </span>
+              ) : (
+                <span className="opacity-50">{t("finance.gateways.none")}</span>
+              )}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_NET}`}>{fmt(order.bastiNet)}</TableCell>
+          </TableRow>
+        );
+      })}
     </>
   );
 }
@@ -227,6 +256,12 @@ export default function FinanceOrdersPage() {
         <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiDelivery")}
         </TableHead>
+        <TableHead className={`text-end ${HDR_FEE}`}>
+          {t("finance.columns.gatewayFee")}
+        </TableHead>
+        <TableHead className={`text-end ${HDR_NET}`}>
+          {t("finance.columns.bastiNet")}
+        </TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -243,6 +278,8 @@ export default function FinanceOrdersPage() {
         <TableCell className={`text-end font-semibold tabular-nums ${HDR_BAKERY}`}>{fmt(totals.bakeryTotal)}</TableCell>
         <TableCell className={`text-end font-semibold tabular-nums ${HDR_DELIVERY}`}>{fmt(totals.deliveryAmount)}</TableCell>
         <TableCell className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiDeliveryAmount)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_FEE}`}>−{fmt(totals.gatewayFeeTotal)}</TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_NET}`}>{fmt(totals.bastiNetTotal)}</TableCell>
       </TableRow>
     </TableFooter>
   );
@@ -301,7 +338,7 @@ export default function FinanceOrdersPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-400">
+                <TableCell colSpan={10} className="text-center py-8 text-gray-400">
                   {t("finance.noOrders")}
                 </TableCell>
               </TableRow>
@@ -393,7 +430,7 @@ export default function FinanceOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
+                  <TableCell colSpan={10} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{t("common.loading")}</span>
@@ -402,7 +439,7 @@ export default function FinanceOrdersPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                     {t("finance.noOrders")}
                   </TableCell>
                 </TableRow>

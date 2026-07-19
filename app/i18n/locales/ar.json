@@ -1343,7 +1343,14 @@
       "bastiDelivery": "توصيل باستي",
       "bastiAmount": "نسبة باستي",
       "bakeryAmount": "نسبة المخبز",
-      "addonValue": "الإضافات"
+      "addonValue": "الإضافات",
+      "gatewayFee": "رسوم البوابة",
+      "bastiNet": "صافي باستي"
+    },
+    "gateways": {
+      "masarat": "مسارات",
+      "tadawul": "تداول",
+      "none": "—"
     }
   },
   "drivers": {
