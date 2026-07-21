@@ -109,13 +109,14 @@ export interface OrderFinancialsRow {
   addonsTotal: number;
   bastiPercentage: number;
   bastiAmount: number;
+  bakeryAmount: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
   gatewayName: string; // 'masarat' | 'tadawul' | '' (cash/wallet/unknown)
   gatewayFee: number; // finalPrice * rate, deducted from Basti share
-  bastiNet: number; // bastiAmount - gatewayFee
   totalPrice: number;
   discountAmount: number;
+  finalPriceBeforeGatewayFee: number;
   finalPrice: number;
   bakeryId: string;
   bakeryName: string;
@@ -128,14 +129,15 @@ export interface OrderFinancialsRow {
 
 export interface OrderFinancialsTotal {
   addonsTotal: number;
+  miniCakesTotal: number;
   bastiTotal: number;
   bakeryTotal: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
   gatewayFeeTotal: number;
-  bastiNetTotal: number;
   totalPrice: number;
   discountAmount: number;
+  finalPriceBeforeGatewayFee: number;
   finalPrice: number;
 }
 

@@ -1345,6 +1345,7 @@
       "bakeryAmount": "نسبة المخبز",
       "addonValue": "الإضافات",
       "gatewayFee": "رسوم البوابة",
+      "finalPrice": "السعر النهائي",
       "bastiNet": "صافي باستي"
     },
     "gateways": {

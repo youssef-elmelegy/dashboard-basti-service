@@ -52,7 +52,10 @@ function getDefaultRange() {
 }
 
 const fmt = (n: number) =>
-  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
@@ -93,18 +96,17 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
     <>
       {rows.map((order) => {
         const gatewayLabelKey = GATEWAY_LABEL_KEY[order.gatewayName];
+        const totalValue = order.finalPriceBeforeGatewayFee;
+        const finalValue = order.finalPrice;
         return (
           <TableRow key={order.orderId}>
             <TableCell className="font-mono font-medium">
               #{order.referenceNumber || order.orderId.slice(0, 8)}
             </TableCell>
             <TableCell>{order.bakeryName}</TableCell>
-            <TableCell className="text-end tabular-nums">{fmt(order.totalPrice)}</TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiAmount)}</TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>{fmt(order.addonsTotal)}</TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_BAKERY}`}>{fmt(order.finalPrice)}</TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_DELIVERY}`}>{fmt(order.deliveryAmount)}</TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>{fmt(order.bastiDeliveryAmount)}</TableCell>
+            <TableCell className="text-end tabular-nums">
+              {fmt(totalValue)}
+            </TableCell>
             <TableCell className={`text-end tabular-nums ${COL_FEE}`}>
               {order.gatewayFee > 0 ? (
                 <span className="flex items-center justify-end gap-1.5">
@@ -117,7 +119,24 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
                 <span className="opacity-50">{t("finance.gateways.none")}</span>
               )}
             </TableCell>
-            <TableCell className={`text-end tabular-nums ${COL_NET}`}>{fmt(order.bastiNet)}</TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_NET}`}>
+              {fmt(finalValue)}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>
+              {fmt(order.bastiAmount)}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>
+              {fmt(order.addonsTotal)}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BAKERY}`}>
+              {fmt(order.bakeryAmount)}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_DELIVERY}`}>
+              {fmt(order.deliveryAmount)}
+            </TableCell>
+            <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>
+              {fmt(order.bastiDeliveryAmount)}
+            </TableCell>
           </TableRow>
         );
       })}
@@ -207,17 +226,22 @@ export default function FinanceOrdersPage() {
   const totalCount = data?.pagination.total ?? 0;
   const totalPages = Math.max(1, data?.pagination.totalPages ?? 1);
   const safePage = Math.min(page, totalPages);
+  const totalValue = totals?.finalPriceBeforeGatewayFee ?? 0;
+  const finalValue = totals?.finalPrice ?? 0;
 
   const selectedBakeryName =
     selectedBakery === "all"
       ? null
-      : bakeries.find((b) => b.id === selectedBakery)?.name ?? null;
+      : (bakeries.find((b) => b.id === selectedBakery)?.name ?? null);
 
   const handleDownload = () => {
     // Browsers use document.title as the suggested PDF filename when printing.
     // Sanitize anything that breaks filenames on common OSes.
     const sanitize = (s: string) =>
-      s.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").replace(/\s+/g, " ").trim();
+      s
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
     const bakeryPart = sanitize(selectedBakeryName ?? t("finance.allBakeries"));
     const filename = `Basti Service - ${bakeryPart} - ${startDate}_${endDate}`;
 
@@ -241,6 +265,12 @@ export default function FinanceOrdersPage() {
           {t("finance.columns.bakery")}
         </TableHead>
         <TableHead className="text-end">{t("finance.columns.total")}</TableHead>
+        <TableHead className={`text-end ${HDR_FEE}`}>
+          {t("finance.columns.gatewayFee")}
+        </TableHead>
+        <TableHead className={`text-end ${HDR_NET}`}>
+          {t("finance.columns.finalPrice")}
+        </TableHead>
         <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiAmount")}
         </TableHead>
@@ -256,12 +286,6 @@ export default function FinanceOrdersPage() {
         <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiDelivery")}
         </TableHead>
-        <TableHead className={`text-end ${HDR_FEE}`}>
-          {t("finance.columns.gatewayFee")}
-        </TableHead>
-        <TableHead className={`text-end ${HDR_NET}`}>
-          {t("finance.columns.bastiNet")}
-        </TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -272,14 +296,40 @@ export default function FinanceOrdersPage() {
         <TableCell colSpan={2} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
-        <TableCell className="text-end font-semibold tabular-nums">{fmt(totals.totalPrice)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiTotal)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_ADDON}`}>{fmt(totals.addonsTotal)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BAKERY}`}>{fmt(totals.bakeryTotal)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_DELIVERY}`}>{fmt(totals.deliveryAmount)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}>{fmt(totals.bastiDeliveryAmount)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_FEE}`}>−{fmt(totals.gatewayFeeTotal)}</TableCell>
-        <TableCell className={`text-end font-semibold tabular-nums ${HDR_NET}`}>{fmt(totals.bastiNetTotal)}</TableCell>
+        <TableCell className="text-end font-semibold tabular-nums">
+          {fmt(totalValue)}
+        </TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_FEE}`}>
+          −{fmt(totals.gatewayFeeTotal)}
+        </TableCell>
+        <TableCell className={`text-end font-semibold tabular-nums ${HDR_NET}`}>
+          {fmt(finalValue)}
+        </TableCell>
+        <TableCell
+          className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}
+        >
+          {fmt(totals.bastiTotal)}
+        </TableCell>
+        <TableCell
+          className={`text-end font-semibold tabular-nums ${HDR_ADDON}`}
+        >
+          {fmt(totals.addonsTotal)}
+        </TableCell>
+        <TableCell
+          className={`text-end font-semibold tabular-nums ${HDR_BAKERY}`}
+        >
+          {fmt(totals.bakeryTotal)}
+        </TableCell>
+        <TableCell
+          className={`text-end font-semibold tabular-nums ${HDR_DELIVERY}`}
+        >
+          {fmt(totals.deliveryAmount)}
+        </TableCell>
+        <TableCell
+          className={`text-end font-semibold tabular-nums ${HDR_BASTI}`}
+        >
+          {fmt(totals.bastiDeliveryAmount)}
+        </TableCell>
       </TableRow>
     </TableFooter>
   );
@@ -327,7 +377,9 @@ export default function FinanceOrdersPage() {
             <p className="font-semibold text-sm text-slate-900">
               {selectedBakeryName ?? t("finance.allBakeries")}
             </p>
-            <p>{startDate} — {endDate}</p>
+            <p>
+              {startDate} — {endDate}
+            </p>
             <p>
               {t("finance.sum")}: {totalCount}
             </p>
@@ -338,7 +390,10 @@ export default function FinanceOrdersPage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-gray-400">
+                <TableCell
+                  colSpan={10}
+                  className="text-center py-8 text-gray-400"
+                >
                   {t("finance.noOrders")}
                 </TableCell>
               </TableRow>
@@ -439,7 +494,10 @@ export default function FinanceOrdersPage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                  <TableCell
+                    colSpan={10}
+                    className="text-center py-12 text-muted-foreground"
+                  >
                     {t("finance.noOrders")}
                   </TableCell>
                 </TableRow>
@@ -455,12 +513,17 @@ export default function FinanceOrdersPage() {
         {totalCount > 0 && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {t("finance.showing")} {Math.min((safePage - 1) * pageSize + 1, totalCount)}–{Math.min(safePage * pageSize, totalCount)} {t("finance.of")} {totalCount}
+              {t("finance.showing")}{" "}
+              {Math.min((safePage - 1) * pageSize + 1, totalCount)}–
+              {Math.min(safePage * pageSize, totalCount)} {t("finance.of")}{" "}
+              {totalCount}
             </span>
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">{t("finance.rowsPerPage")}</span>
+                <span className="text-muted-foreground">
+                  {t("finance.rowsPerPage")}
+                </span>
                 <Select
                   value={String(pageSize)}
                   onValueChange={(v) => setPageSize(Number(v))}
@@ -490,7 +553,11 @@ export default function FinanceOrdersPage() {
                   onClick={() => setPage(1)}
                   disabled={safePage === 1 || isLoading}
                 >
-                  {isRTL ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
+                  {isRTL ? (
+                    <ChevronsRight className="w-4 h-4" />
+                  ) : (
+                    <ChevronsLeft className="w-4 h-4" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -499,7 +566,11 @@ export default function FinanceOrdersPage() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={safePage === 1 || isLoading}
                 >
-                  {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  {isRTL ? (
+                    <ChevronRight className="w-4 h-4" />
+                  ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -508,7 +579,11 @@ export default function FinanceOrdersPage() {
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages || isLoading}
                 >
-                  {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  {isRTL ? (
+                    <ChevronLeft className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
                 </Button>
                 <Button
                   variant="outline"
@@ -517,7 +592,11 @@ export default function FinanceOrdersPage() {
                   onClick={() => setPage(totalPages)}
                   disabled={safePage === totalPages || isLoading}
                 >
-                  {isRTL ? <ChevronsLeft className="w-4 h-4" /> : <ChevronsRight className="w-4 h-4" />}
+                  {isRTL ? (
+                    <ChevronsLeft className="w-4 h-4" />
+                  ) : (
+                    <ChevronsRight className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>

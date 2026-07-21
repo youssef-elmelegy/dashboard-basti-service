@@ -1345,6 +1345,7 @@
       "bakeryAmount": "Bakery %",
       "addonValue": "Add-ons",
       "gatewayFee": "Gateway Fee",
+      "finalPrice": "Final Price",
       "bastiNet": "Basti Net"
     },
     "gateways": {
