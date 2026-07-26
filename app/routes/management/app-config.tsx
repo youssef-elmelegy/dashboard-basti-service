@@ -34,6 +34,10 @@ const formSchema = z.object({
     normal: z.number().int().min(0),
     suger: z.number().int().min(0),
   }),
+  paymentFee: z.object({
+    masarat: z.number().int().min(0).max(100),
+    tadawul: z.number().int().min(0).max(100),
+  }),
   cardPrice: z.number().int().min(0),
   deliveryAmount: z.number().int().min(0),
   bastiDeliveryAmount: z.number().int().min(0),
@@ -76,6 +80,7 @@ export default function AppConfigPage() {
       miniCakePercentage: 10,
       minMiniCakesRequired: 10,
       printingFee: { normal: 10, suger: 20 },
+      paymentFee: { masarat: 1, tadawul: 2 },
       cardPrice: 15,
       deliveryAmount: 10,
       bastiDeliveryAmount: 0,
@@ -102,6 +107,7 @@ export default function AppConfigPage() {
           miniCakePercentage: config.miniCakePercentage,
           minMiniCakesRequired: config.minMiniCakesRequired,
           printingFee: config.printingFee,
+          paymentFee: config.paymentFee,
           cardPrice: config.cardPrice,
           deliveryAmount: config.deliveryAmount,
           bastiDeliveryAmount: config.bastiDeliveryAmount,
@@ -138,6 +144,7 @@ export default function AppConfigPage() {
         miniCakePercentage: values.miniCakePercentage,
         minMiniCakesRequired: values.minMiniCakesRequired,
         printingFee: values.printingFee,
+        paymentFee: values.paymentFee,
         cardPrice: values.cardPrice,
         deliveryAmount: values.deliveryAmount,
         bastiDeliveryAmount: values.bastiDeliveryAmount,
@@ -164,6 +171,7 @@ export default function AppConfigPage() {
         bastiPercentage: config.bastiPercentage,
         miniCakePercentage: config.miniCakePercentage,
         printingFee: config.printingFee,
+        paymentFee: config.paymentFee,
         cardPrice: config.cardPrice,
         deliveryAmount: config.deliveryAmount,
         bastiDeliveryAmount: config.bastiDeliveryAmount,
@@ -536,6 +544,64 @@ export default function AppConfigPage() {
                       </FormControl>
                       <FormDescription>
                         {t("appConfig.printingFeeSugerDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Payment Gateway Fees Section */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">
+                {t("appConfig.paymentGatewayFees")}
+              </h2>
+              <div className="flex gap-6 flex-wrap items-start">
+                <FormField
+                  control={form.control}
+                  name="paymentFee.masarat"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>{t("appConfig.paymentFeeMasarat")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.paymentFeeMasaratDesc")}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="paymentFee.tadawul"
+                  render={({ field }) => (
+                    <FormItem className="flex-1 min-w-48">
+                      <FormLabel>{t("appConfig.paymentFeeTadawul")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseInt(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {t("appConfig.paymentFeeTadawulDesc")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

@@ -7,6 +7,11 @@ import { apiClient } from "@/lib/api-client";
 import type { ApiResponse } from "@/lib/api-client";
 
 /**
+ * Cart (order) type — mirrors the backend `cart_type_enum`
+ */
+export type CartType = "big_cakes" | "small_cakes" | "others";
+
+/**
  * Order item type definition
  */
 export interface OrderItem {
@@ -123,6 +128,7 @@ export interface OrderFinancialsRow {
   orderId: string;
   referenceNumber: string;
   orderStatus: string;
+  cartType: CartType;
   deliveredAt: string;
   createdAt: string;
 }

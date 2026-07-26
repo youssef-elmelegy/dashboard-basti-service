@@ -40,6 +40,7 @@ import {
   type OrderFinancialsResponse,
   type OrderFinancialsRow,
 } from "@/lib/services/order.service";
+import { CartTypeIcon } from "@/components/CartTypeIcon";
 
 function getDefaultRange() {
   const now = new Date();
@@ -101,7 +102,12 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
         return (
           <TableRow key={order.orderId}>
             <TableCell className="font-mono font-medium">
-              #{order.referenceNumber || order.orderId.slice(0, 8)}
+              <span className="flex items-center gap-2">
+                <CartTypeIcon cartType={order.cartType} />
+                <span>
+                  #{order.referenceNumber || order.orderId.slice(0, 8)}
+                </span>
+              </span>
             </TableCell>
             <TableCell>{order.bakeryName}</TableCell>
             <TableCell className="text-end tabular-nums">

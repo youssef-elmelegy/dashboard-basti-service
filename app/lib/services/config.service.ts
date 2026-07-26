@@ -21,6 +21,10 @@ export interface ConfigResponseDto {
     normal: number;
     suger: number;
   };
+  paymentFee: {
+    masarat: number;
+    tadawul: number;
+  };
   cardPrice: number;
   deliveryAmount: number;
   bastiDeliveryAmount: number;
@@ -47,6 +51,10 @@ export interface UpdateConfigRequest {
   printingFee?: {
     normal: number;
     suger: number;
+  };
+  paymentFee?: {
+    masarat: number;
+    tadawul: number;
   };
   cardPrice?: number;
   deliveryAmount?: number;

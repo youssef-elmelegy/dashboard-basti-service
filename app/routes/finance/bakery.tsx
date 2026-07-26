@@ -38,6 +38,7 @@ import {
   type OrderFinancialsResponse,
   type OrderFinancialsRow,
 } from "@/lib/services/order.service";
+import { CartTypeIcon } from "@/components/CartTypeIcon";
 
 function getDefaultRange() {
   const now = new Date();
@@ -86,7 +87,10 @@ function BakeryTableBody({
       {rows.map((order) => (
         <TableRow key={order.orderId}>
           <TableCell className="font-mono font-medium">
-            #{order.referenceNumber || order.orderId.slice(0, 8)}
+            <span className="flex items-center gap-2">
+              <CartTypeIcon cartType={order.cartType} />
+              <span>#{order.referenceNumber || order.orderId.slice(0, 8)}</span>
+            </span>
           </TableCell>
           <TableCell className="whitespace-nowrap">{formatDate(order.createdAt)}</TableCell>
           <TableCell>
