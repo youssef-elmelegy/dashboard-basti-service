@@ -1,5 +1,6 @@
 import type { SmallCake, AddOn } from "@/data/products";
-import type { SelectedProductItem, ProductData } from "../types";
+import type { RegionalProductType } from "@/lib/services/region.service";
+import type { SelectedProductItem, ProductData, ProductType } from "../types";
 
 export function convertStoreProductToProductData(
   product: SmallCake | AddOn,
@@ -83,6 +84,26 @@ export function transformRegionalProductsToItems(
       addedAt: product.createdAt ? new Date(product.createdAt) : new Date(),
     };
   });
+}
+
+/**
+ * Inverse of {@link mapApiTypeToProductType}: turns the singular UI product
+ * type into the plural family name the regional products endpoint expects.
+ */
+export function mapProductTypeToApiType(
+  productType: ProductType,
+): RegionalProductType {
+  const typeMap: Record<ProductType, RegionalProductType> = {
+    "featured-cake": "featured-cakes",
+    addon: "addons",
+    sweet: "sweets",
+    flavor: "flavors",
+    shape: "shapes",
+    decoration: "decorations",
+    "predesigned-cake": "predesigned-cakes",
+  };
+
+  return typeMap[productType];
 }
 
 export function mapApiTypeToProductType(

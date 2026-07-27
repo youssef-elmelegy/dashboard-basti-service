@@ -21,17 +21,23 @@ interface ProductTypeSelectionSheetProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectProduct: (product: ProductData, productType: ProductType) => void;
+  /** Type the dropdown starts on when the sheet opens. Defaults to featured cake. */
+  initialProductType?: ProductType;
 }
 
 export function ProductTypeSelectionSheet({
   isOpen,
   onOpenChange,
   onSelectProduct,
+  initialProductType = "featured-cake",
 }: ProductTypeSelectionSheetProps) {
   const { t } = useTranslation();
+  // Seeds the dropdown. Callers that need to re-seed it (e.g. a deep link
+  // choosing the type) should remount via `key` rather than expect this to
+  // re-sync on every change.
   const [selectedProductType, setSelectedProductType] = useState<
     ProductType | ""
-  >("featured-cake");
+  >(initialProductType);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { results, isLoading, hasMore, loadMore } = useProductSearch(

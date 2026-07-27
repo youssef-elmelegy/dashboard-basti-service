@@ -19,6 +19,8 @@ interface BakeryItemsDisplayProps {
   bakeryId: string;
   isLoading?: boolean;
   readOnly?: boolean;
+  /** Rendered in the card header, e.g. an "Add Stock" button. */
+  headerAction?: React.ReactNode;
 }
 
 export function BakeryItemsDisplay({
@@ -26,6 +28,7 @@ export function BakeryItemsDisplay({
   bakeryId,
   isLoading = false,
   readOnly = false,
+  headerAction,
 }: BakeryItemsDisplayProps) {
   const { t } = useTranslation();
   const [selectedItem, setSelectedItem] = useState<BakeryItemStore | null>(
@@ -38,10 +41,25 @@ export function BakeryItemsDisplay({
     setIsEditDialogOpen(true);
   };
 
+  // Shared across the loading / empty / populated states so the header action
+  // (e.g. "Add Stock") stays reachable even when there is nothing to show.
+  const header = (
+    <CardHeader>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CardTitle className="flex items-center gap-2">
+          <Package className="w-5 h-5" />
+          {t("bakeriesManagement.storedItems")}
+        </CardTitle>
+        {headerAction}
+      </div>
+    </CardHeader>
+  );
+
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        {header}
+        <CardContent>
           <div className="flex items-center justify-center">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
@@ -53,7 +71,8 @@ export function BakeryItemsDisplay({
   if (!items || items.length === 0) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center">
+        {header}
+        <CardContent className="text-center">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
           <p className="text-sm text-muted-foreground">
             {t("bakeriesManagement.noItems")}
@@ -66,12 +85,7 @@ export function BakeryItemsDisplay({
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            {t("bakeriesManagement.storedItems")}
-          </CardTitle>
-        </CardHeader>
+        {header}
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (

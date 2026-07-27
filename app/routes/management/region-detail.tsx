@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useRegionStore } from "@/stores/regionStore";
@@ -10,21 +10,58 @@ import { ProductSelectionSheet } from "@/components/ProductSelectionSheet";
 import { Plus, Truck } from "lucide-react";
 
 import { ProductTypeSelectionSheet } from "./components/ProductTypeSelectionSheet";
+import {
+  ProductTypeFilter,
+  ALL_PRODUCT_TYPES,
+  type ProductTypeFilterValue,
+} from "./components/ProductTypeFilter";
 import { SelectedProductsTable } from "./components/SelectedProductsTable";
 import { useRegionalProducts } from "./hooks/useRegionalProducts";
 import { useProductSelection } from "./hooks/useProductSelection";
 import { useEditProductHandler } from "./hooks/useEditProductHandler";
 import { useConfirmSelectionHandler } from "./hooks/useConfirmSelectionHandler";
 import { useDeleteRegionalProduct } from "./hooks/useDeleteRegionalProduct";
-import { transformRegionalProductsToItems } from "./utils/productTransformers";
-import type { SelectedProductItem } from "./types";
+import {
+  transformRegionalProductsToItems,
+  mapProductTypeToApiType,
+} from "./utils/productTransformers";
+import {
+  ADD_TYPE_PARAM,
+  parseAddTypeParam,
+} from "./utils/regionAddProductLink";
+import type { SelectedProductItem, ProductType } from "./types";
 
 export default function RegionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isTypeDialogOpen, setIsTypeDialogOpen] = React.useState(false);
+  const [typeFilter, setTypeFilter] =
+    React.useState<ProductTypeFilterValue>(ALL_PRODUCT_TYPES);
   const { openDeleteDialog } = useDeleteDialog();
+
+  // Deep link (e.g. "Add Stock" on a bakery) asking us to open the add sheet
+  // on a specific product type. Captured into state and stripped from the URL
+  // so closing the sheet doesn't leave a param that reopens it on refresh.
+  const requestedAddType = parseAddTypeParam(searchParams.get(ADD_TYPE_PARAM));
+  const [initialAddType, setInitialAddType] = React.useState<
+    ProductType | undefined
+  >(requestedAddType ?? undefined);
+
+  React.useEffect(() => {
+    if (!requestedAddType) return;
+
+    setInitialAddType(requestedAddType);
+    setIsTypeDialogOpen(true);
+    // Also focus the table on the type being added, so the newly added item is
+    // visible in the list behind the sheet.
+    setTypeFilter(requestedAddType);
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete(ADD_TYPE_PARAM);
+    setSearchParams(nextParams, { replace: true });
+  }, [requestedAddType, searchParams, setSearchParams]);
 
   // Region hooks
   const currentRegion = useRegionStore((state) => state.currentRegion);
@@ -45,12 +82,21 @@ export default function RegionDetailPage() {
     resetSelection,
   } = useProductSelection();
 
-  // Regional products hook
+  // Regional products hook — the type filter is applied server-side so the
+  // backend skips the product families we don't need entirely.
+  const apiTypeFilter = React.useMemo(
+    () =>
+      typeFilter === ALL_PRODUCT_TYPES
+        ? undefined
+        : [mapProductTypeToApiType(typeFilter)],
+    [typeFilter],
+  );
+
   const {
     products: regionalProducts,
     isLoading: isLoadingRegionalProducts,
     setProducts: setRegionalProducts,
-  } = useRegionalProducts(id);
+  } = useRegionalProducts(id, apiTypeFilter);
 
   // Edit product handler hook
   const { handleEditProduct } = useEditProductHandler({
@@ -104,9 +150,15 @@ export default function RegionDetailPage() {
   const selectedProducts = useRegionProductSelectionStore(
     (state) => state.selectedProducts,
   );
+  // Products still staged in the store are filtered client-side to match the
+  // server-side filter already applied to the fetched ones.
   const regionSelectedProducts = [
     ...transformedRegionalProducts,
-    ...selectedProducts.filter((p) => p.regionName === currentRegion?.name),
+    ...selectedProducts.filter(
+      (p) =>
+        p.regionName === currentRegion?.name &&
+        (typeFilter === ALL_PRODUCT_TYPES || p.productType === typeFilter),
+    ),
   ];
 
   const region = currentRegion;
@@ -168,16 +220,21 @@ export default function RegionDetailPage() {
 
       {/* Product Type Selection Sheet */}
       <ProductTypeSelectionSheet
+        key={initialAddType ?? "default"}
         isOpen={isTypeDialogOpen}
         onOpenChange={setIsTypeDialogOpen}
         onSelectProduct={handleSelectProductFromSheet}
+        initialProductType={initialAddType}
       />
 
       {/* Selected Products Table */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-4">
-          {t("regions.selectedProducts")}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <h2 className="text-2xl font-bold tracking-tight">
+            {t("regions.selectedProducts")}
+          </h2>
+          <ProductTypeFilter value={typeFilter} onChange={setTypeFilter} />
+        </div>
         <SelectedProductsTable
           isLoading={isLoadingRegionalProducts}
           data={regionSelectedProducts}

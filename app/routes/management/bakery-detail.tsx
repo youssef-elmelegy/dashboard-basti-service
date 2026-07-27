@@ -5,9 +5,7 @@ import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 import { useReviewStore } from "@/stores/reviewStore";
-import { useStockStore } from "@/stores/stockStore";
 import type { Review } from "@/data/reviews";
-import type { AddOnStock } from "@/data/stock";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,10 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, MapPin, Package, Star, User } from "lucide-react";
+import { ChevronLeft, MapPin, Package, Plus, Star, User } from "lucide-react";
+import { buildRegionAddProductPath } from "./utils/regionAddProductLink";
 import { cn } from "@/lib/utils";
-import { AddOnStockGrid } from "@/components/AddOnStockDisplay";
-import { RestockDialog } from "@/components/RestockDialog";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
 import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,20 +42,6 @@ function ReviewCardSkeleton() {
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-4/5 mt-2" />
         <Skeleton className="h-3 w-20 mt-3" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function AddOnStockSkeleton() {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-6 w-24 rounded-full shrink-0" />
-        </div>
-        <Skeleton className="h-3 w-full rounded-full" />
       </CardContent>
     </Card>
   );
@@ -197,10 +180,6 @@ export default function BakeryDetailPage() {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [bakery, isReviewsLoading, isLoadingMore, fetchMoreReviews]);
 
-  // Legacy stock
-  const [selectedStock, setSelectedStock] = useState<AddOnStock | null>(null);
-  const [isRestockOpen, setIsRestockOpen] = useState(false);
-
   // Fetch bakery items when bakery ID changes
   useEffect(() => {
     if (id) {
@@ -214,25 +193,6 @@ export default function BakeryDetailPage() {
       });
     }
   }, [id, fetchBakeryItems, fetchReviews, t]);
-
-  // Get all stocks for this bakery
-  const allStocks = useMemo(
-    () => (bakery ? useStockStore.getState().getStocksByBakery(bakery.id) : []),
-    [bakery],
-  );
-
-  // Filter stocks to only show add-ons for this bakery's region
-  const stocks = useMemo(() => {
-    if (!bakery || !allStocks.length) return [];
-
-    // Return only stocks for this bakery's region
-    return allStocks.filter((stock) => stock.regionName === bakery.regionId);
-  }, [bakery, allStocks]);
-
-  const handleEditStock = (stock: AddOnStock) => {
-    setSelectedStock(stock);
-    setIsRestockOpen(true);
-  };
 
   if (!bakery) {
     return (
@@ -350,48 +310,25 @@ export default function BakeryDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Stock Management Section */}
-          {isReviewsLoading && stocks.length === 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  {t("bakeriesManagement.stock")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                  aria-busy="true"
-                >
-                  {[0, 1, 2, 3].map((i) => (
-                    <AddOnStockSkeleton key={i} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : stocks.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  {t("bakeriesManagement.stock")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AddOnStockGrid stocks={stocks} onEdit={handleEditStock} />
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {/* Stored Items Section (from API) */}
-          {bakeryItems && bakeryItems.length > 0 && (
-            <BakeryItemsDisplay
-              items={bakeryItems}
-              bakeryId={id || ""}
-              isLoading={isItemsLoading}
-            />
-          )}
+          {/* Stock Section (from API) */}
+          <BakeryItemsDisplay
+            items={bakeryItems}
+            bakeryId={id || ""}
+            isLoading={isItemsLoading}
+            headerAction={
+              <Button
+                size="sm"
+                className="gap-2"
+                disabled={!bakery.regionId}
+                onClick={() =>
+                  navigate(buildRegionAddProductPath(bakery.regionId, "addon"))
+                }
+              >
+                <Plus className="w-4 h-4" />
+                {t("bakeriesManagement.addStock")}
+              </Button>
+            }
+          />
         </div>
 
         {/* Right Column - Reviews Sidebar */}
@@ -466,14 +403,6 @@ export default function BakeryDetailPage() {
         </div>
       </div>
 
-      {/* Restock Dialog */}
-      {selectedStock && (
-        <RestockDialog
-          stock={selectedStock}
-          open={isRestockOpen}
-          onOpenChange={setIsRestockOpen}
-        />
-      )}
     </div>
   );
 }
