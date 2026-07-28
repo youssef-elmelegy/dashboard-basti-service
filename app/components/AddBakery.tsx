@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -49,7 +50,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface AddBakeryProps {
-  onSubmit: (data: FormValues) => void;
+  onSubmit: (data: FormValues) => void | Promise<void>;
 }
 
 export function AddBakery({ onSubmit }: AddBakeryProps) {
@@ -86,9 +87,18 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
     form.setValue("bakeryTypes", updated, { shouldValidate: true });
   };
 
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values);
-    form.reset();
+  // Awaited so react-hook-form keeps `isSubmitting` true for the whole request,
+  // which is what disables the submit button against double-clicks.
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      await onSubmit(values);
+      // Only clear the form once the bakery is actually created — on failure
+      // the user keeps what they typed and can retry.
+      form.reset();
+    } catch {
+      // The parent logs and surfaces the error; swallowing it here just keeps
+      // react-hook-form from treating the rejection as unhandled.
+    }
   };
 
   return (
@@ -230,7 +240,14 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 {t("bakeriesManagement.addBakery")}
               </Button>
             </form>

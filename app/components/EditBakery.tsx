@@ -19,8 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { BakeryType, Bakery } from "@/lib/services/bakery.service";
 import { useRegionStore } from "@/stores/regionStore";
+import {
+  useBakeryItemStore,
+  countItemsWithStock,
+} from "@/stores/bakeryItemStore";
+import { bakeryCarriesStock } from "@/lib/bakeryStock";
 
 // Zod schema for form validation
 const formSchema = z.object({
@@ -53,7 +60,7 @@ interface EditBakeryProps {
       Bakery,
       "id" | "averageRating" | "totalReviews" | "createdAt" | "updatedAt"
     >,
-  ) => void;
+  ) => void | Promise<void>;
 }
 
 export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
@@ -83,6 +90,40 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
   const selectedTypes = form.watch("bakeryTypes");
   const selectedRegionId = form.watch("regionId");
 
+  // Stock lives only on "others" bakeries, so dropping that type discards it.
+  // Loaded once on mount for bakeries that could have stock in the first place.
+  const [stockedCount, setStockedCount] = useState(0);
+  const carriedStockInitially = bakeryCarriesStock(bakery.types);
+
+  useEffect(() => {
+    if (!carriedStockInitially) return;
+
+    let cancelled = false;
+    useBakeryItemStore
+      .getState()
+      .fetchBakeryItems(bakery.id)
+      .then(() => {
+        if (cancelled) return;
+        setStockedCount(
+          countItemsWithStock(
+            useBakeryItemStore.getState().getItemsByBakery(bakery.id),
+          ),
+        );
+      })
+      .catch((error) =>
+        console.error("Failed to load bakery stock for edit warning:", error),
+      );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bakery.id, carriedStockInitially]);
+
+  const willLoseStock =
+    carriedStockInitially &&
+    !bakeryCarriesStock(selectedTypes) &&
+    stockedCount > 0;
+
   const handleRegionSelect = (regionId: string) => {
     form.setValue("regionId", regionId, { shouldValidate: true });
   };
@@ -95,8 +136,10 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
     form.setValue("bakeryTypes", updated, { shouldValidate: true });
   };
 
-  const handleSubmit = (values: FormValues) => {
-    onSubmit({
+  // Awaited so react-hook-form keeps `isSubmitting` true for the whole request,
+  // which is what disables the submit button against double-clicks.
+  const handleSubmit = async (values: FormValues) => {
+    await onSubmit({
       name: values.name,
       locationDescription: values.locationDescription,
       regionId: values.regionId,
@@ -239,12 +282,33 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                         </button>
                       ))}
                     </div>
+                    {willLoseStock && (
+                      <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-sm text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>
+                          {t("bakeriesManagement.editStockWarning", {
+                            count: stockedCount,
+                            defaultValue_one:
+                              "Removing this type will discard the stock held for 1 item.",
+                            defaultValue_other:
+                              "Removing this type will discard the stock held for {{count}} items.",
+                          })}
+                        </span>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 {t("bakeriesManagement.updateBakery")}
               </Button>
             </form>

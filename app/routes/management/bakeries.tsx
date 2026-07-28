@@ -1,4 +1,4 @@
-import { Plus, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, AlertCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,11 @@ import { EditBakery } from "@/components/EditBakery";
 import { BakeryFilter } from "@/components/BakeryFilter";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { useBakeryStore } from "@/stores/bakeryStore";
+import {
+  useBakeryItemStore,
+  countItemsWithStock,
+} from "@/stores/bakeryItemStore";
+import { bakeryCarriesStock } from "@/lib/bakeryStock";
 import { useRegionStore } from "@/stores/regionStore";
 import { useState, useMemo, useEffect } from "react";
 import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
@@ -104,6 +109,8 @@ export default function BakeriesPage() {
       setIsAddOpen(false);
     } catch (error) {
       console.error("Failed to add bakery:", error);
+      // Rethrow so the form keeps the user's input instead of resetting it
+      throw error;
     }
   };
 
@@ -130,7 +137,22 @@ export default function BakeriesPage() {
     }
   };
 
-  const handleDeleteBakery = (bakery: Bakery) => {
+  const handleDeleteBakery = async (bakery: Bakery) => {
+    // Deleting cascades to the bakery's item stores, so surface how much stock
+    // is about to be lost. Only stock-carrying bakeries can have any.
+    let stockedCount = 0;
+    if (bakeryCarriesStock(bakery.types)) {
+      try {
+        await useBakeryItemStore.getState().fetchBakeryItems(bakery.id);
+        stockedCount = countItemsWithStock(
+          useBakeryItemStore.getState().getItemsByBakery(bakery.id),
+        );
+      } catch (error) {
+        // A failed lookup shouldn't block deletion — just omit the warning
+        console.error("Failed to check bakery stock before delete:", error);
+      }
+    }
+
     openDeleteDialog(
       {
         title: t("bakeriesManagement.deleteBakery"),
@@ -138,6 +160,20 @@ export default function BakeriesPage() {
           <>
             {t("bakeriesManagement.deleteBakeryDescription")}{" "}
             <strong>{bakery.name}</strong>? {t("common.cannotBeUndone")}
+            {stockedCount > 0 && (
+              <span className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {t("bakeriesManagement.deleteStockWarning", {
+                    count: stockedCount,
+                    defaultValue_one:
+                      "This bakery still holds stock for 1 item, which will be lost.",
+                    defaultValue_other:
+                      "This bakery still holds stock for {{count}} items, which will be lost.",
+                  })}
+                </span>
+              </span>
+            )}
           </>
         ),
         recordName: bakery.name,

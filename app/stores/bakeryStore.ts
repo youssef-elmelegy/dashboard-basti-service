@@ -18,6 +18,7 @@ import {
   type BakeryType,
 } from "@/lib/services/bakery.service";
 import type { Order } from "@/data/orders";
+import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 
 interface BakeryState {
   // Data
@@ -191,12 +192,20 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
       });
 
       if (response.success && response.data) {
+        const updated = response.data as Bakery;
         set((state) => ({
-          bakeries: state.bakeries.map((b) =>
-            b.id === id ? (response.data as Bakery) : b,
-          ),
+          bakeries: state.bakeries.map((b) => (b.id === id ? updated : b)),
+          // The detail page falls back to `currentBakery` on a hard refresh, so
+          // leaving it stale would show pre-edit values until the next fetch.
+          currentBakery:
+            state.currentBakery?.id === id ? updated : state.currentBakery,
           isLoading: false,
         }));
+
+        // Bakery types gate which items are stocked, so a type change can flip
+        // the item list between populated and empty. Drop the cached slice so
+        // the detail page refetches instead of serving pre-edit items.
+        useBakeryItemStore.getState().invalidateBakery(id);
       } else {
         throw new Error(response.message || "Failed to update bakery");
       }

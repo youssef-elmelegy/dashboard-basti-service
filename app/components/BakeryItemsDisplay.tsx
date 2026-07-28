@@ -11,8 +11,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Package, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  MoreVertical,
+  Package,
+  PackageOpen,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { EditStockDialog } from "./EditStockDialog";
+import { bakeryCarriesStock } from "@/lib/bakeryStock";
+
+/**
+ * Maps stored bakery type values to their translation keys. `large_cakes` is a
+ * legacy alias for `big_cakes` still present in older records.
+ */
+const BAKERY_TYPE_LABEL_KEYS: Record<string, string> = {
+  small_cakes: "smallCakes",
+  big_cakes: "bigCakes",
+  large_cakes: "bigCakes",
+  others: "othersType",
+};
 
 interface BakeryItemsDisplayProps {
   items: BakeryItemStore[];
@@ -21,6 +39,12 @@ interface BakeryItemsDisplayProps {
   readOnly?: boolean;
   /** Rendered in the card header, e.g. an "Add Stock" button. */
   headerAction?: React.ReactNode;
+  /**
+   * The bakery's declared types (e.g. `["big_cakes"]`). Used only to name the
+   * bakery in the empty state — stock is not filtered by type anywhere in the
+   * stack, so this never changes which items render.
+   */
+  bakeryTypes?: string[];
 }
 
 export function BakeryItemsDisplay({
@@ -29,6 +53,7 @@ export function BakeryItemsDisplay({
   isLoading = false,
   readOnly = false,
   headerAction,
+  bakeryTypes,
 }: BakeryItemsDisplayProps) {
   const { t } = useTranslation();
   const [selectedItem, setSelectedItem] = useState<BakeryItemStore | null>(
@@ -69,14 +94,67 @@ export function BakeryItemsDisplay({
   }
 
   if (!items || items.length === 0) {
+    const carriesStock = bakeryCarriesStock(bakeryTypes);
+    const typeLabels = (bakeryTypes ?? [])
+      .map((type) =>
+        t(`bakeriesManagement.${BAKERY_TYPE_LABEL_KEYS[type] ?? type}`, {
+          defaultValue: type.replace(/_/g, " "),
+        }),
+      )
+      .filter(Boolean);
+
     return (
       <Card>
         {header}
-        <CardContent className="text-center">
-          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">
-            {t("bakeriesManagement.noItems")}
-          </p>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-border/70 bg-muted/20 px-6 py-12">
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-muted/60 mb-4">
+              <PackageOpen className="w-7 h-7 text-muted-foreground" />
+            </div>
+
+            {/* A bakery that carries no stock by type is a permanent state, not
+                an empty one — say so instead of inviting the user to add stock. */}
+            {bakeryTypes && !carriesStock ? (
+              <>
+                <p className="text-base font-semibold">
+                  {typeLabels.length > 0
+                    ? t("bakeriesManagement.typeHasNoStore", {
+                        types: typeLabels.join(" / "),
+                        defaultValue:
+                          "{{types}} bakeries don't have a store",
+                      })
+                    : t("bakeriesManagement.noStoreGeneric", {
+                        defaultValue: "This bakery doesn't have a store",
+                      })}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+                  {t("bakeriesManagement.typeHasNoStoreHint", {
+                    defaultValue:
+                      "These bakeries prepare cakes to order, so no stock is kept for them.",
+                  })}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-semibold">
+                  {t("bakeriesManagement.noStoreGeneric", {
+                    defaultValue: "This bakery doesn't have a store yet",
+                  })}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+                  {readOnly
+                    ? t("bakeriesManagement.noStoreHintReadOnly", {
+                        defaultValue:
+                          "No stock has been assigned to this bakery yet.",
+                      })
+                    : t("bakeriesManagement.noStoreHint", {
+                        defaultValue:
+                          "Use “Add Stock” to assign products from this bakery's region.",
+                      })}
+                </p>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -87,7 +165,7 @@ export function BakeryItemsDisplay({
       <Card>
         {header}
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {items.map((item) => (
               <ItemCard
                 key={item.id}
@@ -163,35 +241,31 @@ function ItemCard({
           </div>
         )}
 
-        {/* Product Type Badge */}
-        {item.product?.type && (
-          <Badge
-            variant="secondary"
-            className="absolute top-2 end-2 capitalize"
-          >
-            {item.product.type.replace("_", " ")}
-          </Badge>
-        )}
-
         {/* Low Stock Badge */}
         {isLowStock && (
           <Badge
             variant="destructive"
-            className="absolute top-2 start-2"
+            className="absolute top-2 start-2 max-w-[calc(50%-0.5rem)] truncate"
           >
             {t("bakeriesManagement.lowStock")}
           </Badge>
         )}
 
-        {/* Options Menu */}
-        {onEdit && (
-          <div className="absolute top-2 end-2">
+        {/* Type badge and options menu share one row so they can't overlap. */}
+        <div className="absolute top-2 end-2 flex items-center gap-1 max-w-[calc(50%-0.5rem)]">
+          {item.product?.type && (
+            <Badge variant="secondary" className="capitalize truncate">
+              {item.product.type.replace("_", " ")}
+            </Badge>
+          )}
+
+          {onEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 bg-background/80 hover:bg-background"
+                  className="h-8 w-8 p-0 shrink-0 bg-background/80 hover:bg-background"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
@@ -205,8 +279,8 @@ function ItemCard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Content Section */}

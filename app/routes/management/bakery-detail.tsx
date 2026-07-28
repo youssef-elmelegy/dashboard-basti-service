@@ -22,8 +22,15 @@ import { ChevronLeft, MapPin, Package, Plus, Star, User } from "lucide-react";
 import { buildRegionAddProductPath } from "./utils/regionAddProductLink";
 import { cn } from "@/lib/utils";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
-import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
+import { bakeryCarriesStock } from "@/lib/bakeryStock";
+import {
+  BAKERY_TYPE_COLORS,
+  type BakeryItemStore,
+} from "@/lib/services/bakery.service";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Stable reference so the selector doesn't return a fresh array each render
+const EMPTY_ITEMS: BakeryItemStore[] = [];
 
 function ReviewCardSkeleton() {
   return (
@@ -108,19 +115,28 @@ export default function BakeryDetailPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // Bakery store
+  // Bakery store. `bakeries` is only populated by navigating in from the list,
+  // so on a hard refresh we fall back to `currentBakery`, which the fetch below
+  // fills in. Without that, a reload renders the "no bakeries" fallback.
   const bakeries = useBakeryStore((state) => state.bakeries);
-  const bakery = bakeries.find((b) => b.id === id) || null;
+  const currentBakery = useBakeryStore((state) => state.currentBakery);
+  const bakery =
+    bakeries.find((b) => b.id === id) ||
+    (currentBakery?.id === id ? currentBakery : null);
 
-  // Bakery items store with subscription to updates
-  const allItems = useBakeryItemStore((state) => state.items);
+  // Distinguishes "not loaded yet" from "does not exist" — the store's shared
+  // isLoading flag is set by every action, so it can't answer that per-request.
+  // Holds the id whose fetch has settled, so switching bakeries re-arms the
+  // skeleton without an extra state write during the effect.
+  const [fetchedId, setFetchedId] = useState<string | null>(null);
+  const hasAttemptedFetch = fetchedId === id;
+
+  // Bakery items store with subscription to updates. Reading this bakery's
+  // slice directly means another bakery's rows can never appear here.
+  const bakeryItems = useBakeryItemStore(
+    (state) => (id ? state.itemsByBakery[id] : undefined) ?? EMPTY_ITEMS,
+  );
   const isItemsLoading = useBakeryItemStore((state) => state.isLoading);
-
-  // Filter items for this bakery - use useMemo to avoid re-filtering on every render
-  const bakeryItems = useMemo(() => {
-    if (!id) return [];
-    return allItems.filter((item) => item.bakeryId === id);
-  }, [id, allItems]);
 
   const fetchBakeryItems = useCallback(async (bakeryId: string) => {
     return useBakeryItemStore.getState().fetchBakeryItems(bakeryId);
@@ -154,31 +170,55 @@ export default function BakeryDetailPage() {
     return useReviewStore.getState().fetchNextPageReviewsByBakeryId(bakeryId);
   }, []);
 
-  // Ref for reviews container to handle scroll
   const reviewsContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Handle scroll detection for infinite scroll
+  // Infinite scroll via a sentinel rather than a scroll listener on the column:
+  // below `lg` the column no longer scrolls (the page does), and an
+  // IntersectionObserver with a null root follows whichever ancestor scrolls.
   useEffect(() => {
-    const container = reviewsContainerRef.current;
-    if (!container || !bakery || isReviewsLoading || isLoadingMore) return;
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel || !bakery || isReviewsLoading || isLoadingMore) return;
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-
-      // Load more when 80% scrolled
-      if (scrollPercentage > 0.8) {
+    const bakeryId = bakery.id;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
         setIsLoadingMore(true);
-        fetchMoreReviews(bakery.id)
+        fetchMoreReviews(bakeryId)
           .then(() => setIsLoadingMore(false))
           .catch(() => setIsLoadingMore(false));
-      }
-    };
+      },
+      { rootMargin: "200px" },
+    );
 
-    container.addEventListener("scroll", handleScroll);
-    return () => container.removeEventListener("scroll", handleScroll);
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [bakery, isReviewsLoading, isLoadingMore, fetchMoreReviews]);
+
+  // Load the bakery itself. On a client-side navigation it is already in
+  // `bakeries`; on a direct load or refresh nothing has fetched it yet.
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+
+    useBakeryStore
+      .getState()
+      .getBakeryById(id)
+      .catch((error) => {
+        console.error("Failed to fetch bakery:", error);
+        return null;
+      })
+      .finally(() => {
+        if (!cancelled) setFetchedId(id);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   // Fetch bakery items when bakery ID changes
   useEffect(() => {
@@ -194,11 +234,39 @@ export default function BakeryDetailPage() {
     }
   }, [id, fetchBakeryItems, fetchReviews, t]);
 
+  // Still resolving — show a skeleton rather than claiming the bakery is missing
+  if (!bakery && !hasAttemptedFetch) {
+    return (
+      <div className="lg:h-full flex flex-col gap-6" aria-busy="true">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex-1 min-w-0 space-y-4">
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-9 w-56" />
+          </div>
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <ReviewCardSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fetch finished and the bakery genuinely isn't there
   if (!bakery) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <h1 className="text-2xl font-bold">
-          {t("bakeriesManagement.noBakeries")}
+          {t("bakeriesManagement.bakeryNotFound", {
+            defaultValue: "Bakery not found",
+          })}
         </h1>
         <Button onClick={() => navigate("/management/bakeries")}>
           <ChevronLeft className="w-4 h-4 me-2" />
@@ -221,10 +289,13 @@ export default function BakeryDetailPage() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-6">
+    // The two-pane split with independently scrolling columns only applies from
+    // `lg` up; below that the columns stack and the page itself scrolls, so
+    // `h-full`/`overflow-hidden` are gated to avoid nested scroll traps.
+    <div className="lg:h-full flex flex-col gap-6">
       {/* Header with Breadcrumb */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
           <Breadcrumb className="mb-4">
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -245,7 +316,9 @@ export default function BakeryDetailPage() {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <h1 className="text-3xl font-bold tracking-tight">{bakery.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
+            {bakery.name}
+          </h1>
         </div>
 
         <Button
@@ -259,9 +332,9 @@ export default function BakeryDetailPage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:flex-1 lg:overflow-hidden">
         {/* Left Column - Bakery Details */}
-        <div className="lg:col-span-2 space-y-6 overflow-y-auto pe-4">
+        <div className="lg:col-span-2 space-y-6 lg:overflow-y-auto lg:pe-4">
           {/* Header Card */}
           <Card>
             <CardHeader>
@@ -315,7 +388,10 @@ export default function BakeryDetailPage() {
             items={bakeryItems}
             bakeryId={id || ""}
             isLoading={isItemsLoading}
+            bakeryTypes={bakery.types}
             headerAction={
+              // Bakeries that hold no stock by type have nothing to add to
+              !bakeryCarriesStock(bakery.types) ? null : (
               <Button
                 size="sm"
                 className="gap-2"
@@ -327,6 +403,7 @@ export default function BakeryDetailPage() {
                 <Plus className="w-4 h-4" />
                 {t("bakeriesManagement.addStock")}
               </Button>
+              )
             }
           />
         </div>
@@ -334,7 +411,7 @@ export default function BakeryDetailPage() {
         {/* Right Column - Reviews Sidebar */}
         <div
           ref={reviewsContainerRef}
-          className="overflow-y-auto space-y-4 pe-4"
+          className="space-y-4 lg:overflow-y-auto lg:pe-4"
         >
           {/* Rating Summary Card */}
           <Card className="relative overflow-hidden border-yellow-400/40 bg-linear-to-br from-yellow-400/15 via-amber-300/5 to-transparent shadow-sm">
@@ -390,6 +467,7 @@ export default function BakeryDetailPage() {
                 <ReviewCard key={review.id} review={review} />
               ))}
               {isLoadingMore && <ReviewCardSkeleton />}
+              <div ref={loadMoreSentinelRef} aria-hidden="true" />
             </div>
           ) : (
             <Card>

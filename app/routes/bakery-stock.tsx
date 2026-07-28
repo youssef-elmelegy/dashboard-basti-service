@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,8 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, ArrowLeft } from "lucide-react";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
+import type { BakeryItemStore } from "@/lib/services/bakery.service";
 
-const EMPTY_ITEMS: ReturnType<typeof useBakeryItemStore.getState>["items"] = [];
+const EMPTY_ITEMS: BakeryItemStore[] = [];
 
 const BakeryStockPage = () => {
   const { t } = useTranslation();
@@ -20,13 +21,10 @@ const BakeryStockPage = () => {
   const currentBakery = useBakeryStore((state) => state.currentBakery);
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
 
-  const allItems = useBakeryItemStore((s) => s.items);
+  const bakeryItems = useBakeryItemStore(
+    (s) => (bakeryId ? s.itemsByBakery[bakeryId] : undefined) ?? EMPTY_ITEMS,
+  );
   const isItemsLoading = useBakeryItemStore((s) => s.isLoading);
-
-  const bakeryItems = useMemo(() => {
-    if (!bakeryId) return EMPTY_ITEMS;
-    return allItems.filter((item) => item.bakeryId === bakeryId);
-  }, [bakeryId, allItems]);
 
   const fetchBakeryItems = useCallback(
     (id: string) => useBakeryItemStore.getState().fetchBakeryItems(id),
@@ -86,6 +84,11 @@ const BakeryStockPage = () => {
         items={bakeryItems}
         bakeryId={bakeryId}
         isLoading={isItemsLoading}
+        bakeryTypes={
+          currentBakery && currentBakery.id === bakeryId
+            ? currentBakery.types
+            : undefined
+        }
         readOnly
       />
     </div>
