@@ -678,6 +678,8 @@
     "deleteStockWarning_other": "This bakery still holds stock for {{count}} items, which will be lost.",
     "editStockWarning_one": "Removing this type will discard the stock held for 1 item.",
     "editStockWarning_other": "Removing this type will discard the stock held for {{count}} items.",
+    "regionChangeStockWarning_one": "Moving to another region keeps the stock for items sold there too. Stock for 1 item will be lost if the new region doesn't sell it, and the region's other items are added at 0 stock.",
+    "regionChangeStockWarning_other": "Moving to another region keeps the stock for items sold there too. Stock for {{count}} items will be lost if the new region doesn't sell them, and the region's other items are added at 0 stock.",
     "noStoreGeneric": "This bakery doesn't have a store yet",
     "noStoreHint": "Use “Add Stock” to assign products from this bakery's region.",
     "noStoreHintReadOnly": "No stock has been assigned to this bakery yet.",

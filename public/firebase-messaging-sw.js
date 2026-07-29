@@ -44,8 +44,8 @@ messaging.onBackgroundMessage(async (payload) => {
   const title = payload.notification?.title || "New notification";
   const options = {
     body: payload.notification?.body || "",
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/logo.svg",
+    badge: "/logo.svg",
     data: payload.data || {},
     tag: payload.data?.notificationId || undefined,
   };

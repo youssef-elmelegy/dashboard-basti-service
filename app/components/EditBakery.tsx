@@ -124,6 +124,14 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
     !bakeryCarriesStock(selectedTypes) &&
     stockedCount > 0;
 
+  // Stock rows reference prices belonging to the bakery's region, so moving the
+  // bakery remaps them onto the new region's prices. Only warn when there is
+  // actual stock at risk — a move with nothing stocked needs no warning.
+  const willChangeRegion =
+    carriedStockInitially &&
+    selectedRegionId !== bakery.regionId &&
+    stockedCount > 0;
+
   const handleRegionSelect = (regionId: string) => {
     form.setValue("regionId", regionId, { shouldValidate: true });
   };
@@ -246,6 +254,20 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                             {region.name}
                           </button>
                         ))}
+                      </div>
+                    )}
+                    {willChangeRegion && (
+                      <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-sm text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>
+                          {t("bakeriesManagement.regionChangeStockWarning", {
+                            count: stockedCount,
+                            defaultValue_one:
+                              "Moving to another region keeps the stock for items sold there too. Stock for 1 item will be lost if the new region doesn't sell it, and the region's other items are added at 0 stock.",
+                            defaultValue_other:
+                              "Moving to another region keeps the stock for items sold there too. Stock for {{count}} items will be lost if the new region doesn't sell them, and the region's other items are added at 0 stock.",
+                          })}
+                        </span>
                       </div>
                     )}
                     <FormMessage />

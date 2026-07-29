@@ -315,10 +315,6 @@ export default function BakeryDetailPage() {
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight break-words">
-            {bakery.name}
-          </h1>
         </div>
 
         <Button
@@ -338,7 +334,11 @@ export default function BakeryDetailPage() {
           {/* Header Card */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">{bakery.name}</CardTitle>
+              {/* Doubles as the page heading — the standalone <h1> above was a
+                  duplicate of this title. */}
+              <h1 className="text-2xl font-semibold leading-none break-words">
+                {bakery.name}
+              </h1>
               <div className="flex flex-wrap gap-2 mt-3">
                 {bakery.types.map((type) => (
                   <Badge
