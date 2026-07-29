@@ -259,15 +259,37 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                     {willChangeRegion && (
                       <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-sm text-amber-600 dark:text-amber-400">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <span>
-                          {t("bakeriesManagement.regionChangeStockWarning", {
-                            count: stockedCount,
-                            defaultValue_one:
-                              "Moving to another region keeps the stock for items sold there too. Stock for 1 item will be lost if the new region doesn't sell it, and the region's other items are added at 0 stock.",
-                            defaultValue_other:
-                              "Moving to another region keeps the stock for items sold there too. Stock for {{count}} items will be lost if the new region doesn't sell them, and the region's other items are added at 0 stock.",
-                          })}
-                        </span>
+                        <div className="min-w-0">
+                          <p className="font-medium">
+                            {t("bakeriesManagement.regionChangeStockTitle", {
+                              defaultValue: "Moving to another region:",
+                            })}
+                          </p>
+                          {/* One bullet per outcome — kept, lost, seeded */}
+                          <ul className="mt-1 list-disc space-y-1 ps-4">
+                            <li>
+                              {t("bakeriesManagement.regionChangeStockKept", {
+                                defaultValue:
+                                  "Stock is kept for items the new region also sells.",
+                              })}
+                            </li>
+                            <li>
+                              {t("bakeriesManagement.regionChangeStockLost", {
+                                count: stockedCount,
+                                defaultValue_one:
+                                  "Stock for 1 item is lost if the new region doesn't sell it.",
+                                defaultValue_other:
+                                  "Stock for {{count}} items is lost if the new region doesn't sell them.",
+                              })}
+                            </li>
+                            <li>
+                              {t("bakeriesManagement.regionChangeStockSeeded", {
+                                defaultValue:
+                                  "The region's remaining items are added at 0 stock.",
+                              })}
+                            </li>
+                          </ul>
+                        </div>
                       </div>
                     )}
                     <FormMessage />
