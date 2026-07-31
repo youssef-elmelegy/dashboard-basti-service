@@ -112,6 +112,9 @@
     "orderNotFoundDesc": "الطلب الذي تبحث عنه غير موجود.",
     "backToOrders": "العودة إلى الطلبات",
     "back": "رجوع",
+    "markOutForDelivery": "تحديد كقيد التسليم",
+    "markDelivered": "تحديد كمسلم",
+    "statusUpdateFailed": "فشل تحديث حالة الطلب",
     "orderDetails": "تفاصيل الطلب",
     "orderItems": "عناصر الطلب",
     "deliveryMap": "خريطة موقع التسليم",
@@ -1403,7 +1406,7 @@
     "password": "كلمة المرور",
     "passwordPlaceholder": "أدخل كلمة المرور",
     "passwordRules": {
-      "minLength": "٨ أحرف على الأقل",
+      "minLength": "8 أحرف على الأقل",
       "lowercase": "حرف صغير واحد",
       "uppercase": "حرف كبير واحد",
       "digit": "رقم واحد"

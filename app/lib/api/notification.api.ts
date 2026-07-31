@@ -1,5 +1,8 @@
 import { apiClient, type ApiResponse } from "../api-client";
 
+/** Languages the backend stores notifications in. */
+export type SupportedLanguage = "en" | "ar";
+
 export const NOTIFICATION_TYPES = [
   "order_update",
   "order_status",
@@ -107,6 +110,20 @@ class NotificationApi {
     return apiClient.delete<{ message: string }>(
       "/notifications/register-token",
     );
+  }
+
+  /**
+   * Persist the admin's preferred language on the backend. Notifications are
+   * stored bilingually; this decides which side is delivered as the FCM push,
+   * and must be set per account because the request that triggers a push
+   * usually belongs to someone else.
+   */
+  updateLanguage(
+    language: SupportedLanguage,
+  ): Promise<ApiResponse<{ language: SupportedLanguage }>> {
+    return apiClient.patch<{ language: SupportedLanguage }>("/me/language", {
+      language,
+    });
   }
 
   list(

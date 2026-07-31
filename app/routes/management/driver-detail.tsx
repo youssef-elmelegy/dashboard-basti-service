@@ -147,7 +147,11 @@ export default function DriverDetailPage() {
   };
 
   const formatDate = (value: string | null) =>
-    value ? new Date(value).toLocaleDateString(i18n.language) : "—";
+    value
+      ? new Date(value).toLocaleDateString(
+          i18n.language === "ar" ? "ar-EG-u-nu-latn" : "en-GB",
+        )
+      : "—";
 
   const regionName =
     regions.find((r) => r.id === driver?.regionId)?.name || driver?.regionId || "—";

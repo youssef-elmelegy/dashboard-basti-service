@@ -124,7 +124,11 @@ export default function BakeryFinancePage() {
   const [error, setError] = useState<string | null>(null);
 
   const formatDate = (iso: string) =>
-    iso ? new Date(iso).toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-GB") : "—";
+    iso
+      ? new Date(iso).toLocaleDateString(
+          i18n.language === "ar" ? "ar-EG-u-nu-latn" : "en-GB",
+        )
+      : "—";
 
   // Debounce date changes (typing or picker fiddling)
   useEffect(() => {

@@ -60,7 +60,7 @@ export function ShapeCard({
             ) : null}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {new Date(shape.createdAt).toLocaleDateString()}
+            {new Date(shape.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
         <DropdownMenu>

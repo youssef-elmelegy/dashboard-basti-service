@@ -4,6 +4,8 @@ import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/stores/orderStore";
+import { useAuthStore } from "@/stores/auth.store";
+import { orderApi } from "@/lib/services/order.service";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { env } from "@/config/env";
 import { httpRequest } from "@/lib/http-handler";
@@ -36,6 +38,8 @@ import {
   Download,
   MessageSquare,
   ArrowRightLeft,
+  Truck,
+  PackageCheck,
 } from "lucide-react";
 
 type OrderStatus = keyof typeof statusColors;
@@ -375,6 +379,9 @@ export default function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const isSuperAdmin = useAuthStore((state) => state.admin?.role === "super_admin");
 
   // `forceRefresh` skips the cache — used after an assign/unassign so the page
   // reflects the new status and bakery rather than the stale cached order.
@@ -488,6 +495,46 @@ export default function OrderDetailPage() {
     );
   }
 
+  // Delivery progression is linear, so the admin only ever needs the one button
+  // that advances this order to its next step: ready -> out_for_delivery ->
+  // delivered. Anything earlier than ready is the bakery's to move, and
+  // delivered/cancelled are terminal, so no button shows for those.
+  const nextDeliveryStep =
+    order.orderStatus === "ready"
+      ? ({
+          status: "out_for_delivery",
+          label: t("orderDetail.markOutForDelivery"),
+          Icon: Truck,
+        } as const)
+      : order.orderStatus === "out_for_delivery"
+        ? ({
+            status: "delivered",
+            label: t("orderDetail.markDelivered"),
+            Icon: PackageCheck,
+          } as const)
+        : null;
+
+  const handleAdvanceStatus = async () => {
+    if (!nextDeliveryStep || !order.id) return;
+
+    try {
+      setIsChangingStatus(true);
+      setStatusError(null);
+      await orderApi.changeOrderStatus(order.id, nextDeliveryStep.status);
+      // Refetch rather than patching local state: the backend rewrites `ready`
+      // to `out_for_delivery` when a driver already accepted, so the stored
+      // status isn't always the one we sent.
+      await loadOrder(true);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : t("orderDetail.statusUpdateFailed");
+      setStatusError(message);
+      console.error("Failed to change order status:", err);
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
   // The order can be moved (returned to admin or reassigned) only while a bakery
   // holds it and it hasn't progressed past preparing.
   const canReassign =
@@ -576,6 +623,16 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {isSuperAdmin && nextDeliveryStep && (
+            <Button
+              onClick={handleAdvanceStatus}
+              disabled={isChangingStatus}
+              className="gap-2"
+            >
+              <nextDeliveryStep.Icon className="w-4 h-4" />
+              {nextDeliveryStep.label}
+            </Button>
+          )}
           {canReassign && (
             <Button
               variant="outline"
@@ -596,6 +653,12 @@ export default function OrderDetailPage() {
           </Button>
         </div>
       </div>
+
+      {statusError && (
+        <p className="text-sm text-red-600" role="alert">
+          {statusError}
+        </p>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-2">

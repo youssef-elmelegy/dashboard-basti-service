@@ -123,7 +123,9 @@ export default function CouponsPage() {
     if (!value) return "—";
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return "—";
-    return d.toLocaleDateString(i18n.language === "ar" ? "ar-EG" : "en-US");
+    return d.toLocaleDateString(
+      i18n.language === "ar" ? "ar-EG-u-nu-latn" : "en-US",
+    );
   };
 
   const formatDiscount = (coupon: Coupon) => {

@@ -10,7 +10,6 @@ import BakeryOrderDetail from "@/routes/bakery-order-detail";
 import BakeryStock from "@/routes/bakery-stock";
 import BakeryReviews from "@/routes/bakery-reviews";
 import Customers from "@/routes/customers";
-import CustomerDetail from "@/routes/customer-detail";
 import Settings from "@/routes/settings";
 import Support from "@/routes/support";
 import PaymentsPage from "@/routes/payments";
@@ -139,10 +138,6 @@ export const router = createBrowserRouter([
       {
         path: "customers",
         element: <Customers />,
-      },
-      {
-        path: "customers/:username",
-        element: <CustomerDetail />,
       },
       {
         path: "settings",

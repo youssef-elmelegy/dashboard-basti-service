@@ -12,7 +12,12 @@
  */
 
 import { create } from "zustand";
-import { bakeryApi, type BakeryItemStore } from "@/lib/services/bakery.service";
+import {
+  bakeryApi,
+  type Bakery,
+  type BakeryItemStore,
+} from "@/lib/services/bakery.service";
+import { bakeryCarriesStock } from "@/lib/bakeryStock";
 
 const EMPTY_ITEMS: BakeryItemStore[] = [];
 
@@ -52,6 +57,7 @@ interface BakeryItemStoreState {
   clearItems: () => void;
   invalidate: () => void;
   invalidateBakery: (bakeryId: string) => void;
+  refreshRegionBakeries: (regionId: string) => Promise<void>;
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -218,5 +224,35 @@ export const useBakeryItemStore = create<BakeryItemStoreState>((set, get) => ({
       delete lastFetchTime[bakeryId];
       return { itemsByBakery, lastFetchTime };
     });
+  },
+
+  /**
+   * Force-refetches item stores for every stock-carrying bakery in a region.
+   * Adding a region item price (addon/sweet/featured-cake) seeds a `stock: 0`
+   * row for each of those bakeries server-side; calling this afterward writes
+   * the fresh rows into this store so any bakery detail page already mounted
+   * (subscribed via `itemsByBakery[id]`) picks up the new item live, without
+   * whoever triggered the price change needing to know who's viewing what.
+   */
+  refreshRegionBakeries: async (regionId: string) => {
+    try {
+      const response = await bakeryApi.getAll();
+      if (!response.success || !response.data) return;
+
+      const raw = response.data as unknown;
+      const bakeries: Bakery[] = Array.isArray(raw)
+        ? raw
+        : ((raw as { items?: Bakery[] })?.items ?? []);
+
+      const targetIds = bakeries
+        .filter((b) => b.regionId === regionId && bakeryCarriesStock(b.types))
+        .map((b) => b.id);
+
+      await Promise.all(
+        targetIds.map((bakeryId) => get().fetchBakeryItems(bakeryId, true)),
+      );
+    } catch (error) {
+      console.error("Failed to refresh bakery stock for region:", error);
+    }
   },
 }));

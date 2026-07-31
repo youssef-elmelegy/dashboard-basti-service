@@ -46,7 +46,7 @@ export function FlavorCard({
             {flavor.description}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            {new Date(flavor.createdAt).toLocaleDateString()}
+            {new Date(flavor.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
         <DropdownMenu>

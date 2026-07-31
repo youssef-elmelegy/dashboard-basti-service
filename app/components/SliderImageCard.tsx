@@ -67,7 +67,7 @@ export function SliderImageCard({
             {image.title}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {new Date(image.createdAt).toLocaleDateString()}
+            {new Date(image.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
       </div>

@@ -53,4 +53,27 @@ i18n.on("languageChanged", (lng: string) => applyDirection(lng));
 // invalidating is a harmless no-op.
 i18n.on("languageChanged", () => invalidateAllStores());
 
+// Push notifications are delivered in the language stored on the admin's
+// account, so a language switch has to reach the backend too — otherwise the
+// dashboard flips to Arabic while pushes keep arriving in English.
+//
+// The auth store is imported lazily inside the handler: it imports this module
+// (for `i18n.language` at login), so a top-level import here would be a cycle.
+// Skipped while logged out — the endpoint is authenticated, and login syncs
+// the language anyway.
+i18n.on("languageChanged", (lng: string) => {
+  void (async () => {
+    try {
+      const { useAuthStore } = await import("@/stores/auth.store");
+      if (!useAuthStore.getState().isAuthenticated) return;
+      const { syncLanguageWithBackend } = await import(
+        "@/lib/services/language.service"
+      );
+      await syncLanguageWithBackend(lng);
+    } catch (err) {
+      console.warn("[i18n] Language sync skipped:", err);
+    }
+  })();
+});
+
 export default i18n;

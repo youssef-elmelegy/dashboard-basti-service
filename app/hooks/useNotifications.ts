@@ -32,9 +32,10 @@ function resolveNavigationPath(
       return redirectId ? `/orders/${redirectId}` : "/orders";
     case "review":
       if (isManager) return "/bakery-reviews";
-      // redirectId is the review id; the review detail lives on the bakery
-      // customer screen — for now route to the customers list as a fallback.
-      return redirectId ? `/customers/${redirectId}` : "/customers";
+      // No admin-facing review screen exists yet, so there is nowhere
+      // meaningful to send a non-manager. Returning null leaves the
+      // notification non-clickable instead of navigating somewhere wrong.
+      return null;
     case "coupon":
       return "/advertisement/coupons";
     case "offer":

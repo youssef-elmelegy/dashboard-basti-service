@@ -1,13 +1,27 @@
 import { useCallback } from "react";
 import { useRegionProductSelectionStore } from "@/stores/regionProductSelectionStore";
 import { useStockStore } from "@/stores/stockStore";
+import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 import type { SmallCake, AddOn } from "@/data/products";
 import type {
   SelectedProductItem,
   ProductData,
   ProductSelection,
+  ProductType,
 } from "../types";
 import { submitRegionalPricing } from "../utils/regionPricingHelper";
+
+// Product types whose region-pricing endpoint seeds `stock: 0` bakery item
+// stores for every bakery in the region (see backend
+// `BakeryItemStoreService.createStoresForRegionItemPrice`, called from the
+// addon/sweet/featured-cake services only). Flavor/shape/decoration/
+// predesigned-cake pricing never touches bakery stock, so there's nothing to
+// refresh for them.
+const STOCK_SEEDING_PRODUCT_TYPES: ProductType[] = [
+  "addon",
+  "sweet",
+  "featured-cake",
+];
 
 interface UseConfirmSelectionProps {
   currentRegion: { id: string; name: string } | null;
@@ -51,6 +65,22 @@ export function useConfirmSelectionHandler({
           regionPrice,
           sizePrices,
         );
+
+        // A new/updated price for these types seeds bakery stock rows
+        // server-side — refresh so a bakery detail page already open on one
+        // of this region's bakeries shows the new item without a manual
+        // reload. Fire-and-forget: it shouldn't block the rest of this flow.
+        if (STOCK_SEEDING_PRODUCT_TYPES.includes(selectedProduct.type)) {
+          useBakeryItemStore
+            .getState()
+            .refreshRegionBakeries(currentRegion.id)
+            .catch((error) => {
+              console.error(
+                "Failed to refresh bakery stock after region pricing change:",
+                error,
+              );
+            });
+        }
 
         const isEditingRegionalProduct =
           editingProductId?.startsWith("regional-");

@@ -64,7 +64,7 @@ export function DecorationCard({
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {new Date(decoration.createdAt).toLocaleDateString()}
+            {new Date(decoration.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
         <DropdownMenu>

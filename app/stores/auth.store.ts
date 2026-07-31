@@ -7,6 +7,11 @@ import {
   resetFcmRegistrationCache,
   clearFcmRegistration,
 } from "@/lib/services/fcm.service";
+import {
+  syncLanguageWithBackend,
+  resetLanguageSyncCache,
+} from "@/lib/services/language.service";
+import i18n from "@/i18n/config";
 
 // Utility to extract human-friendly message from unknown errors
 function extractErrorMessage(err: unknown, fallback = "An error occurred") {
@@ -78,6 +83,10 @@ export const useAuthStore = create<AuthState>()(
             // deliver real-time notifications. Fire-and-forget — login must
             // not block on browser push permission.
             void registerFcmWithBackend();
+
+            // Sync the dashboard language so pushes for this admin arrive in
+            // the language they're actually reading the dashboard in.
+            void syncLanguageWithBackend(i18n.language);
           } else {
             throw new Error(response.message || "Login failed");
           }
@@ -113,6 +122,7 @@ export const useAuthStore = create<AuthState>()(
           console.error("Logout error:", error);
         } finally {
           resetFcmRegistrationCache();
+          resetLanguageSyncCache();
           set({
             admin: null,
             isAuthenticated: false,
@@ -189,6 +199,7 @@ export const useAuthStore = create<AuthState>()(
             // Re-register the FCM token for the restored session so a
             // browser-restart admin still gets push delivery.
             void registerFcmWithBackend();
+            void syncLanguageWithBackend(i18n.language);
           } else {
             set({
               admin: null,
