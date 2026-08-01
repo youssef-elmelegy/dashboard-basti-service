@@ -1,17 +1,7 @@
 import axios from "axios";
 import type { AxiosInstance, AxiosError } from "axios";
-import i18n from "@/i18n/config";
 import { env } from "@/config/env";
-
-const SUPPORTED_LANGUAGES = ["en", "ar"] as const;
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
-
-function getCurrentLanguage(): SupportedLanguage {
-  const lang = i18n.language?.split("-")[0];
-  return SUPPORTED_LANGUAGES.includes(lang as SupportedLanguage)
-    ? (lang as SupportedLanguage)
-    : "en";
-}
+import { getCurrentLanguage } from "@/lib/language-header";
 
 export interface ApiResponse<T> {
   code: number;

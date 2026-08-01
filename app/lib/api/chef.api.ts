@@ -1,6 +1,7 @@
 import { type ApiResponse } from "../api-client";
 import axios, { type AxiosInstance } from "axios";
 import { env } from "@/config/env";
+import { languageHeader } from "@/lib/language-header";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 export interface CloudinaryUploadResult {
@@ -88,6 +89,7 @@ export async function uploadImage(
   const uploadAxios = axios.create({
     baseURL: env.API_BASE_URL,
     withCredentials: true,
+    headers: languageHeader(),
   });
 
   addAutoRefreshInterceptor(uploadAxios);
@@ -132,6 +134,7 @@ export async function deleteImages(
   const deleteAxios = axios.create({
     baseURL: env.API_BASE_URL,
     withCredentials: true,
+    headers: languageHeader(),
   });
 
   addAutoRefreshInterceptor(deleteAxios);

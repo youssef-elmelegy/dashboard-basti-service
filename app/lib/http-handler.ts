@@ -4,6 +4,7 @@
  */
 
 import { env } from "@/config/env";
+import { languageHeader } from "@/lib/language-header";
 
 export interface HttpOptions {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -29,9 +30,14 @@ export async function httpRequest(
     credentials = "include",
   } = options;
 
+  // Callers may pass their own headers, which would otherwise replace the
+  // defaults wholesale and drop the language. Merge rather than overwrite,
+  // while still letting an explicit Accept-Language win.
+  const headersWithLang = { ...languageHeader(), ...headers };
+
   let response = await fetch(url, {
     method,
-    headers,
+    headers: headersWithLang,
     credentials,
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -54,7 +60,7 @@ export async function httpRequest(
         // Retry the original request with refreshed token
         response = await fetch(url, {
           method,
-          headers,
+          headers: headersWithLang,
           credentials,
           body: body ? JSON.stringify(body) : undefined,
         });

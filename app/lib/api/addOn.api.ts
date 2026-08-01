@@ -6,6 +6,7 @@
 import axios, { type AxiosInstance } from "axios";
 import type { ApiResponse } from "@/lib/api-client";
 import { env } from "@/config/env";
+import { languageHeader } from "@/lib/language-header";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 /**
@@ -100,6 +101,7 @@ export const uploadImage = async (
     const uploadAxios = axios.create({
       baseURL: env.API_BASE_URL,
       withCredentials: true,
+      headers: languageHeader(),
     });
 
     addAutoRefreshInterceptor(uploadAxios);
@@ -135,6 +137,7 @@ export const deleteImages = async (
     const deleteAxios = axios.create({
       baseURL: env.API_BASE_URL,
       withCredentials: true,
+      headers: languageHeader(),
     });
 
     addAutoRefreshInterceptor(deleteAxios);

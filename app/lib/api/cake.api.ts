@@ -1,6 +1,7 @@
 import { type ApiResponse } from "../api-client";
 import axios from "axios";
 import { env } from "@/config/env";
+import { languageHeader } from "@/lib/language-header";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 
 export interface CloudinaryUploadResult {
@@ -50,6 +51,7 @@ export async function uploadImage(
   const uploadAxios = axios.create({
     baseURL: env.API_BASE_URL,
     withCredentials: true,
+    headers: languageHeader(),
   });
 
   // Add the same response interceptor for auto-refresh on 401
@@ -130,6 +132,7 @@ export async function deleteImages(
   const deleteAxios = axios.create({
     baseURL: env.API_BASE_URL,
     withCredentials: true,
+    headers: languageHeader(),
   });
 
   // Add the same response interceptor for auto-refresh on 401
