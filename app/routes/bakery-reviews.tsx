@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,7 @@ import type { Review } from "@/data/reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, User, ArrowLeft } from "lucide-react";
+import { Star, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const EMPTY_REVIEWS: Review[] = [];
@@ -32,10 +32,52 @@ function RatingStars({ rating }: { rating: number }) {
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({
+  review,
+  bakeryId,
+}: {
+  review: Review;
+  bakeryId: string;
+}) {
   const customerName = `${review.firstName} ${review.lastName}`;
+
+  // Older reviews predate the orderId backfill, and the order may have been
+  // removed since. Without a target, render the card as plain non-interactive
+  // content rather than a link that dead-ends.
+  if (!review.orderId) {
+    return <ReviewCardBody review={review} customerName={customerName} />;
+  }
+
   return (
-    <Card>
+    <Link
+      to={`/orders/bakery/${bakeryId}/orders/${review.orderId}`}
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <ReviewCardBody
+        review={review}
+        customerName={customerName}
+        interactive
+      />
+    </Link>
+  );
+}
+
+function ReviewCardBody({
+  review,
+  customerName,
+  interactive = false,
+}: {
+  review: Review;
+  customerName: string;
+  interactive?: boolean;
+}) {
+  return (
+    <Card
+      className={cn(
+        interactive &&
+          "transition-colors hover:border-yellow-400/50 hover:bg-muted/40",
+      )}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -62,9 +104,14 @@ function ReviewCard({ review }: { review: Review }) {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{review.reviewText}</p>
-        <p className="text-xs text-muted-foreground mt-3">
-          {format(new Date(review.createdAt), "MMM d, yyyy")}
-        </p>
+        <div className="flex items-center justify-between gap-2 mt-3">
+          <p className="text-xs text-muted-foreground">
+            {format(new Date(review.createdAt), "MMM d, yyyy")}
+          </p>
+          {interactive && (
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 rtl:rotate-180" />
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -232,7 +279,11 @@ const BakeryReviewsPage = () => {
         ) : reviews.length > 0 ? (
           <div className="space-y-3">
             {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+              <ReviewCard
+                key={review.id}
+                review={review}
+                bakeryId={bakeryId}
+              />
             ))}
             {isLoadingMore && (
               <Card>
