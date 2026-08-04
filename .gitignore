@@ -25,3 +25,6 @@ dist-ssr
 
 # React Router typegen output
 .react-router
+
+# Local pnpm config (machine-specific store-dir)
+.npmrc
