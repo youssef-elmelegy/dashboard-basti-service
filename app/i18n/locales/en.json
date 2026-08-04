@@ -18,6 +18,7 @@
     "info": "Info",
     "clear": "Clear",
     "dismiss": "Dismiss",
+    "back": "Back",
     "cancel": "Cancel",
     "close": "Close",
     "remove": "Remove",
@@ -81,7 +82,12 @@
       "small": "Small",
       "medium": "Medium",
       "large": "Large"
-    }
+    },
+    "errorTitle": "Something went wrong",
+    "errorDescription": "This page ran into an unexpected error. You can try again, or head back to the dashboard.",
+    "errorNotFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go to Dashboard",
+    "errorDetails": "Error details (development only)"
   },
   "reassignOrder": {
     "button": "Reassign / Return",
@@ -396,7 +402,10 @@
       "predesigned_cake": "Predesigned Cake",
       "custom_cake": "Custom Cake",
       "item": "Item"
-    }
+    },
+    "uploadFinalImageBeforeReady": "Please upload a final image before marking the order as ready.",
+    "finalizeImageFailed": "Failed to finalize image. Please try again.",
+    "uploadImageFailed": "Failed to upload image"
   },
   "products": {
     "title": "Products",
@@ -1463,5 +1472,10 @@
     "reportedDriver": "Reported {{driver}}",
     "unknownReporter": "Unknown reporter",
     "unknownDriver": "this driver"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go Back Home"
   }
 }

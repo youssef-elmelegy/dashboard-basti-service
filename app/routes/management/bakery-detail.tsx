@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { useBakeryStore } from "@/stores/bakeryStore";
 import { useBakeryItemStore } from "@/stores/bakeryItemStore";
@@ -225,7 +226,7 @@ export default function BakeryDetailPage() {
     if (id) {
       fetchBakeryItems(id).catch((error) => {
         console.error("Failed to fetch bakery items:", error);
-        alert(t("bakeriesManagement.failedToLoadItems"));
+        toast.error(t("bakeriesManagement.failedToLoadItems"));
       });
       // Fetch reviews for this bakery
       fetchReviews(id).catch((error) => {

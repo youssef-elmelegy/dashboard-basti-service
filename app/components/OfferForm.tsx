@@ -63,6 +63,7 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
 
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(formSchema) as Resolver<OfferFormValues, unknown>,
+    mode: "onChange",
     defaultValues: initial
       ? {
           name: initial.name,
@@ -187,7 +188,11 @@ export default function OfferForm({ mode, initial, isSaving, onSubmit }: OfferFo
               />
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={isSaving} className="flex-1">
+                <Button
+                  type="submit"
+                  disabled={isSaving || !form.formState.isValid}
+                  className="flex-1"
+                >
                   {isSaving
                     ? t("common.loading")
                     : mode === "add"

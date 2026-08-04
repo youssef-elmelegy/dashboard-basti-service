@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,7 @@ import type {
   UpdateFlavorFormValues,
   CreateFlavorWithVariantImagesFormValues,
 } from "@/schemas/custom-cakes.schema";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { FlavorForm } from "@/components/custom-cakes/FlavorForm";
 import { FlavorCard } from "@/components/custom-cakes/FlavorCard";
 import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
@@ -39,6 +40,7 @@ import { SortableItem, useDragSensors } from "@/components/SortableItem";
 
 export default function FlavorsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingFlavor, setEditingFlavor] = useState<Flavor | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -47,6 +49,7 @@ export default function FlavorsPage() {
   const isLoading = useFlavorStore((state) => state.isLoading);
   const isLoadingMore = useFlavorStore((state) => state.isLoadingMore);
   const error = useFlavorStore((state) => state.error);
+  const clearError = useFlavorStore((state) => state.clearError);
   const pagination = useFlavorStore((state) => state.pagination);
   const fetchFlavors = useFlavorStore((state) => state.fetchFlavors);
   const loadMoreFlavors = useFlavorStore((state) => state.loadMoreFlavors);
@@ -166,7 +169,9 @@ export default function FlavorsPage() {
     });
   };
 
-  if (error) {
+  // Only a failed *list load* justifies replacing the page. Mutation errors
+  // surface inline so the list stays usable.
+  if (error && flavors.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <div className="text-center py-12">
@@ -174,14 +179,20 @@ export default function FlavorsPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{t(error)}</p>
-          {/* Force a refresh: bypasses the cache guard so the retry actually
-              clears the error and re-fetches, instead of returning early. */}
-          <Button
-            onClick={() => fetchFlavors(undefined, undefined, undefined, true)}
-            className="mt-4"
-          >
-            {t("common.tryAgain")}
-          </Button>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              {t("common.back")}
+            </Button>
+            {/* Force a refresh: bypasses the cache guard so the retry actually
+                clears the error and re-fetches, instead of returning early. */}
+            <Button
+              onClick={() =>
+                fetchFlavors(undefined, undefined, undefined, true)
+              }
+            >
+              {t("common.tryAgain")}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -207,6 +218,21 @@ export default function FlavorsPage() {
           {t("customCakes.addFlavor")}
         </Button>
       </div>
+
+      {/* Mutation errors: shown inline so the list below stays usable. */}
+      {error && (
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-red-600/40 bg-red-600/10 p-4">
+          <p className="text-sm text-red-500">{t(error)}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearError}
+            aria-label={t("common.dismiss")}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       {flavors.length === 0 ? (
         <Empty>

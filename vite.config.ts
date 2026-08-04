@@ -15,6 +15,13 @@ export default defineConfig(({ command }) => ({
     port: 5173,
     strictPort: false,
   },
+  build: {
+    // "hidden" emits .map files for upload to GlitchTip without adding a
+    // sourceMappingURL comment to the shipped JS, so sources aren't exposed to
+    // users but production stack traces are still readable once maps are
+    // uploaded. Upload requires a GlitchTip auth token and belongs in CI.
+    sourcemap: "hidden",
+  },
   // Strip all console.* and debugger statements from production builds so the
   // deployed app never dumps API errors / debug logs to the browser console.
   // Kept in dev (command === "serve") for local debugging.

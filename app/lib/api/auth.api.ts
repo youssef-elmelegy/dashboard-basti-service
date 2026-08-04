@@ -35,12 +35,12 @@ export interface AdminVerifyOtpRequest {
 }
 
 export interface AdminVerifyOtpResponse {
+  // The reset token is returned as an httpOnly cookie, not in the body —
+  // it is intentionally unreadable from JS.
   email: string;
-  resetToken: string;
 }
 
 export interface AdminResetPasswordRequest {
-  resetToken: string;
   newPassword: string;
 }
 

@@ -11,7 +11,7 @@
  */
 
 import { create } from "zustand";
-import { ORDERS_DATA, type Order, type OrderItem } from "@/data/orders";
+import type { Order, OrderItem } from "@/data/orders";
 import {
   orderApi,
   type OrderResponse,
@@ -37,13 +37,14 @@ interface OrderState {
   bakeryOrdersCache: Record<string, { orders: Order[]; timestamp: number }>;
 
   // Detailed orders cache (for full order details from API)
-  detailedOrdersCache: Record<string, { data: any; timestamp: number }>;
+  // Raw, unvalidated order JSON from the API — callers narrow it themselves.
+  detailedOrdersCache: Record<string, { data: unknown; timestamp: number }>;
 
   // Actions
   getRegions: () => string[];
   getOrderById: (id: string) => Order | undefined;
-  getDetailedOrder: (id: string) => any | undefined;
-  cacheDetailedOrder: (id: string, orderData: any) => void;
+  getDetailedOrder: (id: string) => unknown | undefined;
+  cacheDetailedOrder: (id: string, orderData: unknown) => void;
   fetchOrders: (filters?: OrderFilters) => Promise<void>;
   fetchBakeryOrders: (
     bakeryId: string,
@@ -92,7 +93,7 @@ export function convertApiResponseToOrder(apiOrder: OrderResponse): Order {
                 : "",
         };
       });
-    } catch (e) {
+    } catch {
       return undefined;
     }
   }
@@ -282,7 +283,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   /**
    * Cache detailed order information
    */
-  cacheDetailedOrder: (id: string, orderData: any) => {
+  cacheDetailedOrder: (id: string, orderData: unknown) => {
     set((state) => ({
       detailedOrdersCache: {
         ...state.detailedOrdersCache,
@@ -450,10 +451,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   /**
-   * Reset to mock data
+   * Reset the store to its initial empty state. Matches the `orders: []` the
+   * store is created with, so a reset leaves the next fetch to populate the
+   * list rather than seeding rows the server never returned.
    */
   resetOrders: () => {
-    set({ orders: ORDERS_DATA, isLoading: false, error: null, filters: {} });
+    set({ orders: [], isLoading: false, error: null, filters: {} });
   },
 
   /**

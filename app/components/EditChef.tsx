@@ -59,6 +59,7 @@ const EditChef = ({ chef, onSubmit }: EditChefProps) => {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: chef.name,
       specialization: chef.specialization,
@@ -77,6 +78,10 @@ const EditChef = ({ chef, onSubmit }: EditChefProps) => {
       bakeryId: chef.bakeryId,
     });
     setUploadedImageUrl(chef.image || null);
+    // Keyed on chef.id only: this repopulates the form when a *different* chef
+    // is opened. Depending on the individual fields would clobber the user's
+    // in-progress edits every time the parent re-renders with a new object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chef.id, form]);
 
   const selectedBakeryId = form.watch("bakeryId");
@@ -257,7 +262,11 @@ const EditChef = ({ chef, onSubmit }: EditChefProps) => {
           <Button
             type="submit"
             className="w-full"
-            disabled={bakeries.length === 0 || uploadingImage}
+            disabled={
+              bakeries.length === 0 ||
+              uploadingImage ||
+              !form.formState.isValid
+            }
           >
             {uploadingImage ? t("chefs.uploadingImage") : t("chefs.update")}
           </Button>

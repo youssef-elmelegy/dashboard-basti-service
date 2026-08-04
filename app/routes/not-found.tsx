@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -11,6 +12,8 @@ import {
 import { AlertCircle } from "lucide-react";
 
 export default function NotFoundPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Empty className="w-full max-w-md">
@@ -20,14 +23,12 @@ export default function NotFoundPage() {
               <AlertCircle className="w-6 h-6 text-destructive" />
             </div>
           </EmptyMedia>
-          <EmptyTitle>Page Not Found</EmptyTitle>
-          <EmptyDescription>
-            The page you're looking for doesn't exist or has been moved.
-          </EmptyDescription>
+          <EmptyTitle>{t("notFound.title")}</EmptyTitle>
+          <EmptyDescription>{t("notFound.description")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Link to="/">
-            <Button>Go Back Home</Button>
+            <Button>{t("notFound.goHome")}</Button>
           </Link>
         </EmptyContent>
       </Empty>

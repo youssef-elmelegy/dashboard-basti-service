@@ -2,7 +2,6 @@ import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { debugAuth, debugRequest } from "@/lib/debug";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -102,14 +101,6 @@ export default function ChefsPage() {
     bakeryId: string;
   }) => {
     try {
-      // Debug: Check auth before making request
-      console.log("Before adding chef:");
-      console.log("Form data:", formData);
-      console.log("BakeryId:", formData.bakeryId);
-      console.log("BakeryId type:", typeof formData.bakeryId);
-      debugAuth();
-      debugRequest("POST", "/api/chefs");
-
       await addChef({
         name: formData.name,
         specialization: formData.specialization,

@@ -1,12 +1,7 @@
 import { useCallback } from "react";
-import { useSmallCakeStore } from "@/stores/smallCakeStore";
-import { useAddOnStore } from "@/stores/addOnStore";
 import type { SelectedProductItem } from "../types";
 import type { ProductData, ProductSelection } from "../types";
-import {
-  convertStoreProductToProductData,
-  mapApiTypeToProductType,
-} from "../utils/productTransformers";
+import { mapApiTypeToProductType } from "../utils/productTransformers";
 
 interface UseEditProductHandlerProps {
   regionalProducts: ProductData[];
@@ -21,69 +16,39 @@ export function useEditProductHandler({
   setEditingProductId,
   setIsSelectionOpen,
 }: UseEditProductHandlerProps) {
-  const smallCakes = useSmallCakeStore((state) => state.smallCakes);
-  const addOns = useAddOnStore((state) => state.addOns);
-
+  // Every item rendered on this page comes from
+  // `transformRegionalProductsToItems`, which sources rows from the regional
+  // products API and ids them `regional-<productId>`. So the product being
+  // edited is always found in `regionalProducts` — there is no local-store
+  // fallback to fall back to.
   const handleEditProduct = useCallback(
     (item: SelectedProductItem) => {
-      if (item.id.startsWith("regional-")) {
-        const apiProduct = regionalProducts.find(
-          (p) => p.id === item.productId,
-        );
-        if (apiProduct) {
-          const normalizedData = {
-            ...apiProduct,
-            price:
-              typeof apiProduct.price === "string"
-                ? Number(apiProduct.price)
-                : apiProduct.price,
-          };
+      const apiProduct = regionalProducts.find((p) => p.id === item.productId);
+      if (!apiProduct) return;
 
-          const apiType =
-            (apiProduct as unknown as { type?: string }).type || "sweet";
-          const selectionType = mapApiTypeToProductType(apiType);
+      const normalizedData = {
+        ...apiProduct,
+        price:
+          typeof apiProduct.price === "string"
+            ? Number(apiProduct.price)
+            : apiProduct.price,
+      };
 
-          setSelectedProduct({
-            type: selectionType,
-            product: normalizedData as Omit<ProductData, "price"> & {
-              price?: number;
-            },
-            selectedSizes: item.selectedSizes || [],
-          });
-          setEditingProductId(item.id);
-          setIsSelectionOpen(true);
-        }
-      } else {
-        const product =
-          item.type === "cake"
-            ? smallCakes.find((c) => c.id === item.productId)
-            : addOns.find((s) => s.id === item.productId);
+      const apiType =
+        (apiProduct as unknown as { type?: string }).type || "sweet";
+      const selectionType = mapApiTypeToProductType(apiType);
 
-        if (product) {
-          const productData = convertStoreProductToProductData(product);
-          const normalizedData = {
-            ...productData,
-            price:
-              typeof productData.price === "number"
-                ? productData.price
-                : Number(productData.price),
-          };
-
-          setSelectedProduct({
-            type: item.type === "cake" ? "featured-cake" : "addon",
-            product: normalizedData as Omit<ProductData, "price"> & {
-              price?: number;
-            },
-            selectedSizes: item.selectedSizes || [],
-          });
-          setEditingProductId(item.id);
-          setIsSelectionOpen(true);
-        }
-      }
+      setSelectedProduct({
+        type: selectionType,
+        product: normalizedData as Omit<ProductData, "price"> & {
+          price?: number;
+        },
+        selectedSizes: item.selectedSizes || [],
+      });
+      setEditingProductId(item.id);
+      setIsSelectionOpen(true);
     },
     [
-      smallCakes,
-      addOns,
       regionalProducts,
       setSelectedProduct,
       setEditingProductId,

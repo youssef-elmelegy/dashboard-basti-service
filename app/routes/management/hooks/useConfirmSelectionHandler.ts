@@ -1,6 +1,6 @@
 import { useCallback } from "react";
+import { toast } from "sonner";
 import { useRegionProductSelectionStore } from "@/stores/regionProductSelectionStore";
-import { useStockStore } from "@/stores/stockStore";
 import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 import type { SmallCake, AddOn } from "@/data/products";
 import type {
@@ -146,26 +146,6 @@ export function useConfirmSelectionHandler({
             regionPrice,
             selectedProduct.type,
           );
-
-          if (selectedProduct.type === "addon") {
-            const addStock = useStockStore.getState().addStock;
-            addStock({
-              id: `stock-${currentRegion.id}-${selectedProduct.product.id}`,
-              bakeryId: "",
-              regionId: currentRegion.id,
-              regionName: currentRegion.name,
-              addOnId: selectedProduct.product.id,
-              addOnName:
-                selectedProduct.product.name ||
-                selectedProduct.product.title ||
-                "",
-              currentStock: 0,
-              maxStock: 100,
-              lastRestocked: new Date(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-          }
         }
         resetSelection();
       } catch (error) {
@@ -188,12 +168,12 @@ export function useConfirmSelectionHandler({
           } else if (typeof error === "string") {
             message = error;
           }
-        } catch (e) {
+        } catch {
           // ignore
         }
 
         // Show the API-provided message to the user so they know why it failed
-        alert(message);
+        toast.error(message);
       }
     },
     [

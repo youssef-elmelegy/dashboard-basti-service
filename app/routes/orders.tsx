@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { env } from "@/config/env";
 import {
   DndContext,
   DragOverlay,
@@ -29,7 +28,7 @@ import type { Bakery, BakeryType } from "@/lib/services/bakery.service";
 import { BAKERY_TYPE_COLORS } from "@/lib/services/bakery.service";
 import { orderApi } from "@/lib/services/order.service";
 import { convertApiResponseToOrder } from "@/stores/orderStore";
-import { httpRequest } from "@/lib/http-handler";
+import { getApiErrorMessage } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -655,27 +654,11 @@ const Orders = () => {
   // and reports success so the handler can keep or revert the in-memory move.
   const assignOrderToBakery = async (orderId: string, bakeryId: string) => {
     try {
-      const response = await httpRequest(
-        `${env.API_BASE_URL}/orders/${orderId}/assign-bakery`,
-        {
-          method: "PATCH",
-          body: { bakeryId },
-        },
-      );
-
-      if (!response.ok) {
-        // Try to surface API error message to the UI
-        let errorMsg = "Failed to assign order";
-        try {
-          const errorData = await response.json();
-          if (errorData && typeof errorData.message === "string") {
-            errorMsg = errorData.message;
-          }
-        } catch {
-          // ignore JSON parse errors
-        }
-        console.error("Failed to assign order:", errorMsg);
-        setAssignError(errorMsg);
+      const response = await orderApi.assignToBakery(orderId, bakeryId);
+      if (!response.success) {
+        const message = response.message || "Failed to assign order";
+        console.error("Failed to assign order:", message);
+        setAssignError(message);
         return false;
       }
 
@@ -684,9 +667,9 @@ const Orders = () => {
       return true;
     } catch (error) {
       console.error("Error assigning order:", error);
-      const message =
-        error instanceof Error ? error.message : "Failed to assign order";
-      setAssignError(message);
+      // apiClient rejects with a plain ApiError object rather than an Error,
+      // so pull the backend message (incl. BAKERY_STOCK_ISSUE details) out.
+      setAssignError(getApiErrorMessage(error, "Failed to assign order"));
       return false;
     }
   };

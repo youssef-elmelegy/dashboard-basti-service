@@ -110,8 +110,11 @@ export function VariantImagesInput({
     }
   };
 
+  // Read the prop, not the ref: the ref exists only so the async upload
+  // handlers can see the latest list, and reading it during render would
+  // show stale images when the parent updates.
   const getVariantImage = (shapeId: string): VariantImageData | undefined => {
-    return variantImagesRef.current.find((v) => v.shapeId === shapeId);
+    return variantImages.find((v) => v.shapeId === shapeId);
   };
 
   return (

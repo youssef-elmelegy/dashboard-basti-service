@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +31,7 @@ import type {
   CreateShapeFormValues,
   UpdateShapeFormValues,
 } from "@/schemas/custom-cakes.schema";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { ShapeForm } from "@/components/custom-cakes/ShapeForm";
 import { ShapeCard } from "@/components/custom-cakes/ShapeCard";
 import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
@@ -39,12 +40,16 @@ import { SortableItem, useDragSensors } from "@/components/SortableItem";
 
 export default function ShapesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingShape, setEditingShape] = useState<Shape | null>(null);
 
-  const shapes = useShapeStore((state) => state.shapes) || [];
+  // Selected without a `|| []` fallback: the store always holds an array, and
+  // a fresh literal here would re-run every dependent memo on each render.
+  const shapes = useShapeStore((state) => state.shapes);
   const isLoading = useShapeStore((state) => state.isLoading);
   const error = useShapeStore((state) => state.error);
+  const clearError = useShapeStore((state) => state.clearError);
   const fetchShapes = useShapeStore((state) => state.fetchShapes);
   const addShape = useShapeStore((state) => state.addShape);
   const updateShape = useShapeStore((state) => state.updateShape);
@@ -141,7 +146,9 @@ export default function ShapesPage() {
     });
   };
 
-  if (error) {
+  // Only a failed *list load* justifies replacing the page. Mutation errors
+  // surface inline so the list stays usable.
+  if (error && shapes.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <div className="text-center py-12">
@@ -149,14 +156,18 @@ export default function ShapesPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{error}</p>
-          {/* Force a refresh: bypasses the cache guard so the retry actually
-              clears the error and re-fetches, instead of returning early. */}
-          <Button
-            onClick={() => fetchShapes(undefined, undefined, undefined, true)}
-            className="mt-4"
-          >
-            {t("common.tryAgain")}
-          </Button>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              {t("common.back")}
+            </Button>
+            {/* Force a refresh: bypasses the cache guard so the retry actually
+                clears the error and re-fetches, instead of returning early. */}
+            <Button
+              onClick={() => fetchShapes(undefined, undefined, undefined, true)}
+            >
+              {t("common.tryAgain")}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -183,7 +194,22 @@ export default function ShapesPage() {
         </Button>
       </div>
 
-      {shapes.length === 0 ? (
+      {/* Mutation errors: shown inline so the list below stays usable. */}
+      {error && (
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-red-600/40 bg-red-600/10 p-4">
+          <p className="text-sm text-red-500">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearError}
+            aria-label={t("common.dismiss")}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {displayedShapes.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyTitle>{t("customCakes.noShapesYet")}</EmptyTitle>

@@ -68,6 +68,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       locationDescription: "",
@@ -243,7 +244,9 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={form.formState.isSubmitting}
+                disabled={
+                  form.formState.isSubmitting || !form.formState.isValid
+                }
               >
                 {form.formState.isSubmitting && (
                   <Loader2 className="h-4 w-4 animate-spin" />

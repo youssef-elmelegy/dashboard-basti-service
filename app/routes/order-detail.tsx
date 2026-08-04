@@ -6,9 +6,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/auth.store";
 import { orderApi } from "@/lib/services/order.service";
+import { getApiErrorMessage } from "@/lib/api-client";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
-import { env } from "@/config/env";
-import { httpRequest } from "@/lib/http-handler";
 import { LocationMap } from "@/components/location-map";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
 import { Button } from "@/components/ui/button";
@@ -400,39 +399,32 @@ export default function OrderDetailPage() {
         if (!forceRefresh) {
           const cachedOrder = getDetailedOrder(id);
           if (cachedOrder) {
-            setFetchedOrder(cachedOrder);
+            setFetchedOrder(cachedOrder as OrderData);
             setIsLoading(false);
             return;
           }
         }
 
-        const response = await httpRequest(`${env.API_BASE_URL}/orders/${id}`, {
-          method: "GET",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to fetch order details");
-        }
-
-        const data = await response.json();
+        const data = await orderApi.getOne(id);
         if (data.data) {
           // Map QA finalImages to finalImage field
           const apiOrder = data.data;
           const mappedOrder = {
             ...apiOrder,
-            finalImage:
-              apiOrder.qa?.finalImages && apiOrder.qa.finalImages.length > 0
-                ? apiOrder.qa.finalImages[0]
-                : apiOrder.finalImage,
+            finalImage: apiOrder.qa?.finalImages?.[0],
           };
-          setFetchedOrder(mappedOrder);
+          // OrderData is this screen's looser view of the same payload (it
+          // widens several fields to Record<string, unknown> and uses CartItem
+          // where the service says OrderItem). The runtime shape is identical —
+          // this call previously went through an untyped fetch, so the cast
+          // makes the existing narrowing explicit rather than changing it.
+          setFetchedOrder(mappedOrder as unknown as OrderData);
           cacheDetailedOrder(id, mappedOrder);
         }
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch order";
-        setError(errorMessage);
+        // apiClient rejects with a plain ApiError object, not an Error
+        // instance, so `instanceof Error` would drop the backend message.
+        setError(getApiErrorMessage(err, "Failed to fetch order"));
         console.error("Error fetching order:", err);
       } finally {
         setIsLoading(false);

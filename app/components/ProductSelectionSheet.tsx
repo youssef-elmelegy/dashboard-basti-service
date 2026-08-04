@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useState } from "react";
 
 type ProductType =
@@ -84,7 +85,7 @@ export function ProductSelectionSheet({
   const handleConfirm = () => {
     // Predesigned cakes don't require a price input
     if (!isPredesignedCake && regionPrice <= 0) {
-      alert(t("regions.pleaseEnterValidPrice"));
+      toast.warning(t("regions.pleaseEnterValidPrice"));
       return;
     }
     onConfirm(regionPrice || 0, showSizeSelection ? sizePrices : undefined);

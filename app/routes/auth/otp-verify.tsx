@@ -50,10 +50,9 @@ export default function OTPPage() {
       setLocalVerifying(true);
       const response = await authApi.verifyOtp({ email, otp });
       if (response.success && response.data) {
-        const resetToken = response.data.resetToken;
-        // Store resetToken in localStorage as fallback
-        localStorage.setItem("resetToken", resetToken);
-        navigate("/auth/reset-password", { state: { email, resetToken } });
+        // The reset token arrives as an httpOnly cookie and is sent back
+        // automatically on the reset request — nothing to carry by hand.
+        navigate("/auth/reset-password", { state: { email, otpVerified: true } });
       } else {
         setLocalError(response.message || t("auth.otp.verifyFailed"));
       }

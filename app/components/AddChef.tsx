@@ -69,6 +69,7 @@ const AddChef = ({ onSubmit }: AddChefProps) => {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       specialization: "",
@@ -265,7 +266,11 @@ const AddChef = ({ onSubmit }: AddChefProps) => {
           <Button
             type="submit"
             className="w-full"
-            disabled={bakeries.length === 0 || uploadingImage}
+            disabled={
+              bakeries.length === 0 ||
+              uploadingImage ||
+              !form.formState.isValid
+            }
           >
             {uploadingImage ? t("chefs.uploadingImage") : t("chefs.create")}
           </Button>

@@ -67,7 +67,7 @@ export default function TagsManagementPage() {
 
   useEffect(() => {
     fetchTags();
-  }, []);
+  }, [fetchTags]);
 
   useEffect(() => {
     if (editingId) {
@@ -82,6 +82,9 @@ export default function TagsManagementPage() {
     } else {
       form.reset({ name: "", displayOrder: 0, types: [] });
     }
+    // Keyed on editingId: re-running when `tags` changes would discard
+    // whatever the user has typed into the open edit form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId]);
 
   // Validate that displayOrder is unique among tags (exclude current editing tag)
@@ -104,7 +107,7 @@ export default function TagsManagementPage() {
     } else {
       form.clearErrors("displayOrder");
     }
-  }, [watchedDisplayOrder, tags, editingId]);
+  }, [watchedDisplayOrder, tags, editingId, form, t]);
 
   const onSubmit = async (values: FormValues) => {
     try {

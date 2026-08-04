@@ -19,7 +19,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { admin, logout } = useAuth();
+  const { admin, logout, canViewAllContent } = useAuth();
   const { t } = useTranslation();
 
   useNotifications();
@@ -62,10 +62,14 @@ const Navbar = () => {
               <User className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
               {t("common.profile")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
-              <Settings className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
-              {t("common.settings")}
-            </DropdownMenuItem>
+            {/* Settings currently only hosts the broadcast tool, which is an
+                admin-only capability — managers have nothing to do there. */}
+            {canViewAllContent() && (
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                <Settings className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
+                {t("common.settings")}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut className="h-[1.2rem] w-[1.2rem] me-2" />{" "}
               {t("common.logout")}

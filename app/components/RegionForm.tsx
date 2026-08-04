@@ -51,6 +51,7 @@ export function RegionForm({
 
   const form = useForm<RegionFormValues>({
     resolver: zodResolver(regionFormSchema),
+    mode: "onChange",
     defaultValues: {
       name: region?.name || "",
       image: region?.image || "",
@@ -164,7 +165,7 @@ export function RegionForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
         >
           {uploadingImage || isLoading
             ? t("regions.loading")

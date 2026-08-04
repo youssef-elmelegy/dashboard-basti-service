@@ -62,6 +62,7 @@ export function SweetForm({
 
   const form = useForm<SweetFormValues>({
     resolver: zodResolver(sweetSchema),
+    mode: "onChange",
     defaultValues: {
       name: initialSweet?.name || "",
       description: initialSweet?.description || "",
@@ -288,7 +289,7 @@ export function SweetForm({
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {isLoading || uploadingImage

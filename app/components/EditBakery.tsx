@@ -78,6 +78,7 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       name: bakery.name,
       locationDescription: bakery.locationDescription,
@@ -348,7 +349,9 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={form.formState.isSubmitting}
+                disabled={
+                  form.formState.isSubmitting || !form.formState.isValid
+                }
               >
                 {form.formState.isSubmitting && (
                   <Loader2 className="h-4 w-4 animate-spin" />

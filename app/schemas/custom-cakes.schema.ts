@@ -9,19 +9,8 @@ export const createFlavorSchema = z.object({
   flavorUrl: z.string().url("Must be a valid URL"),
 });
 
-export const updateFlavorSchema = z.object({
-  title: z
-    .string()
-    .min(2, "Title must be at least 2 characters")
-    .max(255)
-    .optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(1000)
-    .optional(),
-  flavorUrl: z.string().url("Must be a valid URL").optional(),
-});
+// Edit enforces the same mandatory fields as create.
+export const updateFlavorSchema = createFlavorSchema;
 
 export type CreateFlavorFormValues = z.infer<typeof createFlavorSchema>;
 export type UpdateFlavorFormValues = z.infer<typeof updateFlavorSchema>;
@@ -66,30 +55,9 @@ export const createShapeSchema = z.object({
   minPrepHours: z.number().nonnegative().optional(),
 });
 
-export const updateShapeSchema = z.object({
-  title: z
-    .string()
-    .min(2, "Title must be at least 2 characters")
-    .max(255)
-    .optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(1000)
-    .optional(),
-  shapeUrl: z.string().url("Must be a valid URL").optional(),
-  size: z
-    .enum(["small", "medium", "large"], {
-      message: "Size must be small, medium, or large",
-    })
-    .optional(),
-  capacity: z
-    .number()
-    .int()
-    .positive("Capacity must be greater than 0")
-    .optional(),
-  minPrepHours: z.number().nonnegative().optional(),
-});
+// Edit enforces the same mandatory fields as create — minPrepHours stays the
+// only genuinely optional field.
+export const updateShapeSchema = createShapeSchema;
 
 export type CreateShapeFormValues = z.infer<typeof createShapeSchema>;
 export type UpdateShapeFormValues = z.infer<typeof updateShapeSchema>;
@@ -106,26 +74,8 @@ export const createDecorationSchema = z.object({
   minPrepHours: z.number().nonnegative().optional(),
 });
 
-export const updateDecorationSchema = z.object({
-  title: z
-    .string()
-    .min(2, "Title must be at least 2 characters")
-    .max(255)
-    .optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(1000)
-    .optional(),
-  decorationUrl: z.string().url("Must be a valid URL").optional(),
-  tagId: z.string().optional(),
-  capacity: z
-    .number()
-    .int()
-    .positive("Capacity must be greater than 0")
-    .optional(),
-  minPrepHours: z.number().nonnegative().optional(),
-});
+// Edit enforces the same mandatory fields as create.
+export const updateDecorationSchema = createDecorationSchema;
 
 export type CreateDecorationFormValues = z.infer<typeof createDecorationSchema>;
 export type UpdateDecorationFormValues = z.infer<typeof updateDecorationSchema>;
@@ -180,20 +130,9 @@ export const createPredesignedCakeSchema = z.object({
     .min(1, "At least one cake configuration is required"),
 });
 
-export const updatePredesignedCakeSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(255)
-    .optional(),
-  description: z
-    .string()
-    .min(10, "Description must be at least 10 characters")
-    .max(1000)
-    .optional(),
-  tagId: z.string().optional(),
-  configs: z.array(designedCakeConfigSchema).optional(),
-});
+// Edit enforces the same mandatory fields as create — a saved cake must keep at
+// least one configuration.
+export const updatePredesignedCakeSchema = createPredesignedCakeSchema;
 
 export type CreatePredesignedCakeFormValues = z.infer<
   typeof createPredesignedCakeSchema

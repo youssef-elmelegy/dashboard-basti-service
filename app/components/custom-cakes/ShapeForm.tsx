@@ -56,6 +56,7 @@ export function ShapeForm({
 
   const form = useForm<CreateShapeFormValues | UpdateShapeFormValues>({
     resolver: zodResolver(isEditMode ? updateShapeSchema : createShapeSchema),
+    mode: "onChange",
     defaultValues: shape || {
       title: "",
       description: "",
@@ -256,7 +257,7 @@ export function ShapeForm({
 
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {uploadingImage || isLoading

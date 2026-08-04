@@ -90,7 +90,7 @@ export default function AppConfigPage() {
   // Fetch config on component mount (store handles caching)
   useEffect(() => {
     fetchConfig();
-  }, []);
+  }, [fetchConfig]);
 
   // Update form when config is loaded
   useEffect(() => {
@@ -118,11 +118,13 @@ export default function AppConfigPage() {
           const date = parse(dateStr, "yyyy-MM-dd", new Date());
           return date;
         });
-        // eslint-disable-next-line react-hooks/rules-of-hooks
+        // Seeds the calendar once from the loaded config. It stays state
+        // because the user edits it afterwards, so it can't be derived.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedDates(dates);
       }
     }
-  }, [config]);
+  }, [config, form]);
 
   const onSubmit = async (values: FormValues) => {
     // Basti's delivery slice can't exceed the total delivery fee (backend enforces this too).

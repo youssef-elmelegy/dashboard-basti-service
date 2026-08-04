@@ -189,8 +189,13 @@ export default function BakeryFinancePage() {
 
   const handleDownload = () => {
     // Browsers use document.title as the suggested PDF filename when printing.
+    // Control chars are stripped deliberately — they are illegal in filenames.
     const sanitize = (s: string) =>
-      s.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").replace(/\s+/g, " ").trim();
+      s
+        // eslint-disable-next-line no-control-regex
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
     const filename = `Basti Service - ${sanitize(t("finance.myBakeryTitle"))} - ${startDate}_${endDate}`;
 
     const originalTitle = document.title;

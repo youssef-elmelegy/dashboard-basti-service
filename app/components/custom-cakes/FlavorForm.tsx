@@ -64,7 +64,8 @@ export function FlavorForm({
             topViewUrl: v.topViewUrl,
           }));
           setVariantImages(loaded);
-          form.setValue("variantImages", loaded, { shouldValidate: false });
+          // Must validate: the submit button is gated on formState.isValid.
+          form.setValue("variantImages", loaded, { shouldValidate: true });
         }
       }).catch(() => {
         // silently ignore — form is still usable without pre-loaded images
@@ -77,6 +78,7 @@ export function FlavorForm({
 
   const form = useForm<CreateFlavorWithVariantImagesFormValues>({
     resolver: zodResolver(schema),
+    mode: "onChange",
     defaultValues: {
       title: flavor?.title || "",
       description: flavor?.description || "",
@@ -212,7 +214,7 @@ export function FlavorForm({
 
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {uploadingImage || isLoading

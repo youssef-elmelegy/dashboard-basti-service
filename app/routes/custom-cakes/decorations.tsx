@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,12 +32,13 @@ import type {
   UpdateDecorationFormValues,
   CreateDecorationWithVariantImagesFormValues,
 } from "@/schemas/custom-cakes.schema";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { DecorationForm } from "@/components/custom-cakes/DecorationForm";
 import { DecorationCard } from "@/components/custom-cakes/DecorationCard";
 
 export default function DecorationsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingDecoration, setEditingDecoration] = useState<Decoration | null>(
     null,
@@ -47,6 +49,7 @@ export default function DecorationsPage() {
   const isLoading = useDecorationStore((state) => state.isLoading);
   const isLoadingMore = useDecorationStore((state) => state.isLoadingMore);
   const error = useDecorationStore((state) => state.error);
+  const clearError = useDecorationStore((state) => state.clearError);
   const pagination = useDecorationStore((state) => state.pagination);
   const fetchDecorations = useDecorationStore(
     (state) => state.fetchDecorations,
@@ -181,7 +184,9 @@ export default function DecorationsPage() {
     }
   };
 
-  if (error) {
+  // Only a failed *list load* justifies replacing the page. Mutation errors
+  // surface inline so the list stays usable.
+  if (error && decorations.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <div className="text-center py-12">
@@ -189,16 +194,20 @@ export default function DecorationsPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{error}</p>
-          {/* Force a refresh: bypasses the cache guard so the retry actually
-              clears the error and re-fetches, instead of returning early. */}
-          <Button
-            onClick={() =>
-              fetchDecorations(undefined, undefined, undefined, true)
-            }
-            className="mt-4"
-          >
-            {t("common.tryAgain")}
-          </Button>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              {t("common.back")}
+            </Button>
+            {/* Force a refresh: bypasses the cache guard so the retry actually
+                clears the error and re-fetches, instead of returning early. */}
+            <Button
+              onClick={() =>
+                fetchDecorations(undefined, undefined, undefined, true)
+              }
+            >
+              {t("common.tryAgain")}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -224,6 +233,21 @@ export default function DecorationsPage() {
           {t("customCakes.addDecoration")}
         </Button>
       </div>
+
+      {/* Mutation errors: shown inline so the list below stays usable. */}
+      {error && (
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-red-600/40 bg-red-600/10 p-4">
+          <p className="text-sm text-red-500">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearError}
+            aria-label={t("common.dismiss")}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       {decorations.length === 0 ? (
         <Empty>

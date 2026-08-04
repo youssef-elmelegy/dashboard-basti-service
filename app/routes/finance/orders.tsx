@@ -245,6 +245,7 @@ export default function FinanceOrdersPage() {
     // Sanitize anything that breaks filenames on common OSes.
     const sanitize = (s: string) =>
       s
+        // eslint-disable-next-line no-control-regex
         .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
         .replace(/\s+/g, " ")
         .trim();

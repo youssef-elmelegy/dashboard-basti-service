@@ -18,6 +18,7 @@
     "info": "معلومة",
     "clear": "مسح",
     "dismiss": "إغلاق",
+    "back": "رجوع",
     "cancel": "إلغاء",
     "close": "إغلاق",
     "remove": "إزالة",
@@ -81,7 +82,12 @@
       "small": "صغير",
       "medium": "متوسط",
       "large": "كبير"
-    }
+    },
+    "errorTitle": "حدث خطأ ما",
+    "errorDescription": "واجهت هذه الصفحة خطأً غير متوقع. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة التحكم.",
+    "errorNotFoundDescription": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+    "goHome": "الذهاب إلى لوحة التحكم",
+    "errorDetails": "تفاصيل الخطأ (وضع التطوير فقط)"
   },
   "reassignOrder": {
     "button": "إعادة التعيين / الإرجاع",
@@ -396,7 +402,10 @@
       "predesigned_cake": "كيكة جاهزة التصميم",
       "custom_cake": "كيكة مخصصة",
       "item": "عنصر"
-    }
+    },
+    "uploadFinalImageBeforeReady": "يرجى رفع الصورة النهائية قبل تعليم الطلب كجاهز.",
+    "finalizeImageFailed": "تعذر اعتماد الصورة. يرجى المحاولة مرة أخرى.",
+    "uploadImageFailed": "تعذر رفع الصورة"
   },
   "products": {
     "title": "المنتجات",
@@ -1475,5 +1484,10 @@
     "reportedDriver": "بلاغ ضد {{driver}}",
     "unknownReporter": "مُبلِّغ غير معروف",
     "unknownDriver": "هذا السائق"
+  },
+  "notFound": {
+    "title": "الصفحة غير موجودة",
+    "description": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
+    "goHome": "العودة إلى الرئيسية"
   }
 }

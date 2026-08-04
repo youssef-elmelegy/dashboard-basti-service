@@ -79,10 +79,13 @@ export default function DispatchPage() {
     return () => clearTimeout(handle);
   }, [query]);
 
-  // A bakery belongs to one region — reset the bakery filter if the region changes.
-  useEffect(() => {
+  // A bakery belongs to one region, so picking a new region invalidates the
+  // current bakery choice. Reset it in the handler rather than in an effect —
+  // an effect would render once with the stale pair and refetch twice.
+  const handleRegionChange = (value: string) => {
+    setRegionFilter(value);
     setBakeryFilter("all");
-  }, [regionFilter]);
+  };
 
   // Push filter changes into the store and reload page 1.
   useEffect(() => {
@@ -141,7 +144,7 @@ export default function DispatchPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={regionFilter} onValueChange={setRegionFilter}>
+        <Select value={regionFilter} onValueChange={handleRegionChange}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder={t("dispatch.region")} />
           </SelectTrigger>

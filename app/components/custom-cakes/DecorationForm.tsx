@@ -92,7 +92,8 @@ export function DecorationForm({
             }));
             setVariantImages(loaded);
             if (withVariantImages) {
-              form.setValue("variantImages", loaded, { shouldValidate: false });
+              // Must validate: submit button is gated on formState.isValid.
+              form.setValue("variantImages", loaded, { shouldValidate: true });
             }
           }
         })
@@ -121,6 +122,7 @@ export function DecorationForm({
     | CreateDecorationWithVariantImagesFormValues
   >({
     resolver: zodResolver(schema),
+    mode: "onChange",
     defaultValues: withVariantImages
       ? {
           title: decoration?.title || "",
@@ -376,7 +378,7 @@ export function DecorationForm({
 
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {uploadingImage || isLoading

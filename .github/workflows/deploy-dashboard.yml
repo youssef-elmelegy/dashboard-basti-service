@@ -39,6 +39,63 @@ jobs:
           VITE_SENTRY_RELEASE: basti-dashboard@${{ github.sha }}
         run: pnpm run build
 
+      # The build emits sourcemaps (vite build.sourcemap: "hidden") purely so
+      # they can be uploaded here. They are stripped from dist/ in the next step
+      # so they are never served from the public webroot.
+      #
+      # Uses sentry-cli rather than hand-rolled curl: it is the upload path
+      # GlitchTip documents, and it handles release creation and the
+      # project-scoped files endpoint.
+      #
+      # Pinned to sentry-cli 2.x ON PURPOSE. v3 removed `releases files` and
+      # uploads only via the newer artifactbundle/assemble flow, which GlitchTip
+      # does not implement (glitchtip-backend#299) — it would 404 on every
+      # deploy. 2.x keeps the legacy release-files flow GlitchTip supports.
+      - name: Upload sourcemaps to GlitchTip
+        # Never block a deploy on error reporting: a failed upload only costs
+        # trace readability. The verify step below turns it into a visible
+        # warning rather than a silent no-op.
+        continue-on-error: true
+        id: sourcemaps
+        env:
+          SENTRY_URL: https://glitchtip.basty.ly
+          SENTRY_ORG: basti-backend
+          SENTRY_PROJECT: basti-dashboard
+          SENTRY_AUTH_TOKEN: ${{ secrets.GLITCHTIP_AUTH_TOKEN }}
+          VERSION: basti-dashboard@${{ github.sha }}
+        run: |
+          set -o pipefail
+          CLI="npx --yes @sentry/cli@2.42.2"
+
+          # Idempotent: succeeds whether or not the release already exists.
+          $CLI releases new "$VERSION"
+
+          # --url-prefix '~/' matches any host, so maps resolve regardless of
+          # the domain serving the JS. Vite emits chunks and their .map files
+          # into dist/assets.
+          $CLI releases files "$VERSION" upload-sourcemaps dist \
+            --url-prefix '~/'
+
+          # Fail the step if nothing landed. Without this an upload that
+          # silently no-ops (e.g. server file storage not configured) would
+          # look identical to success.
+          $CLI releases files "$VERSION" list | tee /tmp/gt-files.txt
+          grep -q '\.map' /tmp/gt-files.txt \
+            || { echo "no .map artifacts registered on the release"; exit 1; }
+
+      - name: Warn if sourcemap upload failed
+        if: steps.sourcemaps.outcome != 'success'
+        run: |
+          echo "::warning::Sourcemap upload to GlitchTip failed. Errors will still \
+          be reported, but production stack traces will be minified. Check that the \
+          GlitchTip instance has file storage configured and that \
+          GLITCHTIP_AUTH_TOKEN has project write scope."
+
+      - name: Strip sourcemaps before deploy
+        # Must run before the tar below: /var/www/dashboard is public, so any
+        # .map left in dist/ would expose the app's original source.
+        run: find dist -name '*.map' -delete
+
       - name: Configure SSH agent with deploy key
         uses: webfactory/ssh-agent@v0.9.0
         with:

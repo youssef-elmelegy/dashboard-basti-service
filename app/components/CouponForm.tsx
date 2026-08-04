@@ -134,6 +134,7 @@ export default function CouponForm({
 
   const form = useForm<CouponFormValues>({
     resolver: zodResolver(formSchema) as Resolver<CouponFormValues, unknown>,
+    mode: "onChange",
     defaultValues: initial
       ? {
           code: initial.code,
@@ -516,7 +517,11 @@ export default function CouponForm({
               />
 
               <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={isSaving} className="flex-1">
+                <Button
+                  type="submit"
+                  disabled={isSaving || !form.formState.isValid}
+                  className="flex-1"
+                >
                   {isSaving
                     ? t("common.loading")
                     : mode === "add"

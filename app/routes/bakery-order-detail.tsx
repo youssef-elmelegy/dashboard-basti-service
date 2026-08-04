@@ -34,13 +34,15 @@ const BakeryOrderDetail = () => {
   }>();
 
   const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Seeded from the route param: with an orderId the fetch below runs on
+  // mount, so the first paint is already a loading state. Setting this inside
+  // the effect would render an empty page for a frame and cascade a render.
+  const [isLoading, setIsLoading] = useState(Boolean(orderId));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderId) return;
     let cancelled = false;
-    setIsLoading(true);
     orderApi
       .getOne(orderId)
       .then((res) => {

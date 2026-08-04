@@ -49,7 +49,22 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 class ApiClient {
   private axiosInstance: AxiosInstance;
   private isRefreshing = false;
-  private refreshSubscribers: Array<(token: string) => void> = [];
+  private refreshSubscribers: Array<(error?: unknown) => void> = [];
+
+  /**
+   * Release every request that parked while a refresh was in flight.
+   *
+   * The queue is swapped out before draining so a waiter that immediately
+   * 401s again (and re-queues) lands in a fresh queue rather than one being
+   * iterated. Passing an error rejects the waiters instead of retrying them,
+   * which is what a failed refresh needs — otherwise they'd retry with
+   * credentials we already know are dead.
+   */
+  private drainRefreshQueue(error?: unknown) {
+    const subscribers = this.refreshSubscribers;
+    this.refreshSubscribers = [];
+    subscribers.forEach((cb) => cb(error));
+  }
 
   constructor(baseUrl: string) {
     this.axiosInstance = axios.create({
@@ -122,10 +137,16 @@ class ApiClient {
               );
 
               this.isRefreshing = false;
-              // Retry the original request
+              // Let everything that parked behind this refresh go now that the
+              // cookie is renewed, then retry the request that triggered it.
+              this.drainRefreshQueue();
               return this.axiosInstance(originalRequest);
             } catch (refreshError) {
               this.isRefreshing = false;
+              // Reject the waiters too — retrying them would just re-401
+              // against credentials we now know are dead, and leaving them
+              // parked hangs their callers forever.
+              this.drainRefreshQueue(refreshError);
               console.error("[Token Refresh] Failed to refresh tokens");
               // Redirect to login on refresh failure — but NOT when we're
               // already on an auth page. The auth screens probe session state
@@ -143,8 +164,19 @@ class ApiClient {
               throw refreshError;
             }
           } else {
-            return new Promise((resolve) => {
-              this.refreshSubscribers.push(() => {
+            // A refresh is already in flight. Park this request and let the
+            // in-flight refresh decide its fate, so N concurrent 401s produce
+            // exactly one refresh call.
+            return new Promise((resolve, reject) => {
+              this.refreshSubscribers.push((refreshError?: unknown) => {
+                if (refreshError) {
+                  reject(refreshError);
+                  return;
+                }
+                // Mark before replaying: if the retry 401s again, the guard
+                // above sends it down the normal error path instead of
+                // queueing it behind another refresh.
+                originalRequest._retry = true;
                 resolve(this.axiosInstance(originalRequest));
               });
             });
@@ -152,7 +184,7 @@ class ApiClient {
         }
 
         // Normalize message: server may return array of validation messages
-        let messageField = data?.message as unknown;
+        const messageField = data?.message as unknown;
         let messageString = error.message || "API request failed";
         let messageDetails: string[] | string | undefined = undefined;
         if (Array.isArray(messageField)) {

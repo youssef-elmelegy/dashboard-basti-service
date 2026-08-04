@@ -1,5 +1,5 @@
 import { MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -33,6 +33,10 @@ export function SweetCard({
   const images = Array.isArray(sweet.images) ? sweet.images : [];
   const hasMultiple = images.length > 1;
 
+  // Derive rather than reset in an effect: if the image list shrinks, the
+  // stored index can point past the end, so wrap it back into range.
+  const safeIndex = images.length > 0 ? index % images.length : 0;
+
   const prev = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIndex((i) => (i - 1 + images.length) % images.length);
@@ -43,10 +47,6 @@ export function SweetCard({
     setIndex((i) => (i + 1) % images.length);
   };
 
-  useEffect(() => {
-    setIndex(0);
-  }, [images.length]);
-
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full">
       {/* Image */}
@@ -54,8 +54,8 @@ export function SweetCard({
         {images.length > 0 ? (
           <>
             <img
-              src={images[index]}
-              alt={`${sweet.name} ${index + 1}`}
+              src={images[safeIndex]}
+              alt={`${sweet.name} ${safeIndex + 1}`}
               className="w-full h-full object-cover"
             />
 
@@ -81,7 +81,7 @@ export function SweetCard({
                   {images.map((_, i) => (
                     <span
                       key={i}
-                      className={`w-2 h-2 rounded-full ${i === index ? "bg-white" : "bg-white/50"}`}
+                      className={`w-2 h-2 rounded-full ${i === safeIndex ? "bg-white" : "bg-white/50"}`}
                     />
                   ))}
                 </div>

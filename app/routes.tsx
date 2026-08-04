@@ -1,54 +1,86 @@
-import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import Root from "@/root";
-import ManagerDashboard from "@/routes/manager-dashboard";
-import Orders from "@/routes/orders";
-import CompletedOrders from "@/routes/completed-orders";
-import DispatchPage from "@/routes/dispatch";
-import BakeryOrders from "@/routes/bakery-orders";
-import BakeryCompletedOrders from "@/routes/bakery-completed-orders";
-import BakeryOrderDetail from "@/routes/bakery-order-detail";
-import BakeryStock from "@/routes/bakery-stock";
-import BakeryReviews from "@/routes/bakery-reviews";
-import Customers from "@/routes/customers";
-import Settings from "@/routes/settings";
-import Support from "@/routes/support";
-import PaymentsPage from "@/routes/payments";
-import RegionsPage from "@/routes/management/regions";
-import RegionDetailPage from "@/routes/management/region-detail";
-import RegionDriversPage from "@/routes/management/region-drivers";
-import DriverDetailPage from "@/routes/management/driver-detail";
-import BakeriesPage from "@/routes/management/bakeries";
-import BakeryDetailPage from "@/routes/management/bakery-detail";
-import ChefsPage from "@/routes/management/chefs";
-import AdminsPage from "@/routes/management/admins";
-import SliderImagesPage from "@/routes/management/slider-images";
-import AppConfigPage from "@/routes/management/app-config";
-import TagsPage from "@/routes/management/tags";
-import FeaturedCakesPage from "@/routes/products/featured-cakes";
-import AddOnsPage from "@/routes/products/add-ons";
-import SweetsPage from "@/routes/sweets";
-import FlavorsPage from "@/routes/custom-cakes/flavors";
-import ShapesPage from "@/routes/custom-cakes/shapes";
-import DecorationsPage from "@/routes/custom-cakes/decorations";
-import PredesignedCakesPage from "@/routes/custom-cakes/predesigned-cakes";
-import CouponsPage from "@/routes/advertisement/coupons";
-import OffersPage from "@/routes/advertisement/offers";
-import FinanceOrdersPage from "@/routes/finance/orders";
-import BakeryFinancePage from "@/routes/finance/bakery";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
-import ForgotPasswordPage from "@/routes/auth/forgot-password";
-import OTPVerifyPage from "@/routes/auth/otp-verify";
-import ResetPasswordPage from "@/routes/auth/reset-password";
-import OrderDetailPage from "@/routes/order-detail";
-import ItemDetailPage from "@/routes/item-detail";
-import NotificationsPage from "@/routes/notifications";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
+import RouteErrorBoundary from "@/components/ErrorFallback";
+
+const ManagerDashboard = lazy(() => import("@/routes/manager-dashboard"));
+const Orders = lazy(() => import("@/routes/orders"));
+const CompletedOrders = lazy(() => import("@/routes/completed-orders"));
+const DispatchPage = lazy(() => import("@/routes/dispatch"));
+const BakeryOrders = lazy(() => import("@/routes/bakery-orders"));
+const BakeryCompletedOrders = lazy(() => import("@/routes/bakery-completed-orders"));
+const BakeryOrderDetail = lazy(() => import("@/routes/bakery-order-detail"));
+const BakeryStock = lazy(() => import("@/routes/bakery-stock"));
+const BakeryReviews = lazy(() => import("@/routes/bakery-reviews"));
+const Customers = lazy(() => import("@/routes/customers"));
+const Settings = lazy(() => import("@/routes/settings"));
+const Support = lazy(() => import("@/routes/support"));
+const PaymentsPage = lazy(() => import("@/routes/payments"));
+const RegionsPage = lazy(() => import("@/routes/management/regions"));
+const RegionDetailPage = lazy(() => import("@/routes/management/region-detail"));
+const RegionDriversPage = lazy(() => import("@/routes/management/region-drivers"));
+const DriverDetailPage = lazy(() => import("@/routes/management/driver-detail"));
+const BakeriesPage = lazy(() => import("@/routes/management/bakeries"));
+const BakeryDetailPage = lazy(() => import("@/routes/management/bakery-detail"));
+const ChefsPage = lazy(() => import("@/routes/management/chefs"));
+const AdminsPage = lazy(() => import("@/routes/management/admins"));
+const SliderImagesPage = lazy(() => import("@/routes/management/slider-images"));
+const AppConfigPage = lazy(() => import("@/routes/management/app-config"));
+const TagsPage = lazy(() => import("@/routes/management/tags"));
+const FeaturedCakesPage = lazy(() => import("@/routes/products/featured-cakes"));
+const AddOnsPage = lazy(() => import("@/routes/products/add-ons"));
+const SweetsPage = lazy(() => import("@/routes/sweets"));
+const FlavorsPage = lazy(() => import("@/routes/custom-cakes/flavors"));
+const ShapesPage = lazy(() => import("@/routes/custom-cakes/shapes"));
+const DecorationsPage = lazy(() => import("@/routes/custom-cakes/decorations"));
+const PredesignedCakesPage = lazy(() => import("@/routes/custom-cakes/predesigned-cakes"));
+const CouponsPage = lazy(() => import("@/routes/advertisement/coupons"));
+const OffersPage = lazy(() => import("@/routes/advertisement/offers"));
+const FinanceOrdersPage = lazy(() => import("@/routes/finance/orders"));
+const BakeryFinancePage = lazy(() => import("@/routes/finance/bakery"));
+const ForgotPasswordPage = lazy(() => import("@/routes/auth/forgot-password"));
+const OTPVerifyPage = lazy(() => import("@/routes/auth/otp-verify"));
+const ResetPasswordPage = lazy(() => import("@/routes/auth/reset-password"));
+const OrderDetailPage = lazy(() => import("@/routes/order-detail"));
+const ItemDetailPage = lazy(() => import("@/routes/item-detail"));
+const NotificationsPage = lazy(() => import("@/routes/notifications"));
+
+/**
+ * Fallback shown while a route's JS chunk is being fetched. Deliberately a
+ * bare sized box rather than a spinner: chunks are small and usually arrive
+ * within a frame or two, and a spinner that flashes for 50ms reads as jank.
+ */
+const RouteFallback = () => <div className="min-h-[50vh]" />;
+
+/**
+ * Attach the error boundary to every route in a list, and put each page
+ * behind Suspense so its lazily-loaded chunk has somewhere to suspend.
+ *
+ * The boundary is applied to the children of "/" so a crashing page is
+ * contained inside <main> and the user keeps the sidebar and navbar to
+ * navigate away with. Putting a boundary only on "/" would replace the whole
+ * shell instead, leaving no way out but a manual URL edit.
+ *
+ * Suspense sits *inside* the error boundary (rather than wrapping the router)
+ * so that a chunk which fails to download — a stale hash after a redeploy,
+ * say — surfaces in the page area with the shell still usable, matching how
+ * a render crash behaves.
+ */
+const withErrorBoundary = (routes: RouteObject[]): RouteObject[] =>
+  routes.map((route) => ({
+    ...route,
+    element: <Suspense fallback={<RouteFallback />}>{route.element}</Suspense>,
+    errorElement: <RouteErrorBoundary />,
+  }));
 
 export const router = createBrowserRouter([
   {
     path: "/auth",
-    children: [
+    errorElement: <RouteErrorBoundary />,
+    children: withErrorBoundary([
       {
         path: "login",
         element: (
@@ -81,7 +113,7 @@ export const router = createBrowserRouter([
           </PublicRoute>
         ),
       },
-    ],
+    ]),
   },
   {
     path: "/",
@@ -90,7 +122,10 @@ export const router = createBrowserRouter([
         <Root />
       </ProtectedRoute>
     ),
-    children: [
+    // Catches crashes in ProtectedRoute/Root itself (i.e. the shell). Page-level
+    // crashes are caught by the per-child boundaries below, which preserve it.
+    errorElement: <RouteErrorBoundary />,
+    children: withErrorBoundary([
       {
         index: true,
         element: <ManagerDashboard />,
@@ -141,7 +176,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "settings",
-        element: <Settings />,
+        element: (
+          <ProtectedRoute requiredRole={["super_admin", "admin"]}>
+            <Settings />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "notifications",
@@ -243,10 +282,11 @@ export const router = createBrowserRouter([
         path: "finance/bakery",
         element: <BakeryFinancePage />,
       },
-    ],
+    ]),
   },
   {
     path: "*",
     element: <NotFoundPage />,
+    errorElement: <RouteErrorBoundary />,
   },
 ]);

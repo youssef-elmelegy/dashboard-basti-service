@@ -1,6 +1,7 @@
 import { useState, useEffect, memo, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { createPortal } from "react-dom";
 import { useBakeryStore } from "@/stores/bakeryStore";
@@ -1006,7 +1007,7 @@ export default function BakeryOrdersPage() {
 
     // Check if trying to change to "ready" without uploading an image
     if (newStatus === "ready" && !selectedOrder?.finalImage) {
-      alert("Please upload a final image before marking the order as ready.");
+      toast.error(t("bakeryOrders.uploadFinalImageBeforeReady"));
       return;
     }
 
@@ -1104,7 +1105,7 @@ export default function BakeryOrdersPage() {
         }
       } catch (error) {
         console.error("Failed to finalize QA:", error);
-        alert("Failed to finalize image. Please try again.");
+        toast.error(t("bakeryOrders.finalizeImageFailed"));
         setImagePreview("");
       } finally {
         setIsUploadingImage(false);
@@ -1112,8 +1113,10 @@ export default function BakeryOrdersPage() {
     } catch (error) {
       console.error("Error uploading image:", error);
       const errorMsg =
-        error instanceof Error ? error.message : "Failed to upload image";
-      alert(errorMsg);
+        error instanceof Error
+          ? error.message
+          : t("bakeryOrders.uploadImageFailed");
+      toast.error(errorMsg);
       setIsUploadingImage(false);
     }
   };

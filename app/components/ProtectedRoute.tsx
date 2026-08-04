@@ -1,9 +1,12 @@
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 
+type AdminRole = "super_admin" | "admin" | "manager";
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: "super_admin" | "admin" | "manager";
+  /** Roles allowed through. Anyone else is bounced to the dashboard root. */
+  requiredRole?: AdminRole | AdminRole[];
 }
 
 export function ProtectedRoute({
@@ -30,8 +33,13 @@ export function ProtectedRoute({
     return <Navigate to="/auth/login" replace />;
   }
 
-  if (requiredRole && admin.role !== requiredRole) {
-    return <Navigate to="/" replace />;
+  if (requiredRole) {
+    const allowedRoles = Array.isArray(requiredRole)
+      ? requiredRole
+      : [requiredRole];
+    if (!allowedRoles.includes(admin.role)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;

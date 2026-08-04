@@ -1,10 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { subscribeToForegroundMessages } from "@/config/firebase";
 import { type NotificationType } from "@/lib/api/notification.api";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useAuthStore } from "@/stores/auth.store";
-import { registerFcmWithBackend } from "@/lib/services/fcm.service";
 import { playNotificationSound } from "@/lib/notification-sound";
 
 function resolveNavigationPath(
@@ -77,6 +75,17 @@ export function useNotifications() {
     const init = async () => {
       try {
         await refreshAll();
+
+        // Firebase is imported dynamically here (rather than at module
+        // scope) to keep the SDK out of the entry chunk: this hook runs in
+        // Navbar, which is part of the eagerly-loaded app shell, so a static
+        // import would put ~200 KB of Firebase on the critical path for
+        // every visitor including ones sitting on the login screen.
+        const [{ subscribeToForegroundMessages }, { registerFcmWithBackend }] =
+          await Promise.all([
+            import("@/config/firebase"),
+            import("@/lib/services/fcm.service"),
+          ]);
 
         // Safety net: re-register on mount in case the auth store didn't
         // (e.g., persisted session restored before fcm.service hook-in).

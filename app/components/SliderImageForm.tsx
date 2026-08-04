@@ -66,6 +66,7 @@ export function SliderImageForm({
 
   const form = useForm<SliderImageFormValues>({
     resolver: zodResolver(sliderImageSchema),
+    mode: "onChange",
     defaultValues: {
       title: image?.title || "",
       imageUrl: image?.imageUrl || "",
@@ -198,7 +199,7 @@ export function SliderImageForm({
 
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {uploadingImage || isLoading

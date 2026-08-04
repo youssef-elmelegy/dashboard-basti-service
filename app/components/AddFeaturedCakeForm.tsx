@@ -74,18 +74,16 @@ export function AddFeaturedCakeForm({
   );
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  const tags = useTagsStore((state) => state.tags);
   const fetchTags = useTagsStore((state) => state.fetchTags);
 
-  // Fetch tags on component mount
+  // fetchTags() no-ops when the store is already cached, so no length guard.
   useEffect(() => {
-    if (tags.length === 0) {
-      fetchTags();
-    }
-  }, []);
+    fetchTags();
+  }, [fetchTags]);
 
   const form = useForm<AddFeaturedCakeFormValues>({
     resolver: zodResolver(addFeaturedCakeSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       description: "",
@@ -377,7 +375,7 @@ export function AddFeaturedCakeForm({
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
           className="w-full"
         >
           {isLoading ? t("common.loading") : t("featuredCakes.createCake")}

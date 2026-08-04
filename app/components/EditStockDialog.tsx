@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { BakeryItemStore } from "@/lib/services/bakery.service";
 import { useBakeryItemStore } from "@/stores/bakeryItemStore";
 import {
@@ -89,7 +90,7 @@ export function EditStockDialog({
         // For other items, just send stock number
         const stockValue = parseInt(newStock, 10);
         if (isNaN(stockValue) || stockValue < 0) {
-          alert(t("bakeriesManagement.invalidStockValue"));
+          toast.warning(t("bakeriesManagement.invalidStockValue"));
           setIsLoading(false);
           return;
         }
@@ -102,7 +103,7 @@ export function EditStockDialog({
         error instanceof Error
           ? error.message
           : t("bakeriesManagement.updateStockError");
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

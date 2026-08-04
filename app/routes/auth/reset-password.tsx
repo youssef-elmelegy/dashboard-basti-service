@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -22,12 +22,13 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const locationState = location.state as {
     email: string;
-    resetToken: string;
+    otpVerified?: boolean;
   } | null;
 
-  // Get resetToken from navigation state or localStorage as fallback
-  const resetToken =
-    locationState?.resetToken || localStorage.getItem("resetToken") || "";
+  // The reset token itself lives in an httpOnly cookie we cannot read. This
+  // flag only confirms the user reached here through OTP verification, so we
+  // can avoid showing a form that is guaranteed to fail.
+  const otpVerified = locationState?.otpVerified === true;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,20 +49,10 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!resetToken) {
-      setLocalError(t("auth.resetPassword.sessionExpired"));
-      // Redirect to forgot password page
-      setTimeout(() => {
-        navigate("/auth/forgot-password");
-      }, 2000);
-      return;
-    }
-
     try {
-      // Only send newPassword and resetToken to API (not confirmPassword)
-      await resetPassword(resetToken, newPassword);
-      // Clear resetToken after successful reset
-      localStorage.removeItem("resetToken");
+      // Only newPassword goes to the API — the reset token rides along in the
+      // httpOnly cookie, and the server clears it once the reset succeeds.
+      await resetPassword(newPassword);
       navigate("/auth/login");
     } catch {
       setLocalError(error || t("auth.resetPassword.resetFailed"));
@@ -73,6 +64,13 @@ export default function ResetPasswordPage() {
     confirmPassword &&
     newPassword === confirmPassword &&
     newPassword.length >= 8;
+
+  // Landing here without completing OTP verification (direct URL, hard refresh)
+  // means there is no usable reset cookie. Bounce immediately rather than let
+  // the user fill in a form that can only fail on submit.
+  if (!otpVerified) {
+    return <Navigate to="/auth/forgot-password" replace />;
+  }
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

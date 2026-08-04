@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +24,11 @@ import type {
   AddFeaturedCakeFormValues,
   EditFeaturedCakeFormValues,
 } from "@/schemas/featured-cake.schema";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 export default function FeaturedCakesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCake, setEditingCake] = useState<FeaturedCake | null>(null);
   const [activeFilter, setActiveFilter] = useState<
@@ -54,6 +56,7 @@ export default function FeaturedCakesPage() {
   const toggleFeaturedCakeFeatured = useFeaturedCakeStore(
     (state) => state.toggleFeaturedCakeFeatured,
   );
+  const clearError = useFeaturedCakeStore((state) => state.clearError);
   const { openDeleteDialog } = useDeleteDialog();
 
   // Fetch featured cakes on mount
@@ -140,7 +143,9 @@ export default function FeaturedCakesPage() {
     }
   };
 
-  if (error) {
+  // Only a failed *list load* justifies replacing the page. Mutation errors
+  // (create/update/delete) surface inline so the list stays usable.
+  if (error && featuredCakes.length === 0) {
     return (
       <div className="flex flex-col gap-6">
         <div className="text-center py-12">
@@ -148,9 +153,19 @@ export default function FeaturedCakesPage() {
             {t("common.error")}
           </h2>
           <p className="text-muted-foreground mt-2">{error}</p>
-          <Button onClick={() => fetchFeaturedCakes()} className="mt-4">
-            Try Again
-          </Button>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              {t("common.back")}
+            </Button>
+            <Button
+              onClick={() => {
+                clearError();
+                fetchFeaturedCakes();
+              }}
+            >
+              {t("common.tryAgain")}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -176,6 +191,21 @@ export default function FeaturedCakesPage() {
           {isLoading ? t("common.loading") : t("featuredCakes.addCake")}
         </Button>
       </div>
+
+      {/* Mutation errors: shown inline so the list below stays usable. */}
+      {error && (
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-red-600/40 bg-red-600/10 p-4">
+          <p className="text-sm text-red-500">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearError}
+            aria-label={t("common.dismiss")}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-muted/50 p-4 rounded-lg border">

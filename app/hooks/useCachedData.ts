@@ -15,13 +15,15 @@ import { useEffect } from "react";
 export const useCachedData = (
   isCached: boolean,
   fetchFn: (forceRefresh?: boolean) => void,
-  dependencies: any[] = [],
+  dependencies: unknown[] = [],
 ) => {
   useEffect(() => {
     // Only fetch if not cached
     if (!isCached) {
       fetchFn();
     }
+    // Callers pass an extra dep list, so this array can't be statically checked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCached, fetchFn, ...dependencies]);
 };
 

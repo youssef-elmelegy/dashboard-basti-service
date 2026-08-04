@@ -83,6 +83,7 @@ export function PredesignedCakeForm({
     CreatePredesignedCakeFormValues | UpdatePredesignedCakeFormValues
   >({
     resolver: zodResolver(schema),
+    mode: "onChange",
     defaultValues: {
       name: initialData?.name || "",
       description: initialData?.description || "",
@@ -257,7 +258,11 @@ export function PredesignedCakeForm({
           )}
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button
+          type="submit"
+          disabled={isLoading || !form.formState.isValid}
+          className="w-full"
+        >
           {isLoading
             ? t("common.loading")
             : initialData

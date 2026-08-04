@@ -95,11 +95,14 @@ export function AddOnForm({
 
   const form = useForm<AddOnFormValues>({
     resolver: zodResolver(addOnSchema),
+    mode: "onChange",
     defaultValues: {
       name: initialAddOn?.name || "",
       description: initialAddOn?.description || "",
       images: initialAddOn?.images || [],
-      category: (initialAddOn?.category as any) || "decorations",
+      category:
+        (initialAddOn?.category as AddOnFormValues["category"]) ||
+        "decorations",
       tagId: initialAddOn?.tagId || undefined,
       isActive: initialAddOn?.isActive ?? true,
       options:
@@ -576,7 +579,7 @@ export function AddOnForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={isLoading || uploadingImage}
+          disabled={isLoading || uploadingImage || !form.formState.isValid}
         >
           {uploadingImage
             ? t("common.loading")
