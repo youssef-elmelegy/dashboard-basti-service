@@ -21,6 +21,8 @@ export type AddOn = {
   tags?: string[];
   tagId?: string;
   tagName?: string;
+  /** Set by the API when tagId points at a tag that has been deleted. */
+  tagMissing?: boolean;
   isActive: boolean;
   isFeatured?: boolean;
   options?: Array<{

@@ -27,6 +27,7 @@ import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { SingleImageUploader } from "@/components/SingleImageUploader";
 import { useAddOnStore } from "@/stores/addOnStore";
 import { useTagsStore } from "@/stores/tagsStore";
+import { TagSelectField } from "@/components/TagSelectField";
 import { convertToWebP } from "@/lib/image-utils";
 import type { AddOn } from "@/data/products";
 import type {
@@ -78,7 +79,6 @@ export function AddOnForm({
 }: AddOnFormProps) {
   const { t } = useTranslation();
   const uploadAddOnImage = useAddOnStore((state) => state.uploadAddOnImage);
-  const tags = useTagsStore((s) => s.tags);
   const fetchTags = useTagsStore((s) => s.fetchTags);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>(
@@ -380,29 +380,15 @@ export function AddOnForm({
             <FormItem>
               <FormLabel>{t("common.tag")}</FormLabel>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
+                <TagSelectField
                   value={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t("common.selectTag") || "Select tag"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tags
-                      .filter(
-                        (tag) =>
-                          Array.isArray(tag.types) &&
-                          tag.types.includes("addons"),
-                      )
-                      .map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id}>
-                          {tag.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                  onChange={field.onChange}
+                  tagType="addons"
+                  tagMissing={
+                    initialAddOn?.tagMissing &&
+                    field.value === initialAddOn?.tagId
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

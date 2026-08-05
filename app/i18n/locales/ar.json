@@ -87,7 +87,9 @@
     "errorDescription": "واجهت هذه الصفحة خطأً غير متوقع. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة التحكم.",
     "errorNotFoundDescription": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها.",
     "goHome": "الذهاب إلى لوحة التحكم",
-    "errorDetails": "تفاصيل الخطأ (وضع التطوير فقط)"
+    "errorDetails": "تفاصيل الخطأ (وضع التطوير فقط)",
+    "tagDeletedPickAnother": "يبدو أن هذا الوسم قد تم حذفه، اختر وسماً آخر",
+    "selectTagPlaceholder": "اختر وسماً"
   },
   "reassignOrder": {
     "button": "إعادة التعيين / الإرجاع",
@@ -960,7 +962,15 @@
       "decorations": "زخارف",
       "predesigned-cakes": "كيكات جاهزة",
       "addons": "إضافات"
-    }
+    },
+    "usageSweets": "حلويات",
+    "usageAddons": "إضافات",
+    "usageDecorations": "زينة",
+    "usagePredesignedCakes": "كيك جاهز",
+    "usageFeaturedCakes": "كيك مميز",
+    "deleteImpactTitle": "هذا الوسم ما زال مستخدماً",
+    "deleteImpactProducts": "سيتم إزالة الوسم من {{count}} منتج",
+    "deleteImpactSliders": "سيتم إخفاء {{count}} من صور شريط العرض حتى تربطها بوسم جديد"
   },
   "customCakes": {
     "title": "الكعكات المخصصة",
@@ -1084,7 +1094,9 @@
     "uploadingImage": "جاري تحميل الصورة...",
     "selectTag": "اختر العلامة",
     "selectTagPlaceholder": "اختر علامة لصورة السلايدر هذه",
-    "selectTagDescription": "اختر علامة لربطها بصورة السلايدر هذه. يمكن لكل صورة سلايدر أن تحتوي على علامة فريدة واحدة."
+    "selectTagDescription": "اختر علامة لربطها بصورة السلايدر هذه. يمكن لكل صورة سلايدر أن تحتوي على علامة فريدة واحدة.",
+    "hidden": "مخفية",
+    "hiddenReason": "هذه الصورة مخفية لأن الوسم المرتبط بها تم حذفه. اختر وسماً جديداً لإظهارها مرة أخرى."
   },
   "adminTable": {
     "email": "البريد الإلكتروني",

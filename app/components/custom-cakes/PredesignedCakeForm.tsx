@@ -34,6 +34,7 @@ import { useFlavorStore } from "@/stores/flavorStore";
 import { useShapeStore } from "@/stores/shapeStore";
 import { useDecorationStore } from "@/stores/decorationStore";
 import { useTagsStore } from "@/stores/tagsStore";
+import { TagSelectField } from "@/components/TagSelectField";
 import type {
   PredesignedCake,
   DesignedCakeConfigRequestDto,
@@ -59,7 +60,6 @@ export function PredesignedCakeForm({
   const flavors = useFlavorStore((s) => s.flavors);
   const shapes = useShapeStore((s) => s.shapes);
   const decorations = useDecorationStore((s) => s.decorations);
-  const tags = useTagsStore((s) => s.tags);
 
   const fetchFlavors = useFlavorStore((s) => s.fetchFlavors);
   const fetchShapes = useShapeStore((s) => s.fetchShapes);
@@ -173,20 +173,16 @@ export function PredesignedCakeForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("customCakes.tag")} (Optional)</FormLabel>
-              <Select value={field.value || ""} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("customCakes.selectTag")} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      {tag.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <TagSelectField
+                  value={field.value}
+                  onChange={field.onChange}
+                  tagType="predesigned-cakes"
+                  tagMissing={
+                    initialData?.tagMissing && field.value === initialData?.tagId
+                  }
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -14,6 +14,8 @@ export interface Sweet {
   sizes: string[];
   tagId: string | null;
   tagName: string | null;
+  /** Set by the API when tagId points at a tag that has been deleted. */
+  tagMissing?: boolean;
   price?: number;
   sizesPrices?: Record<string, number>;
   isActive: boolean;

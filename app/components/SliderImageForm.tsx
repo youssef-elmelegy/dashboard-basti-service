@@ -34,6 +34,14 @@ const sliderImageSchema = z.object({
   tagId: z.string().optional(),
 });
 
+/**
+ * A hidden image is one whose tag was deleted. Picking a new tag is the only
+ * way to bring it back, so the field stops being optional in that case.
+ */
+const hiddenSliderImageSchema = sliderImageSchema.extend({
+  tagId: z.string().min(1, "Select a tag to unhide this image"),
+});
+
 type SliderImageFormValues = z.infer<typeof sliderImageSchema>;
 
 interface SliderImageFormProps {
@@ -59,18 +67,18 @@ export function SliderImageForm({
     image?.imageUrl || "",
   );
 
-  // Find tag with matching displayOrder when in edit mode
-  const matchingTag = image
-    ? tags.find((tag) => tag.displayOrder === image.displayOrder)
-    : undefined;
+  const isHidden = Boolean(image?.isHidden);
 
   const form = useForm<SliderImageFormValues>({
-    resolver: zodResolver(sliderImageSchema),
+    resolver: zodResolver(isHidden ? hiddenSliderImageSchema : sliderImageSchema),
     mode: "onChange",
     defaultValues: {
       title: image?.title || "",
       imageUrl: image?.imageUrl || "",
-      tagId: matchingTag?.id,
+      // Read straight off the record. This used to be inferred by matching
+      // displayOrder against the tag list, which mis-assigned tags whenever
+      // either side was reordered.
+      tagId: image?.tagId ?? undefined,
     },
   });
 
@@ -167,6 +175,11 @@ export function SliderImageForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("sliderImages.selectTag")}</FormLabel>
+              {isHidden && (
+                <p className="text-sm rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                  {t("sliderImages.hiddenReason")}
+                </p>
+              )}
               <Select value={field.value || ""} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>

@@ -11,53 +11,17 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useFeaturedCakeStore } from "@/stores/featuredCakeStore";
 import { convertToWebP } from "@/lib/image-utils";
 import { useTagsStore } from "@/stores/tagsStore";
+import { TagSelectField } from "@/components/TagSelectField";
 import { useState, useEffect } from "react";
 import {
   addFeaturedCakeSchema,
   type AddFeaturedCakeFormValues,
 } from "@/schemas/featured-cake.schema";
 import { X, Plus } from "lucide-react";
-
-interface TagSelectFieldProps {
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function TagSelectField({ value, onChange }: TagSelectFieldProps) {
-  const tags = useTagsStore((state) => state.tags);
-
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger>
-        <SelectValue placeholder="Select a tag" />
-      </SelectTrigger>
-      <SelectContent>
-        {tags
-          .filter(
-            (tag) =>
-              Array.isArray(tag.types) &&
-              tag.types.includes("predesigned-cakes"),
-          )
-          .map((tag) => (
-            <SelectItem key={tag.id} value={tag.id}>
-              {tag.name}
-            </SelectItem>
-          ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 interface AddFeaturedCakeFormProps {
   onSubmit: (values: AddFeaturedCakeFormValues) => void;
@@ -346,7 +310,11 @@ export function AddFeaturedCakeForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{t("common.selectTag")}</FormLabel>
-                <TagSelectField value={field.value} onChange={field.onChange} />
+                <TagSelectField
+                  value={field.value}
+                  onChange={field.onChange}
+                  tagType="predesigned-cakes"
+                />
                 <FormMessage />
               </FormItem>
             )}

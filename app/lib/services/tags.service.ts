@@ -50,10 +50,22 @@ export const tagsApi = {
     apiClient.patch<Tag>(`/tags/${id}`, body),
 
   /**
-   * Delete a tag
+   * Report what a tag is attached to, without changing anything.
    */
-  delete: (id: string): Promise<ApiResponse<Record<string, unknown>>> =>
-    apiClient.delete(`/tags/${id}`),
+  getUsage: (id: string): Promise<ApiResponse<TagUsage>> =>
+    apiClient.get<TagUsage>(`/tags/${id}/usage`),
+
+  /**
+   * Delete a tag.
+   *
+   * Without `force` the backend refuses with 409 when the tag is still linked to
+   * products or slider images, so the admin can be shown the impact first.
+   */
+  delete: (
+    id: string,
+    force = false,
+  ): Promise<ApiResponse<Record<string, unknown>>> =>
+    apiClient.delete(`/tags/${id}${force ? "?force=true" : ""}`),
 
   /**
    * Change tag order
@@ -61,6 +73,22 @@ export const tagsApi = {
   changeOrder: (id: string, order: number): Promise<ApiResponse<Tag[]>> =>
     apiClient.patch<Tag[]>(`/tags/${id}/order`, { order }),
 };
+
+/**
+ * Impact report for deleting a tag, used to warn the admin before they confirm.
+ */
+export interface TagUsage {
+  tagId: string;
+  tagName: string;
+  sweets: number;
+  addons: number;
+  decorations: number;
+  predesignedCakes: number;
+  featuredCakes: number;
+  totalProducts: number;
+  sliderImages: { id: string; title: string }[];
+  canDeleteSafely: boolean;
+}
 
 /**
  * Request types

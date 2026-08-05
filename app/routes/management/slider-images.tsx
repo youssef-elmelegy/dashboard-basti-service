@@ -89,9 +89,14 @@ export default function SliderImagesPage() {
     try {
       // Create new array with existing images + new image
       // Auto-assign displayOrder based on existing images count
-      const displayOrder = sliderImages.length + 1;
+      const displayOrder =
+        sliderImages.reduce((max, img) => Math.max(max, img.displayOrder), 0) +
+        1;
       const newImages: SliderImageItem[] = [
+        // `id` is carried through so existing rows are updated in place rather
+        // than recreated — that is what preserves each image's hidden flag.
         ...sliderImages.map((img) => ({
+          id: img.id,
           title: img.title,
           imageUrl: img.imageUrl,
           displayOrder: img.displayOrder,
@@ -114,23 +119,18 @@ export default function SliderImagesPage() {
   const handleUpdateSliderImage = async (values: SliderImageFormValues) => {
     if (selectedImage) {
       try {
-        // Get displayOrder from selected tag, or keep existing displayOrder
-        let displayOrder = selectedImage.displayOrder;
-        if (values.tagId) {
-          const selectedTag = tags.find((tag) => tag.id === values.tagId);
-          if (selectedTag) {
-            displayOrder = selectedTag.displayOrder;
-          }
-        }
-
-        // Create new array with updated image
+        // Create new array with updated image. The image keeps its own
+        // displayOrder: it used to be overwritten with the selected tag's order,
+        // which is what coupled the two and reshuffled sliders on tag reorder.
         const newImages: SliderImageItem[] = sliderImages.map((img) =>
           img.id === selectedImage.id
             ? {
+                id: img.id,
                 ...values,
-                displayOrder,
+                displayOrder: img.displayOrder,
               }
             : {
+                id: img.id,
                 title: img.title,
                 imageUrl: img.imageUrl,
                 displayOrder: img.displayOrder,

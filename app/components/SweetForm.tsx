@@ -18,13 +18,7 @@ import { useTranslation } from "react-i18next";
 import type { Sweet } from "@/lib/services/sweet.service";
 import { useSweetStore } from "@/stores/sweetStore";
 import { useTagsStore } from "@/stores/tagsStore";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { TagSelectField } from "@/components/TagSelectField";
 import { convertToWebP } from "@/lib/image-utils";
 import { X, Plus } from "lucide-react";
 
@@ -56,7 +50,6 @@ export function SweetForm({
   const { t } = useTranslation();
   const isEditMode = !!initialSweet;
   const uploadSweetImage = useSweetStore((state) => state.uploadSweetImage);
-  const tags = useTagsStore((s) => s.tags);
   const fetchTags = useTagsStore((s) => s.fetchTags);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -242,29 +235,15 @@ export function SweetForm({
             <FormItem>
               <FormLabel>{t("common.selectTag")}</FormLabel>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t("common.selectTag") || "Select tag"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tags
-                      .filter(
-                        (tag) =>
-                          Array.isArray(tag.types) &&
-                          tag.types.includes("sweets"),
-                      )
-                      .map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id}>
-                          {tag.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <TagSelectField
+                  value={field.value}
+                  onChange={field.onChange}
+                  tagType="sweets"
+                  tagMissing={
+                    initialSweet?.tagMissing &&
+                    field.value === initialSweet?.tagId
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

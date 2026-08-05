@@ -47,6 +47,8 @@ export interface PredesignedCake {
   thumbnailUrl: string | null;
   tagId?: string;
   tagName?: string;
+  /** Set by the API when tagId points at a tag that has been deleted. */
+  tagMissing?: boolean;
   configs: DesignedCakeConfig[];
   isActive: boolean;
   isFeatured?: boolean;

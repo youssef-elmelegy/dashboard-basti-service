@@ -87,7 +87,9 @@
     "errorDescription": "This page ran into an unexpected error. You can try again, or head back to the dashboard.",
     "errorNotFoundDescription": "The page you're looking for doesn't exist or has been moved.",
     "goHome": "Go to Dashboard",
-    "errorDetails": "Error details (development only)"
+    "errorDetails": "Error details (development only)",
+    "tagDeletedPickAnother": "It seems like this tag has been deleted, pick another one",
+    "selectTagPlaceholder": "Select a tag"
   },
   "reassignOrder": {
     "button": "Reassign / Return",
@@ -948,7 +950,15 @@
       "decorations": "Decorations",
       "predesigned-cakes": "Predesigned Cakes",
       "addons": "Add-ons"
-    }
+    },
+    "usageSweets": "sweets",
+    "usageAddons": "add-ons",
+    "usageDecorations": "decorations",
+    "usagePredesignedCakes": "predesigned cakes",
+    "usageFeaturedCakes": "featured cakes",
+    "deleteImpactTitle": "This tag is still in use",
+    "deleteImpactProducts": "{{count}} product(s) will have their tag cleared",
+    "deleteImpactSliders": "{{count}} slider image(s) will be hidden until you link a new tag"
   },
   "customCakes": {
     "title": "Custom Cakes",
@@ -1072,7 +1082,9 @@
     "uploadingImage": "Uploading image...",
     "selectTag": "Select Tag",
     "selectTagPlaceholder": "Choose a tag for this slider image",
-    "selectTagDescription": "Select a tag to associate with this slider image. Each slider image can have one unique tag."
+    "selectTagDescription": "Select a tag to associate with this slider image. Each slider image can have one unique tag.",
+    "hidden": "Hidden",
+    "hiddenReason": "This image is hidden because its tag was deleted. Select a new tag to show it again."
   },
   "adminTable": {
     "email": "Email",

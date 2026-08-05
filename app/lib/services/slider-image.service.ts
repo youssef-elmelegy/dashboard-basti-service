@@ -14,7 +14,12 @@ export interface SliderImage {
   title: string;
   imageUrl: string;
   displayOrder: number;
-  tagId?: string;
+  tagId?: string | null;
+  /**
+   * Set by the backend when the linked tag is deleted. There is no manual
+   * toggle for this — attaching a new tag is what clears it.
+   */
+  isHidden?: boolean;
   createdAt: string;
 }
 
@@ -22,10 +27,12 @@ export interface SliderImage {
  * Slider Image request payload
  */
 export interface SliderImageItem {
+  /** Omit to create a new image; supply it to update that row in place. */
+  id?: string;
   title: string;
   imageUrl: string;
   displayOrder: number;
-  tagId?: string;
+  tagId?: string | null;
 }
 
 /**
@@ -36,7 +43,9 @@ export const sliderImageApi = {
    * Get all slider images
    */
   getAll: (): Promise<ApiResponse<SliderImage[]>> => {
-    return apiClient.get<SliderImage[]>("/slider-images");
+    // Admin listing: includes images hidden by a tag deletion so they can be
+    // re-linked. The public route filters them out.
+    return apiClient.get<SliderImage[]>("/slider-images/admin");
   },
 
   /**

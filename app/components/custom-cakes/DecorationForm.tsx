@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { MultiImageUploader } from "@/components/MultiImageUploader";
 import { useTagsStore } from "@/stores/tagsStore";
+import { TagSelectField } from "@/components/TagSelectField";
 import { uploadImage } from "@/lib/api/cake.api";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
 import { convertToWebP } from "@/lib/image-utils";
@@ -282,26 +283,16 @@ export function DecorationForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("customCakes.tag")}</FormLabel>
-              <Select value={field.value || ""} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("customCakes.selectTag")} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {tags
-                    .filter(
-                      (tag) =>
-                        Array.isArray(tag.types) &&
-                        tag.types.includes("decorations"),
-                    )
-                    .map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id}>
-                        {tag.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <TagSelectField
+                  value={field.value}
+                  onChange={field.onChange}
+                  tagType="decorations"
+                  tagMissing={
+                    decoration?.tagMissing && field.value === decoration?.tagId
+                  }
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

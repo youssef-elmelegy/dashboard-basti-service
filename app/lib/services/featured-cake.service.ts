@@ -19,6 +19,8 @@ export interface FeaturedCake {
   pipingPaletteList: string[];
   tagId: string;
   tagName: string | null;
+  /** Set by the API when tagId points at a tag that has been deleted. */
+  tagMissing?: boolean;
   isActive: boolean;
   isFeatured: boolean;
   createdAt: Date;

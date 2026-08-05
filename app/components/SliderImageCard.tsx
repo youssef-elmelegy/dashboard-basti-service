@@ -1,5 +1,7 @@
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,8 +31,23 @@ export function SliderImageCard({
         <img
           src={image.imageUrl}
           alt={image.title}
-          className="w-full h-full object-cover"
+          className={cn(
+            "w-full h-full object-cover",
+            // Dimmed to signal the image is not being served to customers
+            image.isHidden && "opacity-40 grayscale",
+          )}
         />
+        {image.isHidden && (
+          <div className="absolute top-2 start-2 z-10">
+            <Badge
+              variant="secondary"
+              className="gap-1 bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100"
+            >
+              <EyeOff className="w-3 h-3" />
+              {t("sliderImages.hidden")}
+            </Badge>
+          </div>
+        )}
         {/* Action Menu */}
         <div className="absolute top-2 end-2 z-10">
           <DropdownMenu>
@@ -70,6 +87,11 @@ export function SliderImageCard({
             {new Date(image.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
+        {image.isHidden && (
+          <p className="text-xs rounded-md border border-amber-300 bg-amber-50 p-2 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+            {t("sliderImages.hiddenReason")}
+          </p>
+        )}
       </div>
     </div>
   );

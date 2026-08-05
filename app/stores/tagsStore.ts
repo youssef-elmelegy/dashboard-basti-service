@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   tagsApi,
   type Tag,
+  type TagUsage,
   type CreateTagRequest,
   type UpdateTagRequest,
 } from "@/lib/services/tags.service";
@@ -17,7 +18,8 @@ interface TagsState {
   fetchTags: (forceRefresh?: boolean) => Promise<void>;
   createTag: (data: CreateTagRequest) => Promise<Tag | null>;
   updateTag: (id: string, data: UpdateTagRequest) => Promise<Tag | null>;
-  deleteTag: (id: string) => Promise<boolean>;
+  deleteTag: (id: string, force?: boolean) => Promise<boolean>;
+  fetchTagUsage: (id: string) => Promise<TagUsage | null>;
   changeTagOrder: (id: string, newOrder: number) => Promise<void>;
   addTag: (tag: Tag) => void;
   removeTag: (tagId: string) => void;
@@ -108,10 +110,20 @@ export const useTagsStore = create<TagsState>((set, get) => ({
   },
 
   // Delete a tag via API and remove from state
-  deleteTag: async (id: string) => {
+  // Look up what a tag is attached to, so the delete dialog can show the impact
+  fetchTagUsage: async (id: string) => {
+    try {
+      const response = await tagsApi.getUsage(id);
+      return response.success && response.data ? response.data : null;
+    } catch {
+      return null;
+    }
+  },
+
+  deleteTag: async (id: string, force = false) => {
     set({ isSaving: true, error: null });
     try {
-      const response = await tagsApi.delete(id);
+      const response = await tagsApi.delete(id, force);
       if (response.success) {
         set((state) => ({
           tags: state.tags.filter((t) => t.id !== id),

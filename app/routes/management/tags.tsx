@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTagsStore } from "@/stores/tagsStore";
+import { invalidateStoresForTagUsage } from "@/stores/invalidateStoresForTagUsage";
 import { useDeleteDialog } from "@/components/useDeleteDialog";
 import { TAG_TYPES, type TagType } from "@/lib/services/tags.service";
 import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
@@ -50,10 +51,13 @@ export default function TagsManagementPage() {
   const createTag = useTagsStore((s) => s.createTag);
   const updateTag = useTagsStore((s) => s.updateTag);
   const deleteTag = useTagsStore((s) => s.deleteTag);
+  const fetchTagUsage = useTagsStore((s) => s.fetchTagUsage);
   const changeTagOrder = useTagsStore((s) => s.changeTagOrder);
   const clearError = useTagsStore((s) => s.clearError);
 
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Tag whose usage is being fetched, to disable its delete button meanwhile
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const sensors = useDragSensors();
 
   const form = useForm<FormValues>({
@@ -151,7 +155,29 @@ export default function TagsManagementPage() {
 
   const { openDeleteDialog } = useDeleteDialog();
 
-  const handleDelete = (tag: { id: string; name: string }) => {
+  const handleDelete = async (tag: { id: string; name: string }) => {
+    // Look up the impact first: deleting a tag clears it from every product
+    // that uses it and hides any slider image linked to it, so the admin needs
+    // to see those numbers before confirming.
+    setPendingDeleteId(tag.id);
+    const usage = await fetchTagUsage(tag.id);
+    setPendingDeleteId(null);
+
+    const affected = usage
+      ? [
+          { count: usage.sweets, label: t("tags.usageSweets") },
+          { count: usage.addons, label: t("tags.usageAddons") },
+          { count: usage.decorations, label: t("tags.usageDecorations") },
+          {
+            count: usage.predesignedCakes,
+            label: t("tags.usagePredesignedCakes"),
+          },
+          { count: usage.featuredCakes, label: t("tags.usageFeaturedCakes") },
+        ].filter((entry) => entry.count > 0)
+      : [];
+
+    const isInUse = Boolean(usage && !usage.canDeleteSafely);
+
     openDeleteDialog(
       {
         title: t("tags.deleteTitle") || "Delete tag",
@@ -159,6 +185,29 @@ export default function TagsManagementPage() {
           <>
             {t("tags.deleteDescription")} <strong>{tag.name}</strong>?{" "}
             {t("common.cannotBeUndone")}
+            {isInUse && usage && (
+              <span className="mt-3 flex flex-col gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                <span className="font-semibold">
+                  {t("tags.deleteImpactTitle")}
+                </span>
+                {affected.length > 0 && (
+                  <span>
+                    {t("tags.deleteImpactProducts", {
+                      count: usage.totalProducts,
+                    })}{" "}
+                    ({affected.map((e) => `${e.count} ${e.label}`).join(", ")})
+                  </span>
+                )}
+                {usage.sliderImages.length > 0 && (
+                  <span>
+                    {t("tags.deleteImpactSliders", {
+                      count: usage.sliderImages.length,
+                    })}{" "}
+                    ({usage.sliderImages.map((s) => s.title).join(", ")})
+                  </span>
+                )}
+              </span>
+            )}
           </>
         ),
         recordName: tag.name,
@@ -166,7 +215,14 @@ export default function TagsManagementPage() {
       },
       async () => {
         try {
-          await deleteTag(tag.id);
+          // `force` is required once anything references the tag; the backend
+          // rejects the delete with 409 otherwise.
+          const deleted = await deleteTag(tag.id, isInUse);
+          if (deleted) {
+            // Products keep the deleted tag in their cached copies, so drop the
+            // caches of exactly the stores the backend just modified.
+            invalidateStoresForTagUsage(usage);
+          }
         } catch (err) {
           console.error("Failed to delete tag:", err);
         }
@@ -411,7 +467,8 @@ export default function TagsManagementPage() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleDelete(tag)}
+                                disabled={pendingDeleteId === tag.id}
+                                onClick={() => void handleDelete(tag)}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

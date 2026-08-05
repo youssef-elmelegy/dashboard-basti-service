@@ -8,6 +8,8 @@ export interface Decoration {
   decorationUrl: string;
   tagId?: string;
   tagName?: string;
+  /** Set by the API when tagId points at a tag that has been deleted. */
+  tagMissing?: boolean;
   capacity: number;
   minPrepHours?: number;
   isFeatured?: boolean;
