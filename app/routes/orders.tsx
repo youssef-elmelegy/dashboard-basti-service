@@ -363,7 +363,7 @@ function BakeryColumn({
     >
       {/* Column Header */}
       <CardHeader className="shrink-0 border-b bg-muted/50 px-4 py-3">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2 min-w-0">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{bakeryName}</h3>
             <p className="text-xs text-muted-foreground line-clamp-2">
@@ -416,12 +416,12 @@ function BakeryColumn({
         </div>
 
         {/* Capacity Progress Bar */}
-        <div className="mt-3 space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
+        <div className="mt-3 space-y-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="text-muted-foreground truncate">
               {t("orders.capacity")}
             </span>
-            <span className="font-medium">
+            <span className="font-medium shrink-0">
               {usedCapacity} / {capacity}
             </span>
           </div>
@@ -434,13 +434,13 @@ function BakeryColumn({
               style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
             />
           </div>
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>
+          <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+            <span className="truncate">
               {Math.round(capacityPercentage)}% {t("orders.used")}
             </span>
             <span
               className={cn(
-                "font-medium",
+                "font-medium shrink-0",
                 capacityPercentage >= 85 && "text-red-500",
                 capacityPercentage >= 60 &&
                   capacityPercentage < 85 &&
