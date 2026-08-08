@@ -166,6 +166,8 @@ export interface OrderFinancialsFilters {
   to?: string;
   page?: number;
   limit?: number;
+  /** Return every matching row, ignoring page/limit. Used by the PDF export. */
+  all?: boolean;
 }
 
 /**
@@ -576,6 +578,7 @@ export const orderApi = {
     if (filters?.to) params.append("to", filters.to);
     if (filters?.page) params.append("page", String(filters.page));
     if (filters?.limit) params.append("limit", String(filters.limit));
+    if (filters?.all) params.append("all", "true");
 
     const queryString = params.toString();
     const url = `/orders/financials${queryString ? `?${queryString}` : ""}`;

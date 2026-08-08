@@ -251,29 +251,22 @@ export default function FinanceOrdersPage() {
     setIsExporting(true);
     let exportRows: OrderFinancialsRow[] = [];
     try {
-      // The API caps `limit` server-side, so walk the pages rather than asking
-      // for everything at once — a single huge limit gets silently truncated.
-      const EXPORT_PAGE_SIZE = 100;
-      for (let p = 1; ; p++) {
-        const response = await orderApi.getFinancials({
-          bakeryId: selectedBakery === "all" ? undefined : selectedBakery,
-          from: debouncedStart || undefined,
-          to: debouncedEnd || undefined,
-          page: p,
-          limit: EXPORT_PAGE_SIZE,
-        });
+      // `all: true` bypasses pagination server-side, so the report contains
+      // every matching order no matter how many there are.
+      const response = await orderApi.getFinancials({
+        bakeryId: selectedBakery === "all" ? undefined : selectedBakery,
+        from: debouncedStart || undefined,
+        to: debouncedEnd || undefined,
+        all: true,
+      });
 
-        if (!response.success || !response.data) {
-          setError(response.message || t("finance.loadError"));
-          setIsExporting(false);
-          return;
-        }
-
-        exportRows = exportRows.concat(response.data.rows);
-
-        const pages = response.data.pagination.totalPages ?? 1;
-        if (p >= pages || response.data.rows.length === 0) break;
+      if (!response.success || !response.data) {
+        setError(response.message || t("finance.loadError"));
+        setIsExporting(false);
+        return;
       }
+
+      exportRows = response.data.rows;
     } catch (err) {
       setError(err instanceof Error ? err.message : t("finance.loadError"));
       setIsExporting(false);
@@ -403,10 +396,20 @@ export default function FinanceOrdersPage() {
         @media print {
           @page { margin: 12mm; size: A4 landscape; }
 
+          /* index.css pins html/body to height:100% + overflow:hidden for the
+             app shell. Left alone, that clamps the printed document to a single
+             page and silently drops every row past the first page. */
+          html, body {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+
           /* Hide the app chrome by removing it from layout entirely. Using
              visibility here would leave the hidden boxes occupying space and
              push the report down the page. */
           body > * { display: none !important; }
+          #root { height: auto !important; }
 
           /* The print area is portaled to <body> while printing, so it is a
              direct child and must be re-shown after the blanket rule above. */
