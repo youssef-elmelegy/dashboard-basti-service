@@ -103,6 +103,9 @@ export default function BakeriesPage() {
     regionId: string;
     capacity: number;
     bakeryTypes: BakeryType[];
+    notes?: string;
+    logoUrl?: string;
+    galleryImages?: string[];
   }) => {
     try {
       await addBakery(data);
@@ -128,6 +131,9 @@ export default function BakeriesPage() {
           regionId: data.regionId,
           capacity: data.capacity,
           bakeryTypes: data.types,
+          notes: data.notes,
+          logoUrl: data.logoUrl,
+          galleryImages: data.galleryImages,
         });
         setIsEditOpen(false);
         setSelectedBakery(null);

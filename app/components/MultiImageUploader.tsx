@@ -18,6 +18,12 @@ interface MultiImageUploaderProps {
   maxImages?: number;
   compact?: boolean;
   compactSize?: "sm" | "md" | "lg";
+  /**
+   * Whether an empty selection shows the "image required" warning. Defaults to
+   * true because most callers require at least one image; set false where the
+   * images are genuinely optional (e.g. the bakery gallery).
+   */
+  required?: boolean;
 }
 
 export function MultiImageUploader({
@@ -29,6 +35,7 @@ export function MultiImageUploader({
   maxImages = 5,
   compact = false,
   compactSize = "md",
+  required = true,
 }: MultiImageUploaderProps) {
   const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
@@ -57,23 +64,40 @@ export function MultiImageUploader({
 
   const currentSize = compact ? sizeClasses[compactSize] : null;
 
-  const handleImageUpload = (files: FileList | null) => {
+  const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
 
-    const newImages: string[] = [...images];
-    const remainingSlots = maxImages - newImages.length;
+    const remainingSlots = maxImages - images.length;
+    if (remainingSlots <= 0) return;
 
-    for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
-      const file = files[i];
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          newImages.push(base64String);
-          onImagesChange(newImages);
-        };
-        reader.readAsDataURL(file);
-      }
+    const selected = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, remainingSlots);
+
+    if (selected.length === 0) return;
+
+    // Every file is read to completion before state is updated once. Reading
+    // them in parallel and pushing from each `onloadend` would emit several
+    // updates carrying the same array reference, so React would bail out of
+    // re-rendering and all but one of a multi-file selection would be dropped.
+    try {
+      const encoded = await Promise.all(
+        selected.map(
+          (file) =>
+            new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+
+      onImagesChange([...images, ...encoded]);
+    } catch (error) {
+      // Callers invoke this from DOM handlers without awaiting, so a rejected
+      // read has to be handled here or it becomes an unhandled rejection.
+      console.error("Failed to read selected image(s):", error);
     }
   };
 
@@ -195,7 +219,7 @@ export function MultiImageUploader({
             </label>
           )}
 
-          {images.length === 0 && !compact && (
+          {images.length === 0 && !compact && required && (
             <p className="text-xs text-destructive">
               {t("common.imageRequired")}
             </p>

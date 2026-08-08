@@ -17,18 +17,27 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { BakeryType, Bakery } from "@/lib/services/bakery.service";
+import {
+  BAKERY_GALLERY_MAX_IMAGES,
+  BAKERY_NOTES_MAX_LENGTH,
+  type BakeryType,
+  type Bakery,
+} from "@/lib/services/bakery.service";
+import { useBakeryMedia } from "@/lib/useBakeryMedia";
+import { MultiImageUploader } from "@/components/MultiImageUploader";
+import { SingleImageUploader } from "@/components/SingleImageUploader";
 import { useRegionStore } from "@/stores/regionStore";
 import {
   useBakeryItemStore,
   countItemsWithStock,
 } from "@/stores/bakeryItemStore";
 import { bakeryCarriesStock } from "@/lib/bakeryStock";
-import { bakeryTypeLabel } from "@/lib/bakeryTypes";
+import { bakeryTypeLabel, normaliseBakeryTypes } from "@/lib/bakeryTypes";
 
 // Zod schema for form validation
 const formSchema = z.object({
@@ -50,6 +59,14 @@ const formSchema = z.object({
   bakeryTypes: z
     .array(z.enum(["small_cakes", "big_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
+  // Optional: an empty textarea submits "" and is normalised to null on submit
+  // so the backend clears a note the admin deleted.
+  notes: z
+    .string()
+    .max(BAKERY_NOTES_MAX_LENGTH, {
+      message: `Notes must not exceed ${BAKERY_NOTES_MAX_LENGTH} characters!`,
+    })
+    .optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -71,6 +88,8 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
   const getBakeryTypeLabel = (type: BakeryType): string =>
     bakeryTypeLabel(type, t);
 
+  const media = useBakeryMedia(bakery.logoUrl, bakery.galleryImages);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     mode: "onChange",
@@ -79,12 +98,26 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
       locationDescription: bakery.locationDescription,
       regionId: bakery.regionId,
       capacity: bakery.capacity,
-      bakeryTypes: bakery.types as BakeryType[],
+      // Legacy values are folded onto the current vocabulary and unknown ones
+      // dropped. Without this a bakery stored with an out-of-vocabulary type
+      // (e.g. the legacy `large_cakes`) fails the zod enum, and since the submit
+      // button is gated on `isValid` the form would be impossible to save.
+      bakeryTypes: normaliseBakeryTypes(bakery.types),
+      notes: bakery.notes ?? "",
     },
   });
 
   const selectedTypes = form.watch("bakeryTypes");
   const selectedRegionId = form.watch("regionId");
+
+  // Every field is pre-filled from the existing bakery, but with `mode:
+  // "onChange"` react-hook-form only validates fields as they change, so
+  // `isValid` stays false until the user touches something. The submit button
+  // is gated on `isValid`, which would leave it disabled for an admin who edits
+  // only the notes/logo/gallery — validate the defaults once on mount instead.
+  useEffect(() => {
+    void form.trigger();
+  }, [form]);
 
   // Stock lives only on "others" bakeries, so dropping that type discards it.
   // Loaded once on mount for bakeries that could have stock in the first place.
@@ -143,17 +176,26 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
   // Awaited so react-hook-form keeps `isSubmitting` true for the whole request,
   // which is what disables the submit button against double-clicks.
   const handleSubmit = async (values: FormValues) => {
+    // Uploads run first so the patch carries stored URLs. A failed upload
+    // aborts before the bakery is updated, leaving the saved record untouched.
+    const { logoUrl, galleryImages } = await media.resolveMedia();
+
     await onSubmit({
       name: values.name,
       locationDescription: values.locationDescription,
       regionId: values.regionId,
       capacity: values.capacity,
       types: values.bakeryTypes,
+      // null rather than undefined so clearing a note or removing the logo is
+      // sent as an explicit clear instead of being read as "leave unchanged".
+      notes: values.notes?.trim() ? values.notes.trim() : null,
+      logoUrl: logoUrl ?? null,
+      galleryImages,
     });
   };
 
   return (
-    <SheetContent className="py-6">
+    <SheetContent className="overflow-y-auto py-6">
       <SheetHeader>
         <SheetTitle className="mb-4">
           {t("bakeriesManagement.editBakery")}
@@ -341,14 +383,69 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("bakeriesManagement.notes", {
+                        defaultValue: "Notes (optional)",
+                      })}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={4}
+                        maxLength={BAKERY_NOTES_MAX_LENGTH}
+                        placeholder={t("bakeriesManagement.enterNotes", {
+                          defaultValue:
+                            "Internal notes about this bakery, visible to management only",
+                        })}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <SingleImageUploader
+                label={t("bakeriesManagement.logo", {
+                  defaultValue: "Logo (optional)",
+                })}
+                imageUrl={media.logo}
+                onImageChange={media.setLogo}
+                isLoading={media.isUploading}
+              />
+
+              <MultiImageUploader
+                label={t("bakeriesManagement.gallery", {
+                  defaultValue: "Photo gallery (optional)",
+                })}
+                description={t("bakeriesManagement.galleryDescription", {
+                  count: BAKERY_GALLERY_MAX_IMAGES,
+                  defaultValue: `Up to ${BAKERY_GALLERY_MAX_IMAGES} photos of the bakery`,
+                })}
+                images={media.gallery}
+                onImagesChange={media.setGallery}
+                maxImages={BAKERY_GALLERY_MAX_IMAGES}
+                required={false}
+              />
+
+              {media.uploadError && (
+                <p className="text-sm text-destructive">{media.uploadError}</p>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
                 disabled={
-                  form.formState.isSubmitting || !form.formState.isValid
+                  form.formState.isSubmitting ||
+                  media.isUploading ||
+                  !form.formState.isValid
                 }
               >
-                {form.formState.isSubmitting && (
+                {(form.formState.isSubmitting || media.isUploading) && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 {t("bakeriesManagement.updateBakery")}

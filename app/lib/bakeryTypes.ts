@@ -29,6 +29,34 @@ export function humaniseBakeryType(type: string): string {
   return type.replace(/_/g, " ");
 }
 
+/** The vocabulary the edit/create forms accept. */
+const CURRENT_BAKERY_TYPES = ["small_cakes", "big_cakes", "others"] as const;
+
+export type CurrentBakeryType = (typeof CURRENT_BAKERY_TYPES)[number];
+
+/** Legacy stored values folded onto their current equivalent. */
+const BAKERY_TYPE_ALIASES: Record<string, CurrentBakeryType> = {
+  large_cakes: "big_cakes",
+};
+
+/**
+ * Maps stored bakery types onto the current vocabulary, resolving legacy
+ * aliases and dropping anything unrecognised, then de-duplicating.
+ *
+ * `bakery_types` is untyped jsonb, so records can hold values the forms don't
+ * accept. Seeding a form directly from such a record makes it fail validation
+ * with no way for the user to see or fix why, so normalise on the way in.
+ */
+export function normaliseBakeryTypes(types: string[]): CurrentBakeryType[] {
+  const mapped = types
+    .map((type) => BAKERY_TYPE_ALIASES[type] ?? type)
+    .filter((type): type is CurrentBakeryType =>
+      (CURRENT_BAKERY_TYPES as readonly string[]).includes(type),
+    );
+
+  return [...new Set(mapped)];
+}
+
 /**
  * Resolves a bakery type to a translated label, falling back to the humanised
  * raw value. `t` is passed in so callers keep their own i18n instance.

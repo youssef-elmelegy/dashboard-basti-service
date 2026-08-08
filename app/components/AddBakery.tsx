@@ -18,11 +18,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRegionStore } from "@/stores/regionStore";
-import type { BakeryType } from "@/lib/services/bakery.service";
+import {
+  BAKERY_GALLERY_MAX_IMAGES,
+  BAKERY_NOTES_MAX_LENGTH,
+  type BakeryType,
+} from "@/lib/services/bakery.service";
 import { bakeryTypeLabel } from "@/lib/bakeryTypes";
+import { useBakeryMedia } from "@/lib/useBakeryMedia";
+import { MultiImageUploader } from "@/components/MultiImageUploader";
+import { SingleImageUploader } from "@/components/SingleImageUploader";
 
 const formSchema = z.object({
   name: z
@@ -46,12 +54,25 @@ const formSchema = z.object({
   bakeryTypes: z
     .array(z.enum(["small_cakes", "big_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
+  // Optional: an empty textarea submits "" and is normalised away on submit.
+  notes: z
+    .string()
+    .max(BAKERY_NOTES_MAX_LENGTH, {
+      message: `Notes must not exceed ${BAKERY_NOTES_MAX_LENGTH} characters!`,
+    })
+    .optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
+/** What the parent receives — form fields plus the resolved image URLs. */
+export interface AddBakeryValues extends FormValues {
+  logoUrl?: string;
+  galleryImages?: string[];
+}
+
 interface AddBakeryProps {
-  onSubmit: (data: FormValues) => void | Promise<void>;
+  onSubmit: (data: AddBakeryValues) => void | Promise<void>;
 }
 
 export function AddBakery({ onSubmit }: AddBakeryProps) {
@@ -60,6 +81,8 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
 
   const getBakeryTypeLabel = (type: BakeryType): string =>
     bakeryTypeLabel(type, t);
+
+  const media = useBakeryMedia();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,6 +93,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
       regionId: "",
       capacity: undefined,
       bakeryTypes: [],
+      notes: "",
     },
   });
 
@@ -87,10 +111,23 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
   // which is what disables the submit button against double-clicks.
   const handleSubmit = async (values: FormValues) => {
     try {
-      await onSubmit(values);
+      // Images are uploaded first so the create request carries stored URLs; a
+      // failed upload aborts before the bakery is created rather than leaving
+      // one saved without its images.
+      const { logoUrl, galleryImages } = await media.resolveMedia();
+
+      await onSubmit({
+        ...values,
+        // Trim so a textarea holding only whitespace is treated as unset.
+        notes: values.notes?.trim() ? values.notes.trim() : undefined,
+        logoUrl,
+        galleryImages: galleryImages.length > 0 ? galleryImages : undefined,
+      });
       // Only clear the form once the bakery is actually created — on failure
       // the user keeps what they typed and can retry.
       form.reset();
+      media.setLogo(undefined);
+      media.setGallery([]);
     } catch {
       // The parent logs and surfaces the error; swallowing it here just keeps
       // react-hook-form from treating the rejection as unhandled.
@@ -98,7 +135,7 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
   };
 
   return (
-    <SheetContent className="py-6">
+    <SheetContent className="overflow-y-auto py-6">
       <SheetHeader>
         <SheetTitle className="mb-4">
           {t("bakeriesManagement.addBakery")}
@@ -236,14 +273,69 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("bakeriesManagement.notes", {
+                        defaultValue: "Notes (optional)",
+                      })}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={4}
+                        maxLength={BAKERY_NOTES_MAX_LENGTH}
+                        placeholder={t("bakeriesManagement.enterNotes", {
+                          defaultValue:
+                            "Internal notes about this bakery, visible to management only",
+                        })}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <SingleImageUploader
+                label={t("bakeriesManagement.logo", {
+                  defaultValue: "Logo (optional)",
+                })}
+                imageUrl={media.logo}
+                onImageChange={media.setLogo}
+                isLoading={media.isUploading}
+              />
+
+              <MultiImageUploader
+                label={t("bakeriesManagement.gallery", {
+                  defaultValue: "Photo gallery (optional)",
+                })}
+                description={t("bakeriesManagement.galleryDescription", {
+                  count: BAKERY_GALLERY_MAX_IMAGES,
+                  defaultValue: `Up to ${BAKERY_GALLERY_MAX_IMAGES} photos of the bakery`,
+                })}
+                images={media.gallery}
+                onImagesChange={media.setGallery}
+                maxImages={BAKERY_GALLERY_MAX_IMAGES}
+                required={false}
+              />
+
+              {media.uploadError && (
+                <p className="text-sm text-destructive">{media.uploadError}</p>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
                 disabled={
-                  form.formState.isSubmitting || !form.formState.isValid
+                  form.formState.isSubmitting ||
+                  media.isUploading ||
+                  !form.formState.isValid
                 }
               >
-                {form.formState.isSubmitting && (
+                {(form.formState.isSubmitting || media.isUploading) && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 {t("bakeriesManagement.addBakery")}

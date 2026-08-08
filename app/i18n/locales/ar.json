@@ -722,7 +722,15 @@
     "enterNewStockValue": "أدخل قيمة المخزون الجديدة",
     "invalidStockValue": "يرجى إدخال قيمة مخزون صحيحة (0 أو أعلى)",
     "stockUpdated": "تم تحديث المخزون بنجاح",
-    "updateStockError": "فشل تحديث المخزون"
+    "updateStockError": "فشل تحديث المخزون",
+    "notes": "ملاحظات (اختياري)",
+    "notesLabel": "ملاحظات",
+    "enterNotes": "ملاحظات داخلية عن هذا المخبز، تظهر للإدارة فقط",
+    "logo": "الشعار (اختياري)",
+    "gallery": "معرض الصور (اختياري)",
+    "galleryLabel": "معرض الصور",
+    "galleryDescription": "حتى {{count}} صور للمخبز",
+    "moreDetails": "تفاصيل أكثر"
   },
   "chefs": {
     "title": "الطهاة",

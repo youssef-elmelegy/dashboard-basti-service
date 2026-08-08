@@ -710,7 +710,15 @@
     "enterNewStockValue": "Enter the new stock value",
     "invalidStockValue": "Please enter a valid stock value (0 or higher)",
     "stockUpdated": "Stock updated successfully",
-    "updateStockError": "Failed to update stock"
+    "updateStockError": "Failed to update stock",
+    "notes": "Notes (optional)",
+    "notesLabel": "Notes",
+    "enterNotes": "Internal notes about this bakery, visible to management only",
+    "logo": "Logo (optional)",
+    "gallery": "Photo gallery (optional)",
+    "galleryLabel": "Photo gallery",
+    "galleryDescription": "Up to {{count}} photos of the bakery",
+    "moreDetails": "More details"
   },
   "chefs": {
     "title": "Chefs",

@@ -21,6 +21,16 @@ export const BAKERY_TYPE_COLORS: Record<BakeryType, string> = {
 };
 
 /**
+ * Maximum gallery images a bakery can hold. Mirrors
+ * `BAKERY_GALLERY_MAX_IMAGES` in the backend schema, which is also enforced by
+ * a CHECK constraint — keep both in step.
+ */
+export const BAKERY_GALLERY_MAX_IMAGES = 3;
+
+/** Maximum length of the management-only notes field. Mirrors the backend DTO. */
+export const BAKERY_NOTES_MAX_LENGTH = 2000;
+
+/**
  * Bakery data model
  */
 export interface Bakery {
@@ -30,6 +40,12 @@ export interface Bakery {
   regionId: string;
   capacity: number;
   types: BakeryType[];
+  /** Management-only free-text notes. Null when never set. */
+  notes: string | null;
+  /** Logo icon URL. Null when the bakery has no logo. */
+  logoUrl: string | null;
+  /** Up to BAKERY_GALLERY_MAX_IMAGES image URLs; empty when unset. */
+  galleryImages: string[];
   averageRating: number | null;
   totalReviews: number;
   createdAt: Date;
@@ -45,6 +61,10 @@ export interface CreateBakeryRequest {
   regionId: string;
   capacity: number;
   bakeryTypes: BakeryType[];
+  /** Optional management fields — omit entirely when not set. */
+  notes?: string;
+  logoUrl?: string;
+  galleryImages?: string[];
 }
 
 /**
@@ -56,6 +76,13 @@ export interface UpdateBakeryRequest {
   regionId?: string;
   capacity?: number;
   bakeryTypes?: BakeryType[];
+  /**
+   * Optional management fields. `undefined` leaves the stored value untouched;
+   * an explicit `null` clears notes/logo, and `[]` clears the gallery.
+   */
+  notes?: string | null;
+  logoUrl?: string | null;
+  galleryImages?: string[];
 }
 
 /**
@@ -121,6 +148,11 @@ export const bakeryApi = {
    * - regionId: string (valid UUID)
    * - capacity: number (>= 0)
    * - bakeryTypes: string[] (valid types: big_cakes, small_cakes, others)
+   *
+   * OPTIONAL FIELDS:
+   * - notes: string (management-only, max 2000 chars)
+   * - logoUrl: string (uploaded image URL)
+   * - galleryImages: string[] (uploaded image URLs, max 3)
    */
   create: (bakeryData: CreateBakeryRequest): Promise<ApiResponse<Bakery>> => {
     return apiClient.post<Bakery>("/bakeries", bakeryData);

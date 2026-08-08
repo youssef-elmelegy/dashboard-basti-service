@@ -19,7 +19,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronLeft, MapPin, Package, Plus, Star, User } from "lucide-react";
+import {
+  ChevronLeft,
+  MapPin,
+  Package,
+  Plus,
+  Star,
+  User,
+  Store,
+  StickyNote,
+} from "lucide-react";
 import { buildRegionAddProductPath } from "./utils/regionAddProductLink";
 import { cn } from "@/lib/utils";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
@@ -323,21 +332,38 @@ export default function BakeryDetailPage() {
           {/* Header Card */}
           <Card>
             <CardHeader>
-              {/* Doubles as the page heading — the standalone <h1> above was a
-                  duplicate of this title. */}
-              <h1 className="text-2xl font-semibold leading-none break-words">
-                {bakery.name}
-              </h1>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {bakery.types.map((type) => (
-                  <Badge
-                    key={type}
-                    variant="outline"
-                    className={cn(bakeryTypeColor(type))}
-                  >
-                    {getBakeryTypeLabel(type)}
-                  </Badge>
-                ))}
+              <div className="flex items-start gap-4">
+                {/* Optional logo, with a neutral placeholder so the header
+                    keeps its shape for bakeries that have none. */}
+                {bakery.logoUrl ? (
+                  <img
+                    src={bakery.logoUrl}
+                    alt={bakery.name}
+                    className="w-16 h-16 rounded-lg object-cover border border-border shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Store className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  {/* Doubles as the page heading — the standalone <h1> above was a
+                      duplicate of this title. */}
+                  <h1 className="text-2xl font-semibold leading-none break-words">
+                    {bakery.name}
+                  </h1>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {bakery.types.map((type) => (
+                      <Badge
+                        key={type}
+                        variant="outline"
+                        className={cn(bakeryTypeColor(type))}
+                      >
+                        {getBakeryTypeLabel(type)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -364,6 +390,55 @@ export default function BakeryDetailPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Notes — management-only, shown in full here. `whitespace-pre-wrap`
+                  preserves the line breaks the admin typed. */}
+              {bakery.notes && (
+                <div className="flex items-start gap-2">
+                  <StickyNote className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      {t("bakeriesManagement.notesLabel", {
+                        defaultValue: "Notes",
+                      })}
+                    </p>
+                    {/* Full note, unclamped — this is the page the card's
+                        truncated preview points at. `break-all` so a long note
+                        with no spaces wraps instead of overflowing the card. */}
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-all">
+                      {bakery.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Gallery — omitted entirely when the bakery has no photos */}
+              {bakery.galleryImages && bakery.galleryImages.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">
+                    {t("bakeriesManagement.galleryLabel", {
+                      defaultValue: "Photo gallery",
+                    })}
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {bakery.galleryImages.map((image, index) => (
+                      <a
+                        key={image}
+                        href={image}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <img
+                          src={image}
+                          alt={`${bakery.name} ${index + 1}`}
+                          className="w-full h-28 rounded-lg object-cover border border-border transition-opacity hover:opacity-90"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <Separator className="my-4" />
             </CardContent>

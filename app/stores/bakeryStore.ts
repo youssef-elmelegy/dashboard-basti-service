@@ -41,6 +41,9 @@ interface BakeryState {
     regionId: string;
     capacity: number;
     bakeryTypes: BakeryType[];
+    notes?: string;
+    logoUrl?: string;
+    galleryImages?: string[];
   }) => Promise<void>;
   updateBakery: (
     id: string,
@@ -50,6 +53,9 @@ interface BakeryState {
       regionId?: string;
       capacity?: number;
       bakeryTypes?: BakeryType[];
+      notes?: string | null;
+      logoUrl?: string | null;
+      galleryImages?: string[];
     },
   ) => Promise<void>;
   deleteBakery: (id: string) => Promise<void>;
@@ -161,6 +167,9 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes,
+        notes: bakeryData.notes,
+        logoUrl: bakeryData.logoUrl,
+        galleryImages: bakeryData.galleryImages,
       });
 
       if (response.success && response.data) {
@@ -189,6 +198,9 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes,
+        notes: bakeryData.notes,
+        logoUrl: bakeryData.logoUrl,
+        galleryImages: bakeryData.galleryImages,
       });
 
       if (response.success && response.data) {
