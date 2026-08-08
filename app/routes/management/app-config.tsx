@@ -34,9 +34,10 @@ const formSchema = z.object({
     normal: z.number().int().min(0),
     suger: z.number().int().min(0),
   }),
+  // Gateway rates are fractional percentages (e.g. 1.5), so not .int().
   paymentFee: z.object({
-    masarat: z.number().int().min(0).max(100),
-    tadawul: z.number().int().min(0).max(100),
+    masarat: z.number().min(0).max(100),
+    tadawul: z.number().min(0).max(100),
   }),
   cardPrice: z.number().int().min(0),
   deliveryAmount: z.number().int().min(0),
@@ -80,7 +81,7 @@ export default function AppConfigPage() {
       miniCakePercentage: 10,
       minMiniCakesRequired: 10,
       printingFee: { normal: 10, suger: 20 },
-      paymentFee: { masarat: 1, tadawul: 2 },
+      paymentFee: { masarat: 1, tadawul: 1.5 },
       cardPrice: 15,
       deliveryAmount: 10,
       bastiDeliveryAmount: 0,
@@ -571,9 +572,14 @@ export default function AppConfigPage() {
                           type="number"
                           min="0"
                           max="100"
+                          step="0.01"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(parseInt(e.target.value))
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : parseFloat(e.target.value),
+                            )
                           }
                         />
                       </FormControl>
@@ -596,9 +602,14 @@ export default function AppConfigPage() {
                           type="number"
                           min="0"
                           max="100"
+                          step="0.01"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(parseInt(e.target.value))
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : parseFloat(e.target.value),
+                            )
                           }
                         />
                       </FormControl>

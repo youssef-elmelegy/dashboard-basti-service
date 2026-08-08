@@ -20,17 +20,7 @@ import {
 } from "lucide-react";
 import { EditStockDialog } from "./EditStockDialog";
 import { bakeryCarriesStock } from "@/lib/bakeryStock";
-
-/**
- * Maps stored bakery type values to their translation keys. `large_cakes` is a
- * legacy alias for `big_cakes` still present in older records.
- */
-const BAKERY_TYPE_LABEL_KEYS: Record<string, string> = {
-  small_cakes: "smallCakes",
-  big_cakes: "bigCakes",
-  large_cakes: "bigCakes",
-  others: "othersType",
-};
+import { bakeryTypeLabel } from "@/lib/bakeryTypes";
 
 interface BakeryItemsDisplayProps {
   items: BakeryItemStore[];
@@ -96,11 +86,7 @@ export function BakeryItemsDisplay({
   if (!items || items.length === 0) {
     const carriesStock = bakeryCarriesStock(bakeryTypes);
     const typeLabels = (bakeryTypes ?? [])
-      .map((type) =>
-        t(`bakeriesManagement.${BAKERY_TYPE_LABEL_KEYS[type] ?? type}`, {
-          defaultValue: type.replace(/_/g, " "),
-        }),
-      )
+      .map((type) => bakeryTypeLabel(type, t))
       .filter(Boolean);
 
     return (

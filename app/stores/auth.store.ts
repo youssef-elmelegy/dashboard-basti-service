@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi } from "@/lib/api/auth.api";
 import type { AdminLoginRequest } from "@/lib/api/auth.api";
+import { getApiErrorMessage } from "@/lib/api-client";
 // Loaded on demand rather than imported statically: fcm.service pulls in
 // @/config/firebase, which drags the whole Firebase SDK (~200 KB) into
 // whatever chunk imports it. This store is reachable from the login page via
@@ -14,18 +15,6 @@ import {
   resetLanguageSyncCache,
 } from "@/lib/services/language.service";
 import i18n from "@/i18n/config";
-
-// Utility to extract human-friendly message from unknown errors
-function extractErrorMessage(err: unknown, fallback = "An error occurred") {
-  if (!err) return fallback;
-  if (err instanceof Error) return err.message;
-  if (typeof err === "object" && err !== null) {
-    const e = err as Record<string, unknown>;
-    if (typeof e.message === "string") return e.message;
-    if (Array.isArray(e.details)) return e.details.join("; ");
-  }
-  return fallback;
-}
 
 export interface Admin {
   id: string;
@@ -42,6 +31,13 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  /**
+   * Bumped every time the session is deliberately established or torn down
+   * (login / logout). An in-flight checkAuth compares it against the value it
+   * started with to tell "still the session I was asked about" from "a login
+   * happened while I was waiting", and stays silent in the latter case.
+   */
+  sessionEpoch: number;
 
   // Actions
   login: (credentials: AdminLoginRequest) => Promise<void>;
@@ -69,8 +65,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      sessionEpoch: 0,
 
-      // Helper to extract message from various error shapes
       login: async (credentials: AdminLoginRequest) => {
         set({ isLoading: true, error: null });
         try {
@@ -80,6 +76,9 @@ export const useAuthStore = create<AuthState>()(
               admin: response.data.admin,
               isAuthenticated: true,
               isLoading: false,
+              // Invalidate any checkAuth still in flight from before this
+              // login — its answer predates the session and must not land.
+              sessionEpoch: get().sessionEpoch + 1,
             });
 
             // Register an FCM push token for this admin so the backend can
@@ -94,19 +93,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "Login failed");
           }
         } catch (error) {
-          const extractErrorMessage = (err: unknown, fallback = "Login failed") => {
-            if (!err) return fallback;
-            if (err instanceof Error) return err.message;
-            if (typeof err === "object" && err !== null) {
-              const e = err as Record<string, unknown>;
-              if (typeof e.message === "string") return e.message;
-              if (Array.isArray(e.details)) return e.details.join("; ");
-            }
-            return fallback;
-          };
-
-          const errorMessage = extractErrorMessage(error, "Login failed");
-
+          const errorMessage = getApiErrorMessage(error, "Login failed");
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -132,6 +119,9 @@ export const useAuthStore = create<AuthState>()(
             admin: null,
             isAuthenticated: false,
             isLoading: false,
+            // Same reasoning as login: a checkAuth that started before this
+            // logout must not restore the session it already saw.
+            sessionEpoch: get().sessionEpoch + 1,
           });
         }
       },
@@ -145,7 +135,7 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          const errorMessage = extractErrorMessage(error, "Failed to send OTP");
+          const errorMessage = getApiErrorMessage(error, "Failed to send OTP");
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -161,7 +151,10 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(response.message || "OTP verification failed");
           }
         } catch (error) {
-          const errorMessage = extractErrorMessage(error, "OTP verification failed");
+          const errorMessage = getApiErrorMessage(
+            error,
+            "OTP verification failed",
+          );
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -178,7 +171,10 @@ export const useAuthStore = create<AuthState>()(
           }
           set({ isLoading: false });
         } catch (error) {
-          const errorMessage = extractErrorMessage(error, "Password reset failed");
+          const errorMessage = getApiErrorMessage(
+            error,
+            "Password reset failed",
+          );
           set({ error: errorMessage, isLoading: false });
           throw error;
         }
@@ -186,6 +182,25 @@ export const useAuthStore = create<AuthState>()(
 
       checkAuth: async () => {
         set({ isLoading: true });
+
+        // Snapshot the session generation this probe started from. A probe that
+        // began before a login must not be allowed to publish its (stale)
+        // "logged out" answer over that login's result — see clearIfCurrent.
+        const startedAt = get().sessionEpoch;
+
+        /**
+         * Clear the session only if no login landed while this probe was in
+         * flight. AuthInitializer fires checkAuth on every cold load including
+         * /auth/login, where it 401s because there is no cookie yet. If the
+         * user signs in during that window, the late 401 would otherwise reset
+         * isAuthenticated to false and strand them on the login page with a
+         * perfectly good session.
+         */
+        const clearIfCurrent = () => {
+          if (get().sessionEpoch !== startedAt) return;
+          set({ admin: null, isAuthenticated: false, isLoading: false });
+        };
+
         try {
           const response = await authApi.checkAuth();
           if (
@@ -193,6 +208,13 @@ export const useAuthStore = create<AuthState>()(
             response.data?.isAuthenticated &&
             response.data.admin
           ) {
+            // A logout that landed mid-probe already bumped the epoch; honour
+            // it rather than resurrecting the session this response describes.
+            if (get().sessionEpoch !== startedAt) {
+              set({ isLoading: false });
+              return;
+            }
+
             set({
               admin: response.data.admin,
               isAuthenticated: true,
@@ -204,19 +226,11 @@ export const useAuthStore = create<AuthState>()(
             void fcmService().then((m) => m.registerFcmWithBackend());
             void syncLanguageWithBackend(i18n.language);
           } else {
-            set({
-              admin: null,
-              isAuthenticated: false,
-              isLoading: false,
-            });
+            clearIfCurrent();
           }
         } catch (error) {
           console.error("Auth check error:", error);
-          set({
-            admin: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
+          clearIfCurrent();
         }
       },
 

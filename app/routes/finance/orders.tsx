@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   Download,
@@ -172,6 +173,10 @@ export default function FinanceOrdersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Full unpaginated result set, populated only while exporting to PDF.
+  const [printRows, setPrintRows] = useState<OrderFinancialsRow[] | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
   useEffect(() => {
     fetchBakeries();
   }, [fetchBakeries]);
@@ -240,7 +245,52 @@ export default function FinanceOrdersPage() {
       ? null
       : (bakeries.find((b) => b.id === selectedBakery)?.name ?? null);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    // The screen table is server-paginated, but the export must contain every
+    // order matching the current filters — so fetch the full set first.
+    setIsExporting(true);
+    let exportRows: OrderFinancialsRow[] = [];
+    try {
+      // The API caps `limit` server-side, so walk the pages rather than asking
+      // for everything at once — a single huge limit gets silently truncated.
+      const EXPORT_PAGE_SIZE = 100;
+      for (let p = 1; ; p++) {
+        const response = await orderApi.getFinancials({
+          bakeryId: selectedBakery === "all" ? undefined : selectedBakery,
+          from: debouncedStart || undefined,
+          to: debouncedEnd || undefined,
+          page: p,
+          limit: EXPORT_PAGE_SIZE,
+        });
+
+        if (!response.success || !response.data) {
+          setError(response.message || t("finance.loadError"));
+          setIsExporting(false);
+          return;
+        }
+
+        exportRows = exportRows.concat(response.data.rows);
+
+        const pages = response.data.pagination.totalPages ?? 1;
+        if (p >= pages || response.data.rows.length === 0) break;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("finance.loadError"));
+      setIsExporting(false);
+      return;
+    }
+
+    // Hand off to the effect below: printing has to happen *after* React has
+    // committed these rows to the DOM, otherwise window.print() snapshots the
+    // old (paginated) table.
+    setIsExporting(false);
+    setPrintRows(exportRows);
+  };
+
+  // Fires once printRows lands in the DOM, so the dialog sees the full table.
+  useEffect(() => {
+    if (printRows === null) return;
+
     // Browsers use document.title as the suggested PDF filename when printing.
     // Sanitize anything that breaks filenames on common OSes.
     const sanitize = (s: string) =>
@@ -255,12 +305,18 @@ export default function FinanceOrdersPage() {
     const originalTitle = document.title;
     const restore = () => {
       document.title = originalTitle;
+      setPrintRows(null);
       window.removeEventListener("afterprint", restore);
     };
     window.addEventListener("afterprint", restore);
     document.title = filename;
     window.print();
-  };
+
+    return () => window.removeEventListener("afterprint", restore);
+    // Only re-run when the print payload changes; the filename inputs are read
+    // at print time and must not retrigger the dialog on their own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [printRows]);
 
   const tableHeaders = (
     <TableHeader>
@@ -346,12 +402,21 @@ export default function FinanceOrdersPage() {
       <style>{`
         @media print {
           @page { margin: 12mm; size: A4 landscape; }
-          body > * { visibility: hidden; }
-          .finance-print-area, .finance-print-area * { visibility: visible; }
+
+          /* Hide the app chrome by removing it from layout entirely. Using
+             visibility here would leave the hidden boxes occupying space and
+             push the report down the page. */
+          body > * { display: none !important; }
+
+          /* The print area is portaled to <body> while printing, so it is a
+             direct child and must be re-shown after the blanket rule above. */
+          body > .finance-print-area { display: block !important; }
+
+          /* Must stay in normal flow — a fixed/absolute element is trapped in
+             the first page box and silently truncates the table. */
           .finance-print-area {
-            position: fixed;
-            inset: 0;
-            padding: 16px 20px;
+            position: static !important;
+            padding: 0;
             background: white;
             color: #0f172a;
             font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -360,10 +425,19 @@ export default function FinanceOrdersPage() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+
+          /* shadcn wraps tables in an overflow-x container; overflow also
+             breaks page flow, so neutralize it for print. */
+          .finance-print-area [data-slot="table-container"] {
+            overflow: visible !important;
+            position: static !important;
+          }
+
           .finance-print-area table { border-collapse: collapse; width: 100%; font-size: 11px; }
+          /* Repeat the header on every page and keep the totals last. */
           .finance-print-area thead { display: table-header-group; }
           .finance-print-area tfoot { display: table-footer-group; }
-          .finance-print-area tr { page-break-inside: avoid; }
+          .finance-print-area tr { page-break-inside: avoid; break-inside: avoid; }
           .finance-print-area th, .finance-print-area td {
             border: 1px solid #cbd5e1 !important;
             padding: 6px 8px !important;
@@ -371,8 +445,11 @@ export default function FinanceOrdersPage() {
         }
       `}</style>
 
-      {/* Print-only area: current page only (server-paginated) */}
-      <div className="finance-print-area hidden print:block">
+      {/* Print-only area: every row matching the filters, not just this page.
+          Portaled to <body> so the print CSS can hide app chrome with
+          `body > *` without also hiding this subtree along with its parents. */}
+      {createPortal(
+        <div className="finance-print-area hidden print:block">
         <div className="flex items-end justify-between mb-3 pb-2 border-b-2 border-slate-900">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 leading-tight">
@@ -395,7 +472,7 @@ export default function FinanceOrdersPage() {
         <Table>
           {tableHeaders}
           <TableBody>
-            {rows.length === 0 ? (
+            {(printRows ?? rows).length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={10}
@@ -405,12 +482,14 @@ export default function FinanceOrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              <OrderTableBody rows={rows} />
+              <OrderTableBody rows={printRows ?? rows} />
             )}
           </TableBody>
           {sumFooter}
         </Table>
-      </div>
+        </div>,
+        document.body,
+      )}
 
       {/* Screen UI */}
       <div className="print:hidden h-full flex flex-col gap-6">
@@ -467,10 +546,14 @@ export default function FinanceOrdersPage() {
           <Button
             variant="outline"
             onClick={handleDownload}
-            disabled={isLoading || rows.length === 0}
+            disabled={isLoading || isExporting || rows.length === 0}
             className="gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 ms-auto"
           >
-            <Download className="w-4 h-4" />
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
             {t("finance.download")}
           </Button>
         </div>

@@ -1,7 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
-
-type AdminRole = "super_admin" | "admin" | "manager";
+import type { AdminRole } from "@/lib/permissions";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

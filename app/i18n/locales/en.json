@@ -211,6 +211,7 @@
       "verifyFailed": "Failed to verify code. Please try again.",
       "resendQuestion": "Didn't receive the code?",
       "resendButton": "Resend",
+      "resending": "Resending...",
       "resendFailed": "Failed to resend code. Please try again.",
       "resendEmailMissing": "Email is missing. Please go back and try again."
     },
@@ -1338,6 +1339,8 @@
     "connectedItems": "Connected Items",
     "itemsConnected": "{{count}} item connected",
     "itemsConnected_other": "{{count}} items connected",
+    "itemsSelected": "{{count}} item selected",
+    "itemsSelected_other": "{{count}} items selected",
     "notConnected": "Not connected",
     "assignToItem": "Assign / remove from item",
     "assignTitle": "Assign Offer to Item",

@@ -3,11 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  BAKERY_TYPE_COLORS,
-  type Bakery,
-  type BakeryType,
-} from "@/lib/services/bakery.service";
+import { type Bakery, type BakeryType } from "@/lib/services/bakery.service";
+import { bakeryTypeColor, bakeryTypeLabel } from "@/lib/bakeryTypes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,15 +22,6 @@ interface BakeryCardProps {
 export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-
-  const getBakeryTypeLabel = (type: BakeryType): string => {
-    const typeMap: Record<BakeryType, string> = {
-      small_cakes: "smallCakes",
-      big_cakes: "bigCakes",
-      others: "othersType",
-    };
-    return t(`bakeriesManagement.${typeMap[type]}`);
-  };
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on the dropdown menu
@@ -128,9 +116,9 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
               <Badge
                 key={type}
                 variant="outline"
-                className={cn("text-xs", BAKERY_TYPE_COLORS[type])}
+                className={cn("text-xs", bakeryTypeColor(type))}
               >
-                {getBakeryTypeLabel(type)}
+                {bakeryTypeLabel(type, t)}
               </Badge>
             ))
           ) : (

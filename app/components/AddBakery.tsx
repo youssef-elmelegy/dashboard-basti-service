@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRegionStore } from "@/stores/regionStore";
 import type { BakeryType } from "@/lib/services/bakery.service";
+import { bakeryTypeLabel } from "@/lib/bakeryTypes";
 
 const formSchema = z.object({
   name: z
@@ -57,14 +58,8 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
   const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
 
-  const getBakeryTypeLabel = (type: BakeryType): string => {
-    const typeMap: Record<BakeryType, string> = {
-      small_cakes: "smallCakes",
-      big_cakes: "bigCakes",
-      others: "othersType",
-    };
-    return t(`bakeriesManagement.${typeMap[type]}`);
-  };
+  const getBakeryTypeLabel = (type: BakeryType): string =>
+    bakeryTypeLabel(type, t);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

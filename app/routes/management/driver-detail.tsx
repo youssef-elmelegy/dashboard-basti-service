@@ -37,6 +37,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDriverStore } from "@/stores/driverStore";
+import { useCan } from "@/hooks/useAuth";
 import { useRegionStore } from "@/stores/regionStore";
 import { cn } from "@/lib/utils";
 
@@ -93,6 +94,7 @@ export default function DriverDetailPage() {
   const [reportsPage, setReportsPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const canWriteDrivers = useCan("writeDrivers");
   const [isEditingDue, setIsEditingDue] = useState(false);
   const [dueInput, setDueInput] = useState("");
   const [savingDue, setSavingDue] = useState(false);
@@ -275,13 +277,16 @@ export default function DriverDetailPage() {
             ) : (
               <div className="flex items-center gap-2">
                 <p className="font-medium">{Number(driver.dueAmount ?? 0).toFixed(2)}</p>
-                <button
-                  onClick={startEditDue}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
-                  title={t("drivers.editDueAmount")}
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {/* PATCH :id/due-amount is super_admin-only; others read it. */}
+                {canWriteDrivers && (
+                  <button
+                    onClick={startEditDue}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    title={t("drivers.editDueAmount")}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )}
           </div>

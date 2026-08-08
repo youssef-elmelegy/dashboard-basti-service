@@ -28,6 +28,7 @@ import {
   countItemsWithStock,
 } from "@/stores/bakeryItemStore";
 import { bakeryCarriesStock } from "@/lib/bakeryStock";
+import { bakeryTypeLabel } from "@/lib/bakeryTypes";
 
 // Zod schema for form validation
 const formSchema = z.object({
@@ -67,14 +68,8 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
   const { t } = useTranslation();
   const regions = useRegionStore((state) => state.regions);
 
-  const getBakeryTypeLabel = (type: BakeryType): string => {
-    const typeMap: Record<BakeryType, string> = {
-      small_cakes: "smallCakes",
-      big_cakes: "bigCakes",
-      others: "othersType",
-    };
-    return t(`bakeriesManagement.${typeMap[type]}`);
-  };
+  const getBakeryTypeLabel = (type: BakeryType): string =>
+    bakeryTypeLabel(type, t);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

@@ -120,7 +120,7 @@ export const bakeryApi = {
    * - locationDescription: string (min 5 chars)
    * - regionId: string (valid UUID)
    * - capacity: number (>= 0)
-   * - bakeryTypes: string[] (valid types: basket_cakes, midume, small_cakes, large_cakes, custom)
+   * - bakeryTypes: string[] (valid types: big_cakes, small_cakes, others)
    */
   create: (bakeryData: CreateBakeryRequest): Promise<ApiResponse<Bakery>> => {
     return apiClient.post<Bakery>("/bakeries", bakeryData);

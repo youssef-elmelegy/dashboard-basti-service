@@ -23,7 +23,7 @@ import {
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import logoSvg from "@/assets/logo.svg";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useCan } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +40,7 @@ import {
 const AppSidebar = () => {
   const { i18n, t } = useTranslation();
   const { canViewAllContent, admin, isManager } = useAuth();
+  const canManageAdmins = useCan("manageAdmins");
   const isRTL = i18n.language === "ar";
   const showManagerOrders = isManager() && admin?.bakeryId;
 
@@ -65,11 +66,17 @@ const AppSidebar = () => {
       url: "/management/bakeries",
       icon: Building2,
     },
-    {
-      title: t("sidebar.admins"),
-      url: "/management/admins",
-      icon: Users,
-    },
+    // Admins is super_admin-only all the way down to the list endpoint, so for
+    // anyone else the link is dropped rather than rendered into a 403.
+    ...(canManageAdmins
+      ? [
+          {
+            title: t("sidebar.admins"),
+            url: "/management/admins",
+            icon: Users,
+          },
+        ]
+      : []),
     {
       title: t("sidebar.chefs"),
       url: "/management/chefs",

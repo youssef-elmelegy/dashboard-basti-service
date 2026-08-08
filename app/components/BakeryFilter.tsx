@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import { bakeryTypeLabel } from "@/lib/bakeryTypes";
 
 interface Region {
   id: string;
@@ -17,13 +18,6 @@ interface BakeryFilterProps {
   onTypeToggle: (type: string) => void;
 }
 
-// Maps a bakery type value to its translation key under `bakeriesManagement`.
-const BAKERY_TYPE_LABEL_KEYS: Record<string, string> = {
-  small_cakes: "smallCakes",
-  big_cakes: "bigCakes",
-  others: "othersType",
-};
-
 export function BakeryFilter({
   availableRegions,
   availableTypes,
@@ -35,12 +29,7 @@ export function BakeryFilter({
   const { t } = useTranslation();
   const hasActiveFilters = selectedRegion !== "all" || selectedTypes.length > 0;
 
-  const getTypeLabel = (type: string) => {
-    const labelKey = BAKERY_TYPE_LABEL_KEYS[type];
-    return labelKey
-      ? t(`bakeriesManagement.${labelKey}`)
-      : type.replace(/_/g, " ");
-  };
+  const getTypeLabel = (type: string) => bakeryTypeLabel(type, t);
 
   const handleClearFilters = () => {
     onRegionChange("all");

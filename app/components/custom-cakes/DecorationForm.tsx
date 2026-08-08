@@ -129,7 +129,10 @@ export function DecorationForm({
           title: decoration?.title || "",
           description: decoration?.description || "",
           decorationUrl: decoration?.decorationUrl || "",
-          tagId: undefined,
+          // Must mirror the record in edit mode — hardcoding undefined here
+          // dropped the existing tag, so the picker opened on the placeholder
+          // and a save silently cleared it.
+          tagId: decoration?.tagId,
           capacity: decoration?.capacity || 0,
           minPrepHours: decoration?.minPrepHours,
           variantImages: [],

@@ -4,16 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import logoSvg from "@/assets/logo.svg";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthErrorBanner } from "@/components/auth/AuthErrorBanner";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiErrorMessage } from "@/lib/api-client";
 import { useTranslation } from "react-i18next";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetPassword, isLoading, error } = useAuth();
+  const { resetPassword, isLoading, error, clearError } = useAuth();
   const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,9 +32,22 @@ export default function ResetPasswordPage() {
   // can avoid showing a form that is guaranteed to fail.
   const otpVerified = locationState?.otpVerified === true;
 
+  // A failed attempt leaves its message on the store, which outlives this
+  // screen. Clear it on mount so an error from an earlier auth step doesn't
+  // greet the user on arrival.
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const dismissError = () => {
+    setLocalError(null);
+    clearError();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    clearError();
 
     if (!newPassword || !confirmPassword) {
       setLocalError(t("auth.resetPassword.fillAllFields"));
@@ -54,8 +69,10 @@ export default function ResetPasswordPage() {
       // httpOnly cookie, and the server clears it once the reset succeeds.
       await resetPassword(newPassword);
       navigate("/auth/login");
-    } catch {
-      setLocalError(error || t("auth.resetPassword.resetFailed"));
+    } catch (err) {
+      setLocalError(
+        getApiErrorMessage(err, t("auth.resetPassword.resetFailed")),
+      );
     }
   };
 
@@ -99,9 +116,10 @@ export default function ResetPasswordPage() {
                 </div>
 
                 {(localError || error) && (
-                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                    {localError || error}
-                  </div>
+                  <AuthErrorBanner
+                    message={(localError || error) as string}
+                    onDismiss={dismissError}
+                  />
                 )}
 
                 <Field>

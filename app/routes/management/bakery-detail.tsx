@@ -24,10 +24,8 @@ import { buildRegionAddProductPath } from "./utils/regionAddProductLink";
 import { cn } from "@/lib/utils";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
 import { bakeryCarriesStock } from "@/lib/bakeryStock";
-import {
-  BAKERY_TYPE_COLORS,
-  type BakeryItemStore,
-} from "@/lib/services/bakery.service";
+import { type BakeryItemStore } from "@/lib/services/bakery.service";
+import { bakeryTypeColor, bakeryTypeLabel } from "@/lib/bakeryTypes";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Stable reference so the selector doesn't return a fresh array each render
@@ -277,17 +275,7 @@ export default function BakeryDetailPage() {
     );
   }
 
-  const getBakeryTypeLabel = (type: string): string => {
-    const typeMap: Record<string, string> = {
-      small_cakes: "smallCakes",
-      big_cakes: "bigCakes",
-      large_cakes: "bigCakes",
-      others: "othersType",
-    };
-    return t(`bakeriesManagement.${typeMap[type] || type}`, {
-      defaultValue: type,
-    });
-  };
+  const getBakeryTypeLabel = (type: string): string => bakeryTypeLabel(type, t);
 
   return (
     // The two-pane split with independently scrolling columns only applies from
@@ -345,10 +333,7 @@ export default function BakeryDetailPage() {
                   <Badge
                     key={type}
                     variant="outline"
-                    className={cn(
-                      BAKERY_TYPE_COLORS[type as keyof typeof BAKERY_TYPE_COLORS] ||
-                        BAKERY_TYPE_COLORS.big_cakes
-                    )}
+                    className={cn(bakeryTypeColor(type))}
                   >
                     {getBakeryTypeLabel(type)}
                   </Badge>

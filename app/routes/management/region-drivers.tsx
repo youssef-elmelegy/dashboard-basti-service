@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AddDriver from "@/components/AddDriver";
+import { useCan } from "@/hooks/useAuth";
 import EditDriver from "@/components/EditDriver";
 import { useDriverStore } from "@/stores/driverStore";
 import { useRegionStore } from "@/stores/regionStore";
@@ -74,6 +75,7 @@ export default function RegionDriversPage() {
   const fetchRegionById = useRegionStore((s) => s.fetchRegionById);
 
   const { openDeleteDialog } = useDeleteDialog();
+  const canWriteDrivers = useCan("writeDrivers");
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -173,37 +175,43 @@ export default function RegionDriversPage() {
     setIsEditOpen(true);
   };
 
-  const actionButtons = (driver: Driver) => (
-    <div className="flex gap-2 justify-end">
-      <button
-        onClick={() => handleEdit(driver)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        title={t("drivers.editDriver")}
-      >
-        <Edit2 className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => handleBlock(driver)}
-        className={`p-2 rounded-lg transition-colors ${
-          driver.isBlocked ? "hover:bg-green-100" : "hover:bg-red-100"
-        }`}
-        title={driver.isBlocked ? t("drivers.unblock") : t("drivers.block")}
-      >
-        {driver.isBlocked ? (
-          <LockOpen className="w-4 h-4 text-green-600" />
-        ) : (
-          <Lock className="w-4 h-4 text-red-600" />
-        )}
-      </button>
-      <button
-        onClick={() => handleDelete(driver)}
-        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-        title={t("drivers.deleteDriver")}
-      >
-        <Trash2 className="w-4 h-4 text-red-600" />
-      </button>
-    </div>
-  );
+  // Driver reads are open to admin, but every mutation (create/edit/block/
+  // delete) is super_admin-only server-side — so the row actions collapse to
+  // nothing rather than offering buttons that would come back 403.
+  const actionButtons = (driver: Driver) => {
+    if (!canWriteDrivers) return null;
+    return (
+      <div className="flex gap-2 justify-end">
+        <button
+          onClick={() => handleEdit(driver)}
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          title={t("drivers.editDriver")}
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleBlock(driver)}
+          className={`p-2 rounded-lg transition-colors ${
+            driver.isBlocked ? "hover:bg-green-100" : "hover:bg-red-100"
+          }`}
+          title={driver.isBlocked ? t("drivers.unblock") : t("drivers.block")}
+        >
+          {driver.isBlocked ? (
+            <LockOpen className="w-4 h-4 text-green-600" />
+          ) : (
+            <Lock className="w-4 h-4 text-red-600" />
+          )}
+        </button>
+        <button
+          onClick={() => handleDelete(driver)}
+          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+          title={t("drivers.deleteDriver")}
+        >
+          <Trash2 className="w-4 h-4 text-red-600" />
+        </button>
+      </div>
+    );
+  };
 
   const align = "text-start";
 
@@ -235,15 +243,17 @@ export default function RegionDriversPage() {
             {t("drivers.title")}
             {currentRegion?.name ? ` — ${currentRegion.name}` : ""}
           </h1>
-          <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <SheetTrigger asChild>
-              <Button className="gap-2" disabled={isLoading}>
-                <Plus className="w-4 h-4" />
-                {t("drivers.addDriver")}
-              </Button>
-            </SheetTrigger>
-            <AddDriver regionId={regionId} onSubmit={handleAddDriver} />
-          </Sheet>
+          {canWriteDrivers && (
+            <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+              <SheetTrigger asChild>
+                <Button className="gap-2" disabled={isLoading}>
+                  <Plus className="w-4 h-4" />
+                  {t("drivers.addDriver")}
+                </Button>
+              </SheetTrigger>
+              <AddDriver regionId={regionId} onSubmit={handleAddDriver} />
+            </Sheet>
+          )}
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2 max-w-md">
@@ -289,19 +299,24 @@ export default function RegionDriversPage() {
               <span className="text-3xl">🚚</span>
             </EmptyMedia>
             <EmptyTitle>{t("drivers.noDrivers")}</EmptyTitle>
-            <EmptyDescription>{t("drivers.startCreating")}</EmptyDescription>
+            {/* "Start by creating one" is only true for someone who can. */}
+            {canWriteDrivers && (
+              <EmptyDescription>{t("drivers.startCreating")}</EmptyDescription>
+            )}
           </EmptyHeader>
-          <EmptyContent>
-            <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <SheetTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  {t("drivers.createDriver")}
-                </Button>
-              </SheetTrigger>
-              <AddDriver regionId={regionId} onSubmit={handleAddDriver} />
-            </Sheet>
-          </EmptyContent>
+          {canWriteDrivers && (
+            <EmptyContent>
+              <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <SheetTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    {t("drivers.createDriver")}
+                  </Button>
+                </SheetTrigger>
+                <AddDriver regionId={regionId} onSubmit={handleAddDriver} />
+              </Sheet>
+            </EmptyContent>
+          )}
         </Empty>
       ) : (
         <>
@@ -315,9 +330,11 @@ export default function RegionDriversPage() {
                   <TableHead className={align}>{t("driverTable.phone")}</TableHead>
                   <TableHead className={align}>{t("driverTable.dueAmount")}</TableHead>
                   <TableHead className={align}>{t("driverTable.status")}</TableHead>
-                  <TableHead className="text-end">
-                    {t("driverTable.actions")}
-                  </TableHead>
+                  {canWriteDrivers && (
+                    <TableHead className="text-end">
+                      {t("driverTable.actions")}
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -360,7 +377,11 @@ export default function RegionDriversPage() {
                           : t("driverTable.active")}
                       </span>
                     </TableCell>
-                    <TableCell className="text-end">{actionButtons(driver)}</TableCell>
+                    {canWriteDrivers && (
+                      <TableCell className="text-end">
+                        {actionButtons(driver)}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

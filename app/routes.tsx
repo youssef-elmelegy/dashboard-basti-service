@@ -4,6 +4,7 @@ import Root from "@/root";
 import NotFoundPage from "@/routes/not-found";
 import LoginPage from "@/routes/auth/login";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
+import { rolesFor, type Capability } from "@/lib/permissions";
 import RouteErrorBoundary from "@/components/ErrorFallback";
 
 const ManagerDashboard = lazy(() => import("@/routes/manager-dashboard"));
@@ -74,6 +75,27 @@ const withErrorBoundary = (routes: RouteObject[]): RouteObject[] =>
     ...route,
     element: <Suspense fallback={<RouteFallback />}>{route.element}</Suspense>,
     errorElement: <RouteErrorBoundary />,
+  }));
+
+/**
+ * Wrap a group of routes in a role guard.
+ *
+ * The sidebar already hides links a role cannot use, but that only removes the
+ * entry point — the URLs stayed reachable by typing, a bookmark, or an in-app
+ * button pointing somewhere the user can't go. Guarding here means the page
+ * never mounts and never fires the request it would be rejected for.
+ */
+const restrictTo = (
+  capability: Capability,
+  routes: RouteObject[],
+): RouteObject[] =>
+  routes.map((route) => ({
+    ...route,
+    element: (
+      <ProtectedRoute requiredRole={[...rolesFor(capability)]}>
+        {route.element}
+      </ProtectedRoute>
+    ),
   }));
 
 export const router = createBrowserRouter([
@@ -194,37 +216,49 @@ export const router = createBrowserRouter([
         path: "payments",
         element: <PaymentsPage />,
       },
-      {
-        path: "management/regions",
-        element: <RegionsPage />,
-      },
-      {
-        path: "management/regions/:id",
-        element: <RegionDetailPage />,
-      },
-      {
-        path: "management/regions/:id/drivers",
-        element: <RegionDriversPage />,
-      },
-      {
-        path: "management/regions/:id/drivers/:driverId",
-        element: <DriverDetailPage />,
-      },
-      {
-        path: "management/bakeries",
-        element: <BakeriesPage />,
-      },
-      {
-        path: "management/bakeries/:id",
-        element: <BakeryDetailPage />,
-      },
-      {
-        path: "management/chefs",
-        element: <ChefsPage />,
-      },
+      // Cross-bakery administration: a bakery manager is scoped to their own
+      // bakery and has no business in these, so they redirect home instead of
+      // rendering a full list of every bakery/region/chef.
+      ...restrictTo("viewAllContent", [
+        {
+          path: "management/regions",
+          element: <RegionsPage />,
+        },
+        {
+          path: "management/regions/:id",
+          element: <RegionDetailPage />,
+        },
+        {
+          path: "management/regions/:id/drivers",
+          element: <RegionDriversPage />,
+        },
+        {
+          path: "management/regions/:id/drivers/:driverId",
+          element: <DriverDetailPage />,
+        },
+        {
+          path: "management/bakeries",
+          element: <BakeriesPage />,
+        },
+        {
+          path: "management/bakeries/:id",
+          element: <BakeryDetailPage />,
+        },
+        {
+          path: "management/chefs",
+          element: <ChefsPage />,
+        },
+      ]),
       {
         path: "management/admins",
-        element: <AdminsPage />,
+        // Guarded to match the backend: every admins endpoint, including the
+        // list, is super_admin-only. Anyone else reaching this by URL is sent
+        // home instead of shown a 403 on an empty table.
+        element: (
+          <ProtectedRoute requiredRole={[...rolesFor("manageAdmins")]}>
+            <AdminsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "management/slider-images",

@@ -499,10 +499,9 @@ export default function AssignOfferDialog({
                     )}
                     {selectedItemIds.size > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedItemIds.size}{" "}
-                        {selectedItemIds.size === 1
-                          ? t("offers.itemSelected") || "item selected"
-                          : t("offers.itemsSelected") || "items selected"}
+                        {t("offers.itemsSelected", {
+                          count: selectedItemIds.size,
+                        })}
                       </p>
                     )}
                   </div>

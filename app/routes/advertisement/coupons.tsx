@@ -54,7 +54,6 @@ export default function CouponsPage() {
   const deleteCoupon = useCouponStore((s) => s.deleteCoupon);
   const clearError = useCouponStore((s) => s.clearError);
 
-  const regions = useRegionStore((s) => s.regions);
   const fetchRegions = useRegionStore((s) => s.fetchRegions);
 
   const { openDeleteDialog } = useDeleteDialog();
@@ -140,8 +139,7 @@ export default function CouponsPage() {
 
   const regionName = (coupon: Coupon) => {
     if (coupon.isGlobal) return t("coupons.global");
-    if (!coupon.regionId) return "—";
-    return regions.find((r) => r.id === coupon.regionId)?.name ?? "—";
+    return coupon.regionName ?? "—";
   };
 
   return (
@@ -156,6 +154,7 @@ export default function CouponsPage() {
             </Button>
           </SheetTrigger>
           <CouponForm
+            key={isAddOpen ? "add-open" : "add-closed"}
             mode="add"
             isSaving={isSaving}
             onSubmit={handleAdd}
@@ -204,6 +203,7 @@ export default function CouponsPage() {
                 </Button>
               </SheetTrigger>
               <CouponForm
+                key={isAddOpen ? "add-open" : "add-closed"}
                 mode="add"
                 isSaving={isSaving}
                 onSubmit={handleAdd}
@@ -323,7 +323,10 @@ export default function CouponsPage() {
 
       <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
         {editingCoupon && (
+          // Keyed so switching coupons remounts the form; useForm only reads
+          // defaultValues on mount, so without this it keeps the prior coupon.
           <CouponForm
+            key={editingCoupon.id}
             mode="edit"
             initial={editingCoupon}
             isSaving={isSaving}

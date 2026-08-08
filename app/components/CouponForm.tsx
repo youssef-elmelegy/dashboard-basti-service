@@ -38,10 +38,12 @@ import {
 
 const formSchema = z
   .object({
+    // Generated codes are 6 chars, but hand-written and legacy codes vary in
+    // length — pinning this to exactly 6 makes existing coupons uneditable.
     code: z
       .string()
-      .regex(/^[A-Z0-9]{6}$/, {
-        message: "Code must be exactly 6 uppercase letters or digits",
+      .regex(/^[A-Z0-9]{4,12}$/, {
+        message: "Code must be 4-12 uppercase letters or digits",
       }),
     name: z
       .string()
@@ -49,7 +51,7 @@ const formSchema = z
       .max(150, { message: "Name must not exceed 150 characters" }),
     discountType: z.enum(["percentage", "fixed_amount", "free_shipping"]),
     discountValue: z.coerce
-      .number({ message: "Discount value must be a number" })
+      .number({ message: "Discount value is required" })
       .min(0, { message: "Discount value must be 0 or greater" }),
     minOrderValue: z.coerce
       .number({ message: "Minimum order value must be a number" })
@@ -57,14 +59,17 @@ const formSchema = z
       .optional(),
     startDate: z.string().optional(),
     expiryDate: z.string().optional(),
+    // Left empty in the UI these mean "no limit"; normalized to 0 on submit.
     usageLimitGlobal: z.coerce
       .number({ message: "Global usage limit must be a number" })
       .int()
-      .min(0, { message: "Must be 0 or greater" }),
+      .min(0, { message: "Must be 0 or greater" })
+      .optional(),
     usageLimitPerUser: z.coerce
       .number({ message: "Per-user usage limit must be a number" })
       .int()
-      .min(0, { message: "Must be 0 or greater" }),
+      .min(0, { message: "Must be 0 or greater" })
+      .optional(),
     isGlobal: z.boolean(),
     isActive: z.boolean(),
     regionId: z.string().optional(),
@@ -154,12 +159,12 @@ export default function CouponForm({
           code: "",
           name: "",
           discountType: "percentage",
-          discountValue: 0,
+          discountValue: undefined,
           minOrderValue: undefined,
           startDate: "",
           expiryDate: "",
-          usageLimitGlobal: 0,
-          usageLimitPerUser: 0,
+          usageLimitGlobal: undefined,
+          usageLimitPerUser: undefined,
           isGlobal: true,
           isActive: true,
           regionId: undefined,
@@ -178,8 +183,8 @@ export default function CouponForm({
       minOrderValue: values.minOrderValue ?? 0,
       startDate: values.startDate || undefined,
       expiryDate: values.expiryDate || undefined,
-      usageLimitGlobal: values.usageLimitGlobal,
-      usageLimitPerUser: values.usageLimitPerUser,
+      usageLimitGlobal: values.usageLimitGlobal ?? 0,
+      usageLimitPerUser: values.usageLimitPerUser ?? 0,
       isGlobal: values.isGlobal,
       isActive: values.isActive,
       regionId: values.isGlobal ? undefined : values.regionId,
@@ -211,13 +216,13 @@ export default function CouponForm({
                           placeholder={t("coupons.codePlaceholder")}
                           {...field}
                           disabled={mode === "edit"}
-                          maxLength={6}
+                          maxLength={12}
                           className="pe-10 font-mono uppercase tracking-widest"
                           onChange={(e) => {
                             const next = e.target.value
                               .toUpperCase()
                               .replace(/[^A-Z0-9]/g, "")
-                              .slice(0, 6);
+                              .slice(0, 12);
                             field.onChange(next);
                           }}
                         />
@@ -304,12 +309,13 @@ export default function CouponForm({
                           type="number"
                           step="0.01"
                           min={0}
+                          placeholder="0"
                           {...field}
                           value={field.value ?? ""}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value === ""
-                                ? 0
+                                ? undefined
                                 : parseFloat(e.target.value),
                             )
                           }
@@ -390,12 +396,13 @@ export default function CouponForm({
                         <Input
                           type="number"
                           min={0}
+                          placeholder="0"
                           {...field}
-                          value={field.value ?? 0}
+                          value={field.value ?? ""}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value === ""
-                                ? 0
+                                ? undefined
                                 : parseInt(e.target.value, 10),
                             )
                           }
@@ -416,12 +423,13 @@ export default function CouponForm({
                         <Input
                           type="number"
                           min={0}
+                          placeholder="0"
                           {...field}
-                          value={field.value ?? 0}
+                          value={field.value ?? ""}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value === ""
-                                ? 0
+                                ? undefined
                                 : parseInt(e.target.value, 10),
                             )
                           }

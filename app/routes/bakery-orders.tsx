@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createPortal } from "react-dom";
 import { useBakeryStore } from "@/stores/bakeryStore";
+import { useAuth } from "@/hooks/useAuth";
 import { useOrderStore } from "@/stores/orderStore";
 import { useBakeryCompletedOrdersStore } from "@/stores/bakeryCompletedOrdersStore";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
@@ -659,6 +660,8 @@ export default function BakeryOrdersPage() {
   const location = useLocation();
   const { t } = useTranslation();
   const currentBakery = useBakeryStore((state) => state.currentBakery);
+  const isBakeryLoading = useBakeryStore((state) => state.isLoading);
+  const { canViewAllContent } = useAuth();
   const getBakeryById = useBakeryStore((state) => state.getBakeryById);
   const setBakeryOrders = useBakeryStore((state) => state.setBakeryOrders);
   const updateOrder = useOrderStore((state) => state.updateOrder);
@@ -907,7 +910,10 @@ export default function BakeryOrdersPage() {
     fetchBakeryOrders();
   }, [id, page, typeFilter, sortDir, debouncedSearch]);
 
-  const bakery = currentBakery;
+  // Only treat the stored bakery as ours once its id matches the route — the
+  // store is shared, so a bakery left behind by a previous page would
+  // otherwise render here under the wrong id. Matches the sibling pages.
+  const bakery = currentBakery && currentBakery.id === id ? currentBakery : null;
   const selectedOrder = bakeryOrders.find((o) => o.id === selectedOrderId);
 
   // Calculate capacity
@@ -1184,14 +1190,30 @@ export default function BakeryOrdersPage() {
     handleConfirm,
   ]);
 
+  // The bakery arrives asynchronously, so "not found" is only true once the
+  // fetch has actually settled. Rendering it while the request is still in
+  // flight showed every manager "Bakery Not Found" on each page load.
   if (!bakery) {
+    if (isBakeryLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <h1 className="text-2xl font-bold">{t("bakeries.bakeryNotFound")}</h1>
-        <Button onClick={() => navigate("/management/bakeries")}>
-          <ChevronLeft className="w-4 h-4 me-2" />
-          {t("bakeries.backToBakeries")}
-        </Button>
+        {/* Managers have no access to the bakeries list, so sending them there
+            just swaps one dead end for a redirect. Only staff who can open it
+            get the link. */}
+        {canViewAllContent() && (
+          <Button onClick={() => navigate("/management/bakeries")}>
+            <ChevronLeft className="w-4 h-4 me-2" />
+            {t("bakeries.backToBakeries")}
+          </Button>
+        )}
       </div>
     );
   }

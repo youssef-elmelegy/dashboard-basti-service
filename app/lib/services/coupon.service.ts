@@ -23,6 +23,7 @@ export interface Coupon {
   isGlobal: boolean;
   isActive: boolean;
   regionId?: string | null;
+  regionName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

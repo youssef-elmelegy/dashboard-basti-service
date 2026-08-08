@@ -211,6 +211,7 @@
       "verifyFailed": "فشل التحقق من الرمز. يرجى المحاولة مرة أخرى.",
       "resendQuestion": "لم تتلق الرمز؟",
       "resendButton": "إعادة الإرسال",
+      "resending": "جاري إعادة الإرسال...",
       "resendFailed": "فشل إعادة إرسال الرمز. يرجى المحاولة مرة أخرى.",
       "resendEmailMissing": "البريد الإلكتروني مفقود. يرجى العودة والمحاولة مرة أخرى."
     },
@@ -1350,6 +1351,8 @@
     "connectedItems": "العناصر المرتبطة",
     "itemsConnected": "{{count}} عنصر مرتبط",
     "itemsConnected_other": "{{count}} عناصر مرتبطة",
+    "itemsSelected": "{{count}} عنصر محدد",
+    "itemsSelected_other": "{{count}} عناصر محددة",
     "notConnected": "غير مرتبط",
     "assignToItem": "تعيين / إزالة من عنصر",
     "assignTitle": "تعيين العرض على عنصر",

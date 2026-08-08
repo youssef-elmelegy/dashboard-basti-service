@@ -16,15 +16,17 @@ import {
 import logoSvg from "@/assets/logo.svg";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthErrorBanner } from "@/components/auth/AuthErrorBanner";
 import { authApi } from "@/lib/api/auth.api";
+import { getApiErrorMessage } from "@/lib/api-client";
 import { useTranslation } from "react-i18next";
 
 export default function OTPPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoading, error } = useAuth();
+  const { isLoading, error, clearError } = useAuth();
   const { t } = useTranslation();
   const [otp, setOtp] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -32,9 +34,22 @@ export default function OTPPage() {
   const [localResending, setLocalResending] = useState(false);
   const email = (location.state as { email: string } | null)?.email || "";
 
+  // A failed attempt leaves its message on the store, which outlives this
+  // screen. Clear it on mount so an error from an earlier auth step doesn't
+  // greet the user on arrival.
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const dismissError = () => {
+    setLocalError(null);
+    clearError();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    clearError();
 
     if (otp.length !== 6) {
       setLocalError(t("auth.otp.invalidCode"));
@@ -57,8 +72,7 @@ export default function OTPPage() {
         setLocalError(response.message || t("auth.otp.verifyFailed"));
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : null;
-      setLocalError(errMsg || error || t("auth.otp.verifyFailed"));
+      setLocalError(getApiErrorMessage(err, t("auth.otp.verifyFailed")));
     } finally {
       setLocalVerifying(false);
     }
@@ -66,6 +80,7 @@ export default function OTPPage() {
 
   const handleResend = async () => {
     setLocalError(null);
+    clearError();
     setOtp("");
 
     if (!email) {
@@ -80,8 +95,7 @@ export default function OTPPage() {
         setLocalError(response.message || t("auth.otp.resendFailed"));
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : null;
-      setLocalError(errMsg || error || t("auth.otp.resendFailed"));
+      setLocalError(getApiErrorMessage(err, t("auth.otp.resendFailed")));
     } finally {
       setLocalResending(false);
     }
@@ -115,9 +129,10 @@ export default function OTPPage() {
                   </div>
 
                   {(localError || error) && (
-                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                      {localError || error}
-                    </div>
+                    <AuthErrorBanner
+                      message={(localError || error) as string}
+                      onDismiss={dismissError}
+                    />
                   )}
 
                   <Field>

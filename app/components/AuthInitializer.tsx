@@ -16,12 +16,16 @@ export function AuthInitializer({ children }: { children: React.ReactNode }) {
         await checkAuth();
       } catch (error) {
         console.error("Initial auth check failed:", error);
-        // Set auth to false so ProtectedRoute will handle redirect
-        useAuthStore.setState({
-          admin: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        // checkAuth already swallows request failures and clears state itself
+        // (guarded so it can't overwrite a login that raced this probe). Only
+        // clear here if nobody has signed in since — on /auth/login this
+        // effect runs *while* the form is usable, and an unconditional reset
+        // would log the user straight back out.
+        useAuthStore.setState((state) =>
+          state.isAuthenticated
+            ? { isLoading: false }
+            : { admin: null, isAuthenticated: false, isLoading: false },
+        );
       } finally {
         setIsInitialized(true);
       }

@@ -4,24 +4,39 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import logoSvg from "@/assets/logo.svg";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authApi } from "@/lib/api/auth.api";
 import { FloatingCake } from "@/components/FloatingCake";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthErrorBanner } from "@/components/auth/AuthErrorBanner";
 import { useAuth } from "@/hooks/useAuth";
+import { getApiErrorMessage } from "@/lib/api-client";
 import { useTranslation } from "react-i18next";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const { /* forgotPassword, */ isLoading, error } = useAuth();
+  const { /* forgotPassword, */ isLoading, error, clearError } = useAuth();
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
 
+  // A failed attempt leaves its message on the store, which outlives this
+  // screen. Clear it on mount so an error from an earlier auth step doesn't
+  // greet the user on arrival.
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const dismissError = () => {
+    setLocalError(null);
+    clearError();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+    clearError();
 
     if (!email) {
       setLocalError(t("auth.forgotPassword.emptyEmail"));
@@ -37,8 +52,9 @@ export default function ForgotPasswordPage() {
         setLocalError(response.message || t("auth.forgotPassword.sendFailed"));
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : null;
-      setLocalError(errMsg || error || t("auth.forgotPassword.sendFailed"));
+      setLocalError(
+        getApiErrorMessage(err, t("auth.forgotPassword.sendFailed")),
+      );
     } finally {
       setLocalLoading(false);
     }
@@ -71,9 +87,10 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {(localError || error) && (
-                  <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-                    {localError || error}
-                  </div>
+                  <AuthErrorBanner
+                    message={(localError || error) as string}
+                    onDismiss={dismissError}
+                  />
                 )}
 
                 <Field>
