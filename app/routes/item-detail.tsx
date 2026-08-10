@@ -144,6 +144,8 @@ export default function ItemDetailPage() {
   const item = location.state?.item as OrderItem | undefined;
   const bakeryId = location.state?.bakeryId as string | undefined;
   const selectedOrderId = location.state?.selectedOrderId as string | undefined;
+  // Bakery-facing callers pass false — the customer price is not theirs to see.
+  const showPrices = (location.state?.showPrices as boolean | undefined) ?? true;
 
   if (!item) {
     return (
@@ -275,12 +277,14 @@ export default function ItemDetailPage() {
                         <p className="text-2xl font-bold">{item.flavor}</p>
                       </div>
                     )}
-                    <div className="space-y-1 bg-muted p-4 rounded-lg">
-                      <p className="text-xs text-muted-foreground uppercase font-medium">
-                        {t("itemDetail.price")}
-                      </p>
-                      <p className="text-2xl font-bold">${item.price}</p>
-                    </div>
+                    {showPrices && (
+                      <div className="space-y-1 bg-muted p-4 rounded-lg">
+                        <p className="text-xs text-muted-foreground uppercase font-medium">
+                          {t("itemDetail.price")}
+                        </p>
+                        <p className="text-2xl font-bold">${item.price}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Selected Options in Order Details */}

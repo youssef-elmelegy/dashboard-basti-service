@@ -55,6 +55,12 @@ interface OrderItemsListProps {
    * Defaults to true. Set false when item-detail route isn't relevant.
    */
   showViewDetails?: boolean;
+  /**
+   * Whether to render per-item and line-total prices. Defaults to true.
+   * Bakery-facing views set this false — a bakery is paid its own share, so
+   * the customer-facing price is not theirs to see.
+   */
+  showPrices?: boolean;
 }
 
 function getFirstImage(
@@ -136,6 +142,7 @@ export function OrderItemsList({
   addons,
   sweets,
   showViewDetails = true,
+  showPrices = true,
 }: OrderItemsListProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -165,7 +172,7 @@ export function OrderItemsList({
       | "custom_cake",
   ) => {
     const orderItem = cartItemToOrderItem(item, type, orderId);
-    navigate("/item-detail", { state: { item: orderItem, orderId } });
+    navigate("/item-detail", { state: { item: orderItem, orderId, showPrices } });
   };
 
   const renderItem = (
@@ -203,9 +210,11 @@ export function OrderItemsList({
                 {typeLabel}
               </Badge>
             </div>
-            <span className="text-lg font-bold text-primary">
-              {item.price} {t("orderDetail.lyd")}
-            </span>
+            {showPrices && (
+              <span className="text-lg font-bold text-primary">
+                {item.price} {t("orderDetail.lyd")}
+              </span>
+            )}
           </div>
 
           {options.extraDetails}
@@ -215,10 +224,12 @@ export function OrderItemsList({
               {t("orderDetail.quantity")}:{" "}
               <span className="font-bold text-primary">{item.quantity}</span>
             </span>
-            <span className="text-muted-foreground shrink-0">
-              {t("orderDetail.total")}: {item.quantity * item.price}{" "}
-              {t("orderDetail.lyd")}
-            </span>
+            {showPrices && (
+              <span className="text-muted-foreground shrink-0">
+                {t("orderDetail.total")}: {item.quantity * item.price}{" "}
+                {t("orderDetail.lyd")}
+              </span>
+            )}
           </div>
 
           {showViewDetails && (

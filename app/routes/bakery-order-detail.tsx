@@ -241,6 +241,7 @@ const BakeryOrderDetail = () => {
               featuredCakes={order.featuredCakes as unknown as CartItem[]}
               addons={order.addons as unknown as CartItem[]}
               sweets={order.sweets as unknown as CartItem[]}
+              showPrices={false}
             />
             <Separator className="my-3" />
             <div className="flex justify-between text-sm font-semibold pt-1">

@@ -68,6 +68,12 @@ export interface OrderResponse {
   totalPrice: number;
   discountAmount: number;
   finalPrice: number;
+  /**
+   * The bakery's share of the order. Passed through from the `bakery_amount`
+   * decimal column, so it arrives as a string — unlike the prices above, which
+   * the backend parseFloat's before responding.
+   */
+  bakeryAmount: string;
   totalCapacity: number;
   paymentMethodId: string | null;
   paymentMethodType: string;

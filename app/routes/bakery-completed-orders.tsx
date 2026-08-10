@@ -274,7 +274,7 @@ const BakeryCompletedOrders = () => {
                     {t("orders.deliveryDate") || "Delivery Date"}
                   </TableHead>
                   <TableHead className="text-end">
-                    {t("orders.totalPrice") || "Total Price"}
+                    {t("finance.columns.bakeryAmount")}
                   </TableHead>
                   <TableHead className="text-end w-10" />
                 </TableRow>
@@ -336,8 +336,10 @@ const BakeryCompletedOrders = () => {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
+                      {/* Bakery share, not the order total the customer paid */}
                       <TableCell className="text-end font-semibold">
-                        {order.totalPrice} {t("common.currency")}
+                        {Number(order.bakeryAmount ?? 0).toFixed(2)}{" "}
+                        {t("common.currency")}
                       </TableCell>
                       <TableCell className="text-end">
                         <ChevronRight className="w-5 h-5 text-muted-foreground" />
