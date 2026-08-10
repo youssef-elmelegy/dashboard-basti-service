@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import type { OrderItem } from "@/data/orders";
-import { format } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/auth.store";
 import { orderApi } from "@/lib/services/order.service";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatClockTime12h } from "@/lib/utils";
+import { cn, formatClockTime12h } from "@/lib/utils";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { LocationMap } from "@/components/location-map";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
@@ -1355,14 +1355,40 @@ export default function OrderDetailPage() {
               <span className="text-xs text-muted-foreground">
                 {t("orderDetail.expectedDelivery")}
               </span>
-              <p className="text-sm font-medium">
-                {format(
-                  new Date(
-                    order.willDeliverAt || order.deliverDay || Date.now(),
-                  ),
-                  "MMM d, yyyy",
-                )}
-              </p>
+              <div className="flex items-center justify-between gap-3 w-full">
+                <p className="text-sm font-medium">
+                  {format(
+                    new Date(
+                      order.willDeliverAt || order.deliverDay || Date.now(),
+                    ),
+                    "MMM d, yyyy",
+                  )}
+                </p>
+                {(() => {
+                  const daysLeft = differenceInCalendarDays(
+                    new Date(
+                      order.willDeliverAt || order.deliverDay || Date.now(),
+                    ),
+                    new Date(),
+                  );
+                  if (daysLeft < 0) return null;
+                  return (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "px-2.5 py-1",
+                        daysLeft === 0
+                          ? "border-orange-500/50 text-orange-500"
+                          : "border-primary/50 text-primary",
+                      )}
+                    >
+                      {daysLeft === 0
+                        ? t("orderDetail.expectedToday")
+                        : t("orderDetail.daysLeft", { count: daysLeft })}
+                    </Badge>
+                  );
+                })()}
+              </div>
             </div>
             <Separator />
             <div>

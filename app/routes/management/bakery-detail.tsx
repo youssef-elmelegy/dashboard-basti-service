@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
+  ChevronRight,
   MapPin,
   Package,
   Plus,
@@ -66,8 +67,40 @@ function ReviewCardSkeleton() {
 
 function ReviewCard({ review }: { review: Review }) {
   const customerName = `${review.firstName} ${review.lastName}`;
+
+  // Older reviews predate the orderId backfill, and the order may have been
+  // removed since. Without a target, render the card as plain non-interactive
+  // content rather than a link that dead-ends.
+  if (!review.orderId) {
+    return <ReviewCardBody review={review} customerName={customerName} />;
+  }
+
   return (
-    <Card>
+    <Link
+      to={`/orders/bakery/${review.bakeryId}/orders/${review.orderId}`}
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <ReviewCardBody review={review} customerName={customerName} interactive />
+    </Link>
+  );
+}
+
+function ReviewCardBody({
+  review,
+  customerName,
+  interactive = false,
+}: {
+  review: Review;
+  customerName: string;
+  interactive?: boolean;
+}) {
+  return (
+    <Card
+      className={cn(
+        interactive &&
+          "transition-colors hover:border-yellow-400/50 hover:bg-muted/40",
+      )}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -94,9 +127,14 @@ function ReviewCard({ review }: { review: Review }) {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">{review.reviewText}</p>
-        <p className="text-xs text-muted-foreground mt-3">
-          {format(new Date(review.createdAt), "MMM d, yyyy")}
-        </p>
+        <div className="flex items-center justify-between gap-2 mt-3">
+          <p className="text-xs text-muted-foreground">
+            {format(new Date(review.createdAt), "MMM d, yyyy")}
+          </p>
+          {interactive && (
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 rtl:rotate-180" />
+          )}
+        </div>
       </CardContent>
     </Card>
   );
