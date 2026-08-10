@@ -9,8 +9,14 @@ import { DeleteDialogProvider } from "@/components/DeleteConfirmationDialog";
 import { AuthInitializer } from "@/components/AuthInitializer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
+import { clearStaleChunkGuard } from "@/lib/stale-chunk";
 import "@/i18n/config";
 import "@/index.css";
+
+// Reaching this line means the entry chunk parsed and the current bundle is
+// intact, so release the one-shot reload guard for the next deploy. Must run
+// before render: a crash during render should still be able to recover.
+clearStaleChunkGuard();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

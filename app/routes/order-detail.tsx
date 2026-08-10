@@ -7,6 +7,7 @@ import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/auth.store";
 import { orderApi } from "@/lib/services/order.service";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { formatClockTime12h } from "@/lib/utils";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { LocationMap } from "@/components/location-map";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
@@ -1559,8 +1560,8 @@ export default function OrderDetailPage() {
                   Preferred Delivery Time
                 </span>
                 <p className="text-sm font-medium">
-                  {order.wantedDeliveryTimeSlot.from} -{" "}
-                  {order.wantedDeliveryTimeSlot.to}
+                  {formatClockTime12h(order.wantedDeliveryTimeSlot.from)} -{" "}
+                  {formatClockTime12h(order.wantedDeliveryTimeSlot.to)}
                 </p>
               </div>
             )}

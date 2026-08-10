@@ -1756,7 +1756,7 @@ export default function BakeryOrdersPage() {
                                         new Date(
                                           selectedOrder.finalImageUploadedAt,
                                         ),
-                                        "MMM d, yyyy HH:mm",
+                                        "MMM d, yyyy h:mm a",
                                       )}
                                     </p>
                                   )}
@@ -1822,7 +1822,7 @@ export default function BakeryOrdersPage() {
                                     new Date(
                                       selectedOrder.finalImageUploadedAt,
                                     ),
-                                    "MMM d, yyyy HH:mm",
+                                    "MMM d, yyyy h:mm a",
                                   )}
                                 </p>
                               )}

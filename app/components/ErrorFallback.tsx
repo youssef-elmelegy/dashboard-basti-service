@@ -17,6 +17,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { reportError } from "@/lib/instrument";
+import { isStaleChunkError, recoverFromStaleChunk } from "@/lib/stale-chunk";
 
 /**
  * Presentational error screen. Shared by the router's `errorElement` and the
@@ -121,19 +122,27 @@ export default function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
 
+  // A route chunk that 404s after a redeploy is an infrastructure race, not a
+  // bug in the page. Reload once to pick up the current bundle; the effect runs
+  // before paint, so the user sees a reload rather than an error screen.
+  const isStaleChunk = isStaleChunkError(error);
+
   useEffect(() => {
+    if (isStaleChunk && recoverFromStaleChunk(error)) return;
+
     // 404s and other thrown Responses are routine routing outcomes, not bugs —
     // reporting them would bury real crashes in noise.
     if (!isRouteErrorResponse(error)) {
       reportError(error);
     }
-  }, [error]);
+  }, [error, isStaleChunk]);
 
   return (
     <ErrorFallbackView
       error={error}
-      // Re-run the current route's render/loaders without a full page reload.
-      onRetry={() => navigate(0)}
+      // A stale chunk survives `navigate(0)` — the failed module stays cached in
+      // the running page — so that case needs a document reload instead.
+      onRetry={isStaleChunk ? () => window.location.reload() : () => navigate(0)}
     />
   );
 }

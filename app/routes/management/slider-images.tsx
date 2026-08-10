@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
+import { SortableItem, useDragSensors } from "@/components/SortableItem";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle, Loader2 } from "lucide-react";
 import {
@@ -54,6 +57,9 @@ export default function SliderImagesPage() {
   const deleteSliderImage = useSliderImageStore(
     (state) => state.deleteSliderImage,
   );
+  const changeSliderImageOrder = useSliderImageStore(
+    (state) => state.changeSliderImageOrder,
+  );
   const clearError = useSliderImageStore((state) => state.clearError);
 
   const { openDeleteDialog } = useDeleteDialog();
@@ -63,6 +69,13 @@ export default function SliderImagesPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagsLoading, setTagsLoading] = useState(false);
+
+  // Cards render in displayOrder, which is also the order the drag handler
+  // resolves drop positions against.
+  const displayedImages = useMemo(
+    () => [...sliderImages].sort((a, b) => a.displayOrder - b.displayOrder),
+    [sliderImages],
+  );
 
   // Fetch tags on mount
   useEffect(() => {
@@ -170,6 +183,24 @@ export default function SliderImagesPage() {
     );
   };
 
+  const sensors = useDragSensors();
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const targetIndex = displayedImages.findIndex((img) => img.id === over.id);
+    if (targetIndex === -1) return;
+
+    // displayOrder is 1-indexed. Fire-and-forget: the store applies the new
+    // order optimistically and rolls back on error.
+    changeSliderImageOrder(active.id as string, targetIndex + 1).catch(
+      (error) => {
+        console.error("Failed to change slider image order:", error);
+      },
+    );
+  };
+
   // Get list of tagIds that are already used in other images
   const getUsedTagIds = (excludeImageId?: string) => {
     return sliderImages
@@ -253,40 +284,40 @@ export default function SliderImagesPage() {
           </div>
         </div>
       ) : sliderImages.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sliderImages.map((image) => (
-            <Sheet
-              key={image.id}
-              open={isEditOpen && selectedImage?.id === image.id}
-              onOpenChange={setIsEditOpen}
-            >
-              <SliderImageCard
-                image={image}
-                onEdit={(img) => {
-                  setSelectedImage(img);
-                  setIsEditOpen(true);
-                }}
-                onDelete={() => handleDeleteSliderImage(image)}
-              />
-              {selectedImage && (
-                <SheetContent className="overflow-y-auto py-6">
-                  <SheetHeader>
-                    <SheetTitle>{t("sliderImages.editSliderImage")}</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <SliderImageForm
-                      image={selectedImage}
-                      onSubmit={handleUpdateSliderImage}
-                      isLoading={isLoading || tagsLoading}
-                      tags={tags}
-                      usedTagIds={getUsedTagIds(selectedImage?.id)}
-                    />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={displayedImages.map((img) => img.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedImages.map((image) => (
+                <SortableItem
+                  key={image.id}
+                  id={image.id}
+                  className={({ isDragging }) =>
+                    `relative transition-opacity ${isDragging ? "opacity-50" : ""}`
+                  }
+                >
+                  <div className="absolute bottom-2 end-2 bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold z-10">
+                    {image.displayOrder}
                   </div>
-                </SheetContent>
-              )}
-            </Sheet>
-          ))}
-        </div>
+                  <SliderImageCard
+                    image={image}
+                    onEdit={(img) => {
+                      setSelectedImage(img);
+                      setIsEditOpen(true);
+                    }}
+                    onDelete={() => handleDeleteSliderImage(image)}
+                  />
+                </SortableItem>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <Empty>
           <EmptyHeader>
@@ -322,6 +353,33 @@ export default function SliderImagesPage() {
             </Sheet>
           </EmptyContent>
         </Empty>
+      )}
+
+      {/* Single edit sheet for the whole grid. It used to be rendered once per
+          card inside the loop, which mounted a duplicate form for every image. */}
+      {selectedImage && (
+        <Sheet
+          open={isEditOpen}
+          onOpenChange={(open) => {
+            setIsEditOpen(open);
+            if (!open) setSelectedImage(null);
+          }}
+        >
+          <SheetContent className="overflow-y-auto py-6">
+            <SheetHeader>
+              <SheetTitle>{t("sliderImages.editSliderImage")}</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <SliderImageForm
+                image={selectedImage}
+                onSubmit={handleUpdateSliderImage}
+                isLoading={isLoading || tagsLoading}
+                tags={tags}
+                usedTagIds={getUsedTagIds(selectedImage.id)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   );

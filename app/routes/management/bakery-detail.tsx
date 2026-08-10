@@ -32,6 +32,8 @@ import {
 import { buildRegionAddProductPath } from "./utils/regionAddProductLink";
 import { cn } from "@/lib/utils";
 import { BakeryItemsDisplay } from "@/components/BakeryItemsDisplay";
+import { RatingStars } from "@/components/RatingStars";
+import { formatRating } from "@/lib/rating";
 import { bakeryCarriesStock } from "@/lib/bakeryStock";
 import { type BakeryItemStore } from "@/lib/services/bakery.service";
 import { bakeryTypeColor, bakeryTypeLabel } from "@/lib/bakeryTypes";
@@ -62,24 +64,6 @@ function ReviewCardSkeleton() {
   );
 }
 
-function RatingStars({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            "w-4 h-4",
-            star <= Math.round(rating)
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
 function ReviewCard({ review }: { review: Review }) {
   const customerName = `${review.firstName} ${review.lastName}`;
   return (
@@ -102,8 +86,8 @@ function ReviewCard({ review }: { review: Review }) {
               <p className="text-sm font-semibold truncate">{customerName}</p>
             </div>
           </div>
-          <Badge variant="outline" className="shrink-0">
-            {review.rating}.0
+          <Badge variant="outline" className="shrink-0 tabular-nums">
+            {formatRating(review.rating)}
           </Badge>
         </div>
         <RatingStars rating={review.rating} />

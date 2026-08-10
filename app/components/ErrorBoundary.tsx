@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportError } from "@/lib/instrument";
 import { ErrorFallbackView } from "@/components/ErrorFallback";
+import { recoverFromStaleChunk } from "@/lib/stale-chunk";
 
 interface Props {
   children: ReactNode;
@@ -31,13 +32,19 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
+    // A chunk missing after a redeploy is recoverable by reloading, and the
+    // reload replaces this page anyway — so don't report it as a crash.
+    if (recoverFromStaleChunk(error)) return;
+
     reportError(error, info.componentStack);
   }
 
   private handleRetry = () => {
     // No router access at this level, so recover with a full reload rather than
-    // a route re-navigation.
-    window.location.assign("/");
+    // a route re-navigation. `reload()` rather than `assign("/")` because a
+    // stale bundle needs index.html revalidated, not just a new navigation —
+    // and it keeps the user where they are instead of bouncing them home.
+    window.location.reload();
   };
 
   render() {

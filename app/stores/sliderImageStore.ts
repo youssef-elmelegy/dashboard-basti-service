@@ -22,6 +22,7 @@ interface SliderImageState {
   // Actions
   fetchSliderImages: (forceRefresh?: boolean) => Promise<void>;
   updateSliderImages: (items: SliderImageItem[]) => Promise<void>;
+  changeSliderImageOrder: (id: string, newOrder: number) => Promise<void>;
   deleteSliderImage: (id: string) => Promise<void>;
   clearError: () => void;
   invalidate: () => void;
@@ -97,6 +98,53 @@ export const useSliderImageStore = create<SliderImageState>((set, get) => ({
           : "Failed to update slider images";
       console.error("SliderImageStore: Update error:", errorMessage);
       set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  // Move an image to a new 1-based position. Optimistic: the reordered list is
+  // applied locally right away so the drag lands instantly, and rolled back to
+  // the previous order if the request fails.
+  changeSliderImageOrder: async (id, newOrder) => {
+    set({ error: null });
+
+    const prevImages = get().sliderImages;
+
+    const reordered = [...prevImages].sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+    const movingIndex = reordered.findIndex((img) => img.id === id);
+    if (movingIndex === -1) return;
+
+    const [movingImage] = reordered.splice(movingIndex, 1);
+    const targetIndex = Math.max(0, Math.min(newOrder - 1, reordered.length));
+    reordered.splice(targetIndex, 0, movingImage);
+
+    set({
+      sliderImages: reordered.map((img, idx) => ({
+        ...img,
+        displayOrder: idx + 1,
+      })),
+    });
+
+    try {
+      const response = await sliderImageApi.changeOrder(id, newOrder);
+      if (!response.success) {
+        throw new Error(
+          response.message || "Failed to change slider image order",
+        );
+      }
+      // Prefer the server's authoritative ordering when it sends one back.
+      if (Array.isArray(response.data)) {
+        set({ sliderImages: response.data });
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to change slider image order";
+      console.error("SliderImageStore: Reorder error:", errorMessage);
+      set({ sliderImages: prevImages, error: errorMessage });
       throw error;
     }
   },

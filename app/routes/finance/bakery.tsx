@@ -96,7 +96,8 @@ function BakeryTableBody({
           <TableCell>
             <StatusBadge status={order.orderStatus} />
           </TableCell>
-          <TableCell className="text-end tabular-nums">{fmt(order.finalPrice)}</TableCell>
+          {/* Bakery managers see their own share only, not the order total */}
+          <TableCell className="text-end tabular-nums">{fmt(order.bakeryAmount)}</TableCell>
         </TableRow>
       ))}
     </>
@@ -220,7 +221,7 @@ export default function BakeryFinancePage() {
         <TableHead className="text-start">
           {t("finance.columns.status")}
         </TableHead>
-        <TableHead className="text-end">{t("finance.columns.amount")}</TableHead>
+        <TableHead className="text-end">{t("finance.columns.bakeryAmount")}</TableHead>
       </TableRow>
     </TableHeader>
   );
@@ -232,7 +233,7 @@ export default function BakeryFinancePage() {
           {t("finance.sum")} ({totalCount})
         </TableCell>
         <TableCell className="text-end font-semibold tabular-nums">
-          {fmt(totals.finalPrice)}
+          {fmt(totals.bakeryTotal)}
         </TableCell>
       </TableRow>
     </TableFooter>

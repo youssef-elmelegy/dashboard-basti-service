@@ -11,26 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RatingStars } from "@/components/RatingStars";
+import { formatRating } from "@/lib/rating";
 
 const EMPTY_REVIEWS: Review[] = [];
-
-function RatingStars({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            "w-4 h-4",
-            star <= Math.round(rating)
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
 
 function ReviewCard({
   review,
@@ -96,8 +80,8 @@ function ReviewCardBody({
               <p className="text-sm font-semibold truncate">{customerName}</p>
             </div>
           </div>
-          <Badge variant="outline" className="shrink-0">
-            {review.rating}.0
+          <Badge variant="outline" className="shrink-0 tabular-nums">
+            {formatRating(review.rating)}
           </Badge>
         </div>
         <RatingStars rating={review.rating} />

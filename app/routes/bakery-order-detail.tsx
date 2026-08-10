@@ -179,7 +179,7 @@ const BakeryOrderDetail = () => {
             {order.referenceNumber || `#${order.id.slice(0, 8)}`}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {format(new Date(order.createdAt), "EEEE, MMMM d, yyyy · HH:mm")}
+            {format(new Date(order.createdAt), "EEEE, MMMM d, yyyy · h:mm a")}
           </p>
         </div>
         <Badge variant={statusInfo.variant} className="text-sm">

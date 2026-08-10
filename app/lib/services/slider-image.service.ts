@@ -56,6 +56,19 @@ export const sliderImageApi = {
   },
 
   /**
+   * Move a slider image to a new 1-based position. The backend resequences the
+   * rest of the set and returns every image sorted by displayOrder.
+   */
+  changeOrder: (
+    id: string,
+    displayOrder: number,
+  ): Promise<ApiResponse<SliderImage[]>> => {
+    return apiClient.patch<SliderImage[]>(`/slider-images/${id}/order`, {
+      displayOrder,
+    });
+  },
+
+  /**
    * Delete slider image by ID
    */
   delete: (id: string): Promise<ApiResponse<{ message: string }>> => {

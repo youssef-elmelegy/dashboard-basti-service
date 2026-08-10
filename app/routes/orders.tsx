@@ -43,6 +43,7 @@ import {
   ChevronRight,
   Menu,
   ClipboardPaste,
+  Store,
   X,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -244,6 +245,7 @@ function formatProductName(
 function BakeryColumn({
   bakeryId,
   bakeryName,
+  logoUrl,
   location,
   capacity,
   orders,
@@ -257,6 +259,7 @@ function BakeryColumn({
 }: {
   bakeryId: string;
   bakeryName: string;
+  logoUrl?: string | null;
   location: string;
   capacity: number;
   orders: Order[];
@@ -309,6 +312,22 @@ function BakeryColumn({
           isIncompatible && "opacity-50 cursor-not-allowed",
         )}
       >
+        {/* Logo stays upright above the rotated name so a collapsed column is
+            still identifiable at a glance. */}
+        <div className="shrink-0 flex justify-center pt-2">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={bakeryName}
+              className="w-8 h-8 rounded-md object-cover border border-border"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+              <Store className="w-4 h-4 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+
         {/* Collapsed Header with rotated text */}
         <div className="flex-1 relative flex items-center justify-center p-2">
           <div
@@ -364,6 +383,19 @@ function BakeryColumn({
       {/* Column Header */}
       <CardHeader className="shrink-0 border-b bg-muted/50 px-4 py-3">
         <div className="flex items-start justify-between gap-2 min-w-0">
+          {/* Logo is optional — fall back to a neutral placeholder so columns
+              with and without one keep the same header layout. */}
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={bakeryName}
+              className="w-8 h-8 rounded-md object-cover border border-border shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+              <Store className="w-4 h-4 text-muted-foreground" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{bakeryName}</h3>
             <p className="text-xs text-muted-foreground line-clamp-2">
@@ -1066,6 +1098,7 @@ const Orders = () => {
                       <BakeryColumn
                         bakeryId={bakery.id}
                         bakeryName={bakery.name}
+                        logoUrl={bakery.logoUrl}
                         location={bakery.locationDescription}
                         capacity={bakery.capacity}
                         orders={bakeryOrders[bakery.id] || []}
