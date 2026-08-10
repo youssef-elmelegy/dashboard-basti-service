@@ -336,9 +336,10 @@ const BakeryCompletedOrders = () => {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      {/* Bakery share, not the order total the customer paid */}
+                      {/* Bakery share net of the gateway fee, not the order
+                          total the customer paid — matches the finance page. */}
                       <TableCell className="text-end font-semibold">
-                        {Number(order.bakeryAmount ?? 0).toFixed(2)}{" "}
+                        {(order.bakeryAmountNet ?? 0).toFixed(2)}{" "}
                         {t("common.currency")}
                       </TableCell>
                       <TableCell className="text-end">

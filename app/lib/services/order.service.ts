@@ -69,15 +69,30 @@ export interface OrderResponse {
   discountAmount: number;
   finalPrice: number;
   /**
-   * The bakery's share of the order. Passed through from the `bakery_amount`
-   * decimal column, so it arrives as a string — unlike the prices above, which
-   * the backend parseFloat's before responding.
+   * Gross bakery share, straight from the `bakery_amount` decimal column, so it
+   * arrives as a string — unlike the prices above, which the backend
+   * parseFloat's before responding. This is *before* the payment gateway fee:
+   * use `bakeryAmountNet` for anything shown to a bakery.
    */
   bakeryAmount: string;
+  /**
+   * The bakery's actual payout, net of the payment gateway fee — computed
+   * server-side by `getBakeryNetAmount`, matching the finance endpoints.
+   * Absent on customer-facing responses, which never expose bakery payouts.
+   */
+  bakeryAmountNet?: number;
   totalCapacity: number;
   paymentMethodId: string | null;
   paymentMethodType: string;
-  paymentData: string | null;
+  /**
+   * JSONB passthrough. Gateway fields are absent for cash/wallet orders.
+   * `paymentGatewayFee` is a percentage (e.g. 1.5 for 1.5%).
+   */
+  paymentData: {
+    type?: string;
+    paymentGatewayName?: string;
+    paymentGatewayFee?: number;
+  } | null;
   orderStatus:
     | "pending"
     | "confirmed"
