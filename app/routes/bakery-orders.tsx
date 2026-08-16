@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOrderStore } from "@/stores/orderStore";
 import { useBakeryCompletedOrdersStore } from "@/stores/bakeryCompletedOrdersStore";
 import { GreetingCardPreview } from "@/components/greeting-card-preview";
+import { DaysLeftBadge } from "@/components/DaysLeftBadge";
 import type { Order, OrderItem } from "@/data/orders";
 import { orderApi, type OrderResponse } from "@/lib/services/order.service";
 import { uploadImage } from "@/lib/api/cake.api";
@@ -586,9 +587,9 @@ function OrderSidebarCard({
               </Badge>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
+                <Calendar className="w-3 h-3 shrink-0" />
                 {(() => {
                   const dateStr = order.orderedAt || order.deliverDay;
                   try {
@@ -601,6 +602,7 @@ function OrderSidebarCard({
               <span>
                 {order.capacitySlots} {t("orders.slots")}
               </span>
+              <DaysLeftBadge date={order.deliverDay} className="ms-auto" />
             </div>
 
             {isPending && (

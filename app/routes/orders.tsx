@@ -35,6 +35,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CopyReferenceButton } from "@/components/CopyReferenceButton";
+import { DaysLeftBadge } from "@/components/DaysLeftBadge";
 import {
   CalendarIcon,
   Package,
@@ -145,9 +146,9 @@ function SortableOrderCard({
                 <h4 className="font-semibold text-sm truncate">
                   {formatProductName(order.productName, t)}
                 </h4>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <User className="w-3 h-3" />
-                  <span className="truncate">{order.customerName}</span>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                  <User className="w-3 h-3 shrink-0" />
+                  <span className="truncate min-w-0">{order.customerName}</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1 items-end shrink-0">
@@ -169,9 +170,9 @@ function SortableOrderCard({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-x-3 gap-y-1 flex-wrap text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
-                <CalendarIcon className="w-3 h-3" />
+                <CalendarIcon className="w-3 h-3 shrink-0" />
                 <span>
                   {(() => {
                     const dateStr = order.orderedAt || order.deliverDay;
@@ -184,11 +185,12 @@ function SortableOrderCard({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Package className="w-3 h-3" />
+                <Package className="w-3 h-3 shrink-0" />
                 <span>
                   {order.capacitySlots} {t("orders.slots")}
                 </span>
               </div>
+              <DaysLeftBadge date={order.deliverDay} />
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t">

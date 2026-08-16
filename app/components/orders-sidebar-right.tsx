@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyReferenceButton } from "@/components/CopyReferenceButton";
+import { DaysLeftBadge } from "@/components/DaysLeftBadge";
 import { useUnassignedOrdersStore } from "@/stores/unassignedOrdersStore";
 import { useRegionStore } from "@/stores/regionStore";
 import { type Order } from "@/data/orders";
@@ -137,6 +138,7 @@ function DraggableOrderCard({
             >
               {order.region}
             </span>
+            <DaysLeftBadge date={order.deliverDay} />
           </div>
         </div>
         <div className="flex items-center justify-between gap-2">

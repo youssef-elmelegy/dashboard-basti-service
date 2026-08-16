@@ -16,6 +16,27 @@ interface ExtraLayer {
   flavorId?: string;
 }
 
+interface FeaturedCakeVariant {
+  flavor?: string;
+  pipingPalette?: string;
+}
+
+/**
+ * The per-unit flavor/piping choices the customer made for a featured cake.
+ * Stored on `order_items.featured_cake_variants` and echoed back by the API
+ * inside the item `data` payload — one entry per cake unit ordered.
+ */
+function extractFeaturedCakeVariants(item: OrderItem): FeaturedCakeVariant[] {
+  const itemData = item.data as Record<string, unknown> | undefined;
+  const variants = itemData?.featuredCakeVarients;
+  if (!Array.isArray(variants)) return [];
+
+  return (variants as FeaturedCakeVariant[]).filter(
+    (variant) =>
+      variant && typeof variant === "object" && (variant.flavor || variant.pipingPalette),
+  );
+}
+
 function extractExtraLayers(item: OrderItem): ExtraLayer[] {
   // Get data from the new nested structure
   const itemData = item.data as Record<string, unknown> | undefined;
@@ -164,6 +185,7 @@ export default function ItemDetailPage() {
   const selectedOptions = Array.isArray(item.selectedOptions)
     ? item.selectedOptions
     : undefined;
+  const featuredCakeVariants = extractFeaturedCakeVariants(item);
 
   const handleBackClick = () => {
     if (bakeryId && selectedOrderId) {
@@ -340,6 +362,53 @@ export default function ItemDetailPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* What the customer actually picked, per cake unit */}
+                    {featuredCakeVariants.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-3">
+                          {t("itemDetail.selectedVariants")}
+                        </h3>
+                        <div className="space-y-2">
+                          {featuredCakeVariants.map((variant, idx) => (
+                            <div
+                              key={idx}
+                              className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3 bg-muted rounded-lg"
+                            >
+                              {featuredCakeVariants.length > 1 && (
+                                <span className="text-xs text-muted-foreground uppercase font-medium">
+                                  {t("itemDetail.unit")} {idx + 1}
+                                </span>
+                              )}
+                              {variant.flavor && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase font-medium">
+                                    {t("itemDetail.flavor")}
+                                  </p>
+                                  <p className="text-sm font-semibold">
+                                    {variant.flavor}
+                                  </p>
+                                </div>
+                              )}
+                              {variant.pipingPalette && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase font-medium">
+                                    {t("itemDetail.pipingColor")}
+                                  </p>
+                                  <p className="text-sm font-semibold">
+                                    {variant.pipingPalette}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {featuredCakeVariants.length > 0 &&
+                      ((Array.isArray(itemData.flavorList) &&
+                        itemData.flavorList.length > 0) ||
+                        (Array.isArray(itemData.pipingPaletteList) &&
+                          itemData.pipingPaletteList.length > 0)) && <Separator />}
                     {Array.isArray(itemData.flavorList) &&
                       itemData.flavorList.length > 0 && (
                         <div>

@@ -175,14 +175,14 @@ const AppSidebar = () => {
       icon: Package,
     },
     {
-      title: t("sidebar.completedOrders"),
-      url: "/completed-orders",
-      icon: PackageCheck,
-    },
-    {
       title: t("sidebar.dispatch"),
       url: "/dispatch",
       icon: Truck,
+    },
+    {
+      title: t("sidebar.completedOrders"),
+      url: "/completed-orders",
+      icon: PackageCheck,
     },
   ];
 
