@@ -1404,6 +1404,7 @@
       "status": "Status",
       "amount": "Amount",
       "bakery": "Bakery",
+      "driver": "Driver",
       "total": "Total",
       "delivery": "Delivery",
       "bastiDelivery": "Basti Delivery",
@@ -1418,7 +1419,8 @@
       "masarat": "Masarat",
       "tadawul": "Tadawul",
       "none": "—"
-    }
+    },
+    "noDriver": "No driver"
   },
   "drivers": {
     "title": "Drivers",

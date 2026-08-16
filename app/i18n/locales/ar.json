@@ -1424,6 +1424,7 @@
       "status": "الحالة",
       "amount": "المبلغ",
       "bakery": "المخبز",
+      "driver": "السائق",
       "total": "الإجمالي",
       "delivery": "التوصيل",
       "bastiDelivery": "توصيل باستي",
@@ -1438,7 +1439,8 @@
       "masarat": "مسارات",
       "tadawul": "تداول",
       "none": "—"
-    }
+    },
+    "noDriver": "بدون سائق"
   },
   "drivers": {
     "title": "السائقون",

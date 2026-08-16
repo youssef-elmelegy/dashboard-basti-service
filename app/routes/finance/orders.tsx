@@ -111,6 +111,11 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
               </span>
             </TableCell>
             <TableCell>{order.bakeryName}</TableCell>
+            <TableCell>
+              {order.driverName || (
+                <span className="opacity-50">{t("finance.noDriver")}</span>
+              )}
+            </TableCell>
             <TableCell className="text-end tabular-nums">
               {fmt(totalValue)}
             </TableCell>
@@ -320,6 +325,9 @@ export default function FinanceOrdersPage() {
         <TableHead className="text-start">
           {t("finance.columns.bakery")}
         </TableHead>
+        <TableHead className="text-start">
+          {t("finance.columns.driver")}
+        </TableHead>
         <TableHead className="text-end">{t("finance.columns.total")}</TableHead>
         <TableHead className={`text-end ${HDR_FEE}`}>
           {t("finance.columns.gatewayFee")}
@@ -349,7 +357,7 @@ export default function FinanceOrdersPage() {
   const sumFooter = totals && rows.length > 0 && (
     <TableFooter>
       <TableRow>
-        <TableCell colSpan={2} className="font-semibold">
+        <TableCell colSpan={3} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
         <TableCell className="text-end font-semibold tabular-nums">
@@ -478,7 +486,7 @@ export default function FinanceOrdersPage() {
             {(printRows ?? rows).length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={10}
+                  colSpan={11}
                   className="text-center py-8 text-gray-400"
                 >
                   {t("finance.noOrders")}
@@ -578,7 +586,7 @@ export default function FinanceOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12">
+                  <TableCell colSpan={11} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{t("common.loading")}</span>
@@ -588,7 +596,7 @@ export default function FinanceOrdersPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-12 text-muted-foreground"
                   >
                     {t("finance.noOrders")}

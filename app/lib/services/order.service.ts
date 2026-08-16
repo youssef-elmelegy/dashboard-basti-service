@@ -148,6 +148,8 @@ export interface OrderFinancialsRow {
   bakeryName: string;
   orderId: string;
   referenceNumber: string;
+  /** Driver who delivered the order. Empty when none was assigned. */
+  driverName: string;
   orderStatus: string;
   cartType: CartType;
   deliveredAt: string;
