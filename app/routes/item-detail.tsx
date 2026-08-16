@@ -47,6 +47,61 @@ function extractExtraLayers(item: OrderItem): ExtraLayer[] {
   return [];
 }
 
+/**
+ * The customer's per-unit flavor/piping picks. Rendered in the right-hand
+ * column alongside the cake image — it's what the bakery has to act on.
+ */
+function CustomerSelection({
+  variants,
+  className,
+  hideHeading = false,
+}: {
+  variants: FeaturedCakeVariant[];
+  className?: string;
+  hideHeading?: boolean;
+}) {
+  const { t } = useTranslation();
+
+  if (variants.length === 0) return null;
+
+  return (
+    <div className={className}>
+      {!hideHeading && (
+        <h3 className="text-sm font-semibold mb-3">
+          {t("itemDetail.selectedVariants")}
+        </h3>
+      )}
+      <div className="space-y-2">
+        {variants.map((variant, idx) => (
+          <div key={idx} className="p-3 bg-muted rounded-lg space-y-2">
+            {variants.length > 1 && (
+              <p className="text-xs text-muted-foreground uppercase font-medium">
+                {t("itemDetail.unit")} {idx + 1}
+              </p>
+            )}
+            {variant.flavor && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase font-medium">
+                  {t("itemDetail.flavor")}
+                </p>
+                <p className="text-sm font-semibold">{variant.flavor}</p>
+              </div>
+            )}
+            {variant.pipingPalette && (
+              <div>
+                <p className="text-xs text-muted-foreground uppercase font-medium">
+                  {t("itemDetail.pipingColor")}
+                </p>
+                <p className="text-sm font-semibold">{variant.pipingPalette}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function getItemCategoryKey(item: OrderItem): string {
   switch (item.type) {
     case "addon":
@@ -362,53 +417,6 @@ export default function ItemDetailPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* What the customer actually picked, per cake unit */}
-                    {featuredCakeVariants.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-semibold mb-3">
-                          {t("itemDetail.selectedVariants")}
-                        </h3>
-                        <div className="space-y-2">
-                          {featuredCakeVariants.map((variant, idx) => (
-                            <div
-                              key={idx}
-                              className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3 bg-muted rounded-lg"
-                            >
-                              {featuredCakeVariants.length > 1 && (
-                                <span className="text-xs text-muted-foreground uppercase font-medium">
-                                  {t("itemDetail.unit")} {idx + 1}
-                                </span>
-                              )}
-                              {variant.flavor && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground uppercase font-medium">
-                                    {t("itemDetail.flavor")}
-                                  </p>
-                                  <p className="text-sm font-semibold">
-                                    {variant.flavor}
-                                  </p>
-                                </div>
-                              )}
-                              {variant.pipingPalette && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground uppercase font-medium">
-                                    {t("itemDetail.pipingColor")}
-                                  </p>
-                                  <p className="text-sm font-semibold">
-                                    {variant.pipingPalette}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {featuredCakeVariants.length > 0 &&
-                      ((Array.isArray(itemData.flavorList) &&
-                        itemData.flavorList.length > 0) ||
-                        (Array.isArray(itemData.pipingPaletteList) &&
-                          itemData.pipingPaletteList.length > 0)) && <Separator />}
                     {Array.isArray(itemData.flavorList) &&
                       itemData.flavorList.length > 0 && (
                         <div>
@@ -844,6 +852,11 @@ export default function ItemDetailPage() {
                               square={true}
                             />
 
+                            <CustomerSelection
+                              variants={featuredCakeVariants}
+                              className="border-t pt-4"
+                            />
+
                             {/* Cake Configuration Details */}
                             {currentConfig && (
                               <div className="border-t pt-4">
@@ -906,6 +919,28 @@ export default function ItemDetailPage() {
                         </Card>
                       ) as React.ReactNode;
                     }
+
+                    // No images to show, but the customer's picks still belong
+                    // in this column rather than disappearing entirely.
+                    if (featuredCakeVariants.length > 0) {
+                      return (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-sm">
+                              <Palette className="w-4 h-4" />
+                              {t("itemDetail.selectedVariants")}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <CustomerSelection
+                              variants={featuredCakeVariants}
+                              hideHeading
+                            />
+                          </CardContent>
+                        </Card>
+                      ) as React.ReactNode;
+                    }
+
                     return null as unknown as React.ReactNode;
                   })()) as React.ReactNode
             }
