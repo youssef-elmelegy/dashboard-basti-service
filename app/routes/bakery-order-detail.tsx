@@ -147,20 +147,6 @@ const BakeryOrderDetail = () => {
         })
     : null;
 
-  const customCakeImageToPrint = order.customCakes?.find((c) => {
-    const d = c.data as Record<string, unknown> | undefined;
-    return d?.imageToPrint;
-  });
-  const imageToPrint = customCakeImageToPrint
-    ? ((customCakeImageToPrint.data as Record<string, unknown>)
-        ?.imageToPrint as string | undefined)
-    : undefined;
-  // Bakery sees the printing type (not the fee — that's admin-only).
-  const printingType = customCakeImageToPrint
-    ? ((customCakeImageToPrint.data as Record<string, unknown>)
-        ?.printingType as "paper" | "suger" | undefined)
-    : undefined;
-
   const finalImage =
     order.qa?.finalImages && order.qa.finalImages.length > 0
       ? order.qa.finalImages[0]
@@ -250,37 +236,6 @@ const BakeryOrderDetail = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Image to print (custom cake design) */}
-        {imageToPrint && (
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ImageIcon className="w-4 h-4" />
-                {t("bakeryOrders.designImage") || "Design Image to Print"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={imageToPrint}
-                  alt="Design"
-                  className="w-full h-72 object-contain"
-                />
-              </div>
-              {printingType && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  {t("orderDetail.printingType")}:{" "}
-                  <span className="font-medium text-foreground">
-                    {printingType === "suger"
-                      ? t("orderDetail.printingSugar")
-                      : t("orderDetail.printingPaper")}
-                  </span>
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Final image uploaded by the bakery */}
         {finalImage && (

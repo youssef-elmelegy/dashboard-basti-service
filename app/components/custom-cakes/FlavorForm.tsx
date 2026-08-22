@@ -135,6 +135,8 @@ export function FlavorForm({
     data: CreateFlavorWithVariantImagesFormValues,
   ) => {
     const filteredVariants = variantImages.filter(
+      // Only fully-filled shapes are sent: a variant missing a view would show
+      // a broken image in the customizer.
       (v) => v.slicedViewUrl && v.frontViewUrl && v.topViewUrl,
     );
 

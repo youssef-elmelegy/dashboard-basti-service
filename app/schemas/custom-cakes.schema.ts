@@ -15,11 +15,16 @@ export const updateFlavorSchema = createFlavorSchema;
 export type CreateFlavorFormValues = z.infer<typeof createFlavorSchema>;
 export type UpdateFlavorFormValues = z.infer<typeof updateFlavorSchema>;
 
+// Every view a shape carries must be a real image. A half-filled variant would
+// render with a missing view in the customizer, so an incomplete shape is
+// rejected rather than saved: fill all three views or remove the shape.
+const viewUrl = z.string().url("Must be a valid URL");
+
 export const shapeVariantImageSchema = z.object({
   shapeId: z.string().uuid("Must be a valid UUID"),
-  slicedViewUrl: z.string().url("Must be a valid URL"),
-  frontViewUrl: z.string().url("Must be a valid URL"),
-  topViewUrl: z.string().url("Must be a valid URL"),
+  slicedViewUrl: viewUrl,
+  frontViewUrl: viewUrl,
+  topViewUrl: viewUrl,
 });
 
 export const createFlavorWithVariantImagesSchema = z.object({
@@ -82,9 +87,9 @@ export type UpdateDecorationFormValues = z.infer<typeof updateDecorationSchema>;
 
 export const decorationVariantImageSchema = z.object({
   shapeId: z.string().uuid("Must be a valid UUID"),
-  slicedViewUrl: z.string().url("Must be a valid URL"),
-  frontViewUrl: z.string().url("Must be a valid URL"),
-  topViewUrl: z.string().url("Must be a valid URL"),
+  slicedViewUrl: viewUrl,
+  frontViewUrl: viewUrl,
+  topViewUrl: viewUrl,
 });
 
 export const createDecorationWithVariantImagesSchema = z.object({

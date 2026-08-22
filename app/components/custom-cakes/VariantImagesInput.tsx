@@ -7,7 +7,7 @@ import { useCakeStore } from "@/stores/imageStore";
 import { useShapeStore } from "@/stores/shapeStore";
 import { convertToWebP } from "@/lib/image-utils";
 import { UPLOAD_FOLDERS } from "@/lib/upload-folders";
-import { X } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 
 interface VariantImageData {
   shapeId: string;
@@ -45,7 +45,14 @@ export function VariantImagesInput({
     viewType: "slicedViewUrl" | "frontViewUrl" | "topViewUrl",
     images: string[],
   ) => {
-    if (!shapeId || images.length === 0) {
+    if (!shapeId) {
+      return;
+    }
+
+    // An empty selection is the per-image remove button firing: clear just
+    // this view and keep the variant's other views intact.
+    if (images.length === 0) {
+      updateVariantImage(shapeId, viewType, "");
       return;
     }
 
@@ -83,8 +90,18 @@ export function VariantImagesInput({
     let next: VariantImageData[];
 
     if (existingIndex >= 0) {
-      next = [...current];
-      next[existingIndex] = { ...next[existingIndex], [viewType]: url };
+      const updated = { ...current[existingIndex], [viewType]: url };
+      const isEmpty =
+        !updated.slicedViewUrl && !updated.frontViewUrl && !updated.topViewUrl;
+
+      // Once every view of a shape has been cleared the variant carries no
+      // images, so drop the row rather than submitting a blank one.
+      next = isEmpty
+        ? current.filter((_, i) => i !== existingIndex)
+        : current.map((v, i) => (i === existingIndex ? updated : v));
+    } else if (!url) {
+      // Clearing a view of a shape that has no variant yet is a no-op.
+      return;
     } else {
       next = [
         ...current,
@@ -122,9 +139,21 @@ export function VariantImagesInput({
       {shapes.map((shape) => {
         const variant = getVariantImage(shape.id);
         const isExpanded = expandedShapeId === shape.id;
+        // A shape that has some but not all of its views blocks submission,
+        // so flag it here rather than leaving the save button silently dead.
+        const isIncomplete =
+          !!variant &&
+          !(
+            variant.slicedViewUrl &&
+            variant.frontViewUrl &&
+            variant.topViewUrl
+          );
 
         return (
-          <Card key={shape.id} className="border-border">
+          <Card
+            key={shape.id}
+            className={isIncomplete ? "border-destructive" : "border-border"}
+          >
             <CardHeader
               className="cursor-pointer py-1 px-3"
               onClick={() => setExpandedShapeId(isExpanded ? "" : shape.id)}
@@ -139,6 +168,9 @@ export function VariantImagesInput({
                     />
                   )}
                   <CardTitle className="text-sm">{shape.title}</CardTitle>
+                  {isIncomplete && (
+                    <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -159,6 +191,11 @@ export function VariantImagesInput({
 
             {isExpanded && (
               <CardContent className="pt-2 px-3 pb-2">
+                {isIncomplete && (
+                  <p className="text-xs text-destructive mb-2 text-center">
+                    {t("customCakes.variantIncomplete")}
+                  </p>
+                )}
                 <div className="flex gap-2 justify-center">
                   <div className="flex flex-col">
                     <label className="text-xs font-medium mb-2">

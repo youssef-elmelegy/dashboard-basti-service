@@ -7,6 +7,7 @@ import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/auth.store";
 import { orderApi } from "@/lib/services/order.service";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { downloadImage } from "@/lib/image-utils";
 import { cn, formatClockTime12h } from "@/lib/utils";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { LocationMap } from "@/components/location-map";
@@ -37,6 +38,7 @@ import {
   Copy,
   Download,
   MessageSquare,
+  Printer,
   ArrowRightLeft,
   Truck,
   PackageCheck,
@@ -49,7 +51,7 @@ interface CustomCakeData {
   shape?: { title: string };
   flavor?: { title: string };
   decoration?: { title: string };
-  color?: { name: string };
+  color?: { name: string; hex?: string };
   description?: string;
   imageToPrint?: string;
   printingType?: "paper" | "suger";
@@ -218,46 +220,6 @@ function cartItemToOrderItem(
 }
 
 // Function to download image properly
-async function downloadImage(imageUrl: string, fileName: string) {
-  const safeName = fileName || "image.png";
-
-  // Primary path: fetch the bytes and save them via a blob URL. Works when the
-  // host (e.g. Cloudinary) allows CORS, and forces a real file download.
-  try {
-    const response = await fetch(imageUrl, { mode: "cors" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = safeName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Revoke only after the click has been processed — revoking synchronously
-    // can abort the download before it starts in some browsers.
-    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-    return;
-  } catch (error) {
-    console.error("Blob download failed, falling back:", error);
-  }
-
-  // Fallback: the `download` attribute is ignored for cross-origin URLs, so a
-  // plain <a> just opens the image in a new tab. For Cloudinary URLs, inject
-  // `fl_attachment` so the CDN responds with Content-Disposition: attachment,
-  // which forces a real download regardless of origin.
-  const downloadUrl = imageUrl.includes("/upload/")
-    ? imageUrl.replace("/upload/", "/upload/fl_attachment/")
-    : imageUrl;
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.download = safeName;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
 // Function to download greeting card as image with QR code
 async function downloadCardAsImage(cardMessage: {
   to: string;
@@ -754,9 +716,25 @@ export default function OrderDetailPage() {
                               </div>
 
                               {item.data?.color && (
-                                <div className="text-xs text-muted-foreground">
-                                  Color:{" "}
-                                  {(item.data.color as { name?: string })?.name}
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span
+                                    className="w-4 h-4 rounded border shrink-0"
+                                    style={{
+                                      backgroundColor: item.data.color.hex,
+                                    }}
+                                  />
+                                  <span>
+                                    Color:{" "}
+                                    {
+                                      (item.data.color as { name?: string })
+                                        ?.name
+                                    }
+                                  </span>
+                                  {item.data.color.hex && (
+                                    <code className="font-mono text-[11px] tracking-wide">
+                                      {item.data.color.hex.toUpperCase()}
+                                    </code>
+                                  )}
                                 </div>
                               )}
                               {/* Extra Layers (if any) */}
@@ -783,6 +761,49 @@ export default function OrderDetailPage() {
                                       },
                                     )}
                                   </ul>
+                                </div>
+                              )}
+
+                              {/* Compact print indicator — the artwork itself
+                                  is shown on the item page, so the list stays
+                                  scannable. */}
+                              {(item.data?.imageToPrint ||
+                                item.customCake?.imageToPrint) && (
+                                <div className="flex flex-wrap items-center gap-2 pt-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className="gap-1.5 text-xs font-normal"
+                                  >
+                                    <Printer className="w-3 h-3" />
+                                    {t("orderDetail.designToPrint")}
+                                    <span className="font-medium">
+                                      {(() => {
+                                        const pt =
+                                          item.data?.printingType ||
+                                          item.customCake?.printingType;
+                                        if (!pt) return "—";
+                                        return pt === "suger"
+                                          ? t("orderDetail.printingSugar")
+                                          : t("orderDetail.printingPaper");
+                                      })()}
+                                    </span>
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs gap-1"
+                                    onClick={() =>
+                                      downloadImage(
+                                        (item.data?.imageToPrint ||
+                                          item.customCake
+                                            ?.imageToPrint) as string,
+                                        `design-to-print-${order.referenceNumber || order.id}-${index + 1}.png`,
+                                      )
+                                    }
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    {t("orderDetail.download")}
+                                  </Button>
                                 </div>
                               )}
 
@@ -1480,81 +1501,6 @@ export default function OrderDetailPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Design Image to Print */}
-        {order.customCakes &&
-          order.customCakes.length > 0 &&
-          order.customCakes.some(
-            (cake: CartItem) =>
-              cake.data?.imageToPrint || cake.customCake?.imageToPrint,
-          ) && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Download className="w-4 h-4" />
-                    {t("orderDetail.designToPrint") || "Design"}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {order.customCakes.map((cake: CartItem, index: number) => {
-                  const imageToPrint =
-                    cake.data?.imageToPrint || cake.customCake?.imageToPrint;
-                  if (!imageToPrint) return null;
-                  const printingType =
-                    cake.data?.printingType || cake.customCake?.printingType;
-                  const printingFee =
-                    cake.data?.printingFee ?? cake.customCake?.printingFee;
-
-                  return (
-                    <div key={index} className="flex flex-col gap-3">
-                      <div className="rounded-lg overflow-hidden border bg-muted/50 p-2">
-                        <img
-                          src={imageToPrint}
-                          alt="Design to Print"
-                          className="w-full h-auto max-h-64 object-contain"
-                        />
-                      </div>
-                      {printingType && (
-                        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1 text-xs text-muted-foreground">
-                          <span>
-                            {t("orderDetail.printingType")}:{" "}
-                            <span className="font-medium text-foreground">
-                              {printingType === "suger"
-                                ? t("orderDetail.printingSugar")
-                                : t("orderDetail.printingPaper")}
-                            </span>
-                          </span>
-                          {printingFee != null && (
-                            <span>
-                              {t("orderDetail.printingFee")}:{" "}
-                              <span className="font-medium text-foreground">
-                                {printingFee} {t("orderDetail.lyd")}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          downloadImage(
-                            imageToPrint,
-                            `design-to-print-${order.referenceNumber || order.id}.png`,
-                          )
-                        }
-                        className="w-full gap-2 h-8 text-xs"
-                      >
-                        <Download className="w-3 h-3" />
-                        {t("orderDetail.download") || "Download"}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
 
         {/* General Order Details */}
         <Card className="lg:col-span-3">

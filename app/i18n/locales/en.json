@@ -919,7 +919,10 @@
       "predesigned_cake": "Predesigned Cake",
       "custom_cake": "Custom Cake",
       "item": "Item"
-    }
+    },
+    "colorCode": "Color code",
+    "copyColorCode": "Copy color code",
+    "colorCopied": "Color code copied"
   },
   "featuredCakes": {
     "title": "Featured Cakes",
@@ -1059,6 +1062,7 @@
     "sideView": "Side View",
     "frontView": "Front View",
     "topView": "Top View",
+    "variantIncomplete": "All three views are required. Add the missing image or remove this shape.",
     "size": "Size",
     "capacity": "Capacity (servings)",
     "small": "Small",

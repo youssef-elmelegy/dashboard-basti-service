@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,9 +11,11 @@ interface CustomCakeData {
   shape?: { title: string };
   flavor?: { title: string };
   decoration?: { title: string };
-  color?: { name: string };
+  color?: { name: string; hex?: string };
   description?: string;
   imageToPrint?: string;
+  printingType?: "paper" | "suger";
+  printingFee?: number;
   name?: string;
   [key: string]: unknown;
 }
@@ -266,6 +269,11 @@ export function OrderItemsList({
               "Custom Cake";
             const imageUrl = (data?.snapshotTop as string | undefined) || "";
             const extras = extractExtraLayers(item);
+            const printImage =
+              data?.imageToPrint || item.customCake?.imageToPrint;
+            const printType =
+              data?.printingType || item.customCake?.printingType;
+            const printFee = data?.printingFee ?? item.customCake?.printingFee;
             return renderItem(item, "Custom Cake", "custom_cake", {
               itemName,
               imageUrl,
@@ -284,9 +292,20 @@ export function OrderItemsList({
                     </p>
                   )}
                   {data?.color && (
-                    <div className="text-xs text-muted-foreground">
-                      Color:{" "}
-                      {(data.color as { name?: string })?.name || "-"}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span
+                        className="w-4 h-4 rounded border shrink-0"
+                        style={{ backgroundColor: data.color.hex }}
+                      />
+                      <span>
+                        Color:{" "}
+                        {(data.color as { name?: string })?.name || "-"}
+                      </span>
+                      {data.color.hex && (
+                        <code className="font-mono text-[11px] tracking-wide">
+                          {data.color.hex.toUpperCase()}
+                        </code>
+                      )}
                     </div>
                   )}
                   {extras.length > 0 && (
@@ -304,6 +323,30 @@ export function OrderItemsList({
                           );
                         })}
                       </ul>
+                    </div>
+                  )}
+                  {printImage && (
+                    <div className="pt-1">
+                      <Badge
+                        variant="secondary"
+                        className="gap-1.5 text-xs font-normal"
+                      >
+                        <Printer className="w-3 h-3" />
+                        {t("orderDetail.designToPrint")}
+                        <span className="font-medium">
+                          {printType
+                            ? printType === "suger"
+                              ? t("orderDetail.printingSugar")
+                              : t("orderDetail.printingPaper")
+                            : "—"}
+                        </span>
+                      </Badge>
+                      {showPrices && printFee != null && (
+                        <span className="ms-2 text-xs text-muted-foreground">
+                          {t("orderDetail.printingFee")}: {printFee}{" "}
+                          {t("orderDetail.lyd")}
+                        </span>
+                      )}
                     </div>
                   )}
                 </>

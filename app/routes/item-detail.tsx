@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Package, Palette, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Download,
+  Package,
+  Palette,
+  Zap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageSlider } from "@/components/ImageSlider";
 import { cn } from "@/lib/utils";
 import type { OrderItem } from "@/data/orders";
+import { downloadImage } from "@/lib/image-utils";
 
 interface ExtraLayer {
   layer: number;
@@ -216,6 +226,7 @@ export default function ItemDetailPage() {
   const location = useLocation();
   const { i18n, t } = useTranslation();
   const isRTL = i18n.language === "ar";
+  const [copiedColor, setCopiedColor] = useState(false);
 
   const item = location.state?.item as OrderItem | undefined;
   const bakeryId = location.state?.bakeryId as string | undefined;
@@ -314,6 +325,68 @@ export default function ItemDetailPage() {
                       <p className="text-muted-foreground">
                         {itemData.description as string}
                       </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Design to print — the artwork the bakery prints onto this
+                  cake. Lives in the wide column so the bakery can actually
+                  inspect the artwork before printing it. */}
+              {item.type === "custom_cake" &&
+                typeof itemData.imageToPrint === "string" &&
+                itemData.imageToPrint && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Download className="w-5 h-5" />
+                        {t("orderDetail.designToPrint")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="rounded-lg border bg-muted/40 p-3 flex justify-center">
+                        <img
+                          src={itemData.imageToPrint as string}
+                          alt={t("orderDetail.designToPrint")}
+                          className="max-h-[28rem] w-auto max-w-full object-contain rounded-md bg-background"
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="space-y-1 bg-muted p-4 rounded-lg flex-1 min-w-40">
+                          <p className="text-xs text-muted-foreground uppercase font-medium">
+                            {t("orderDetail.printingType")}
+                          </p>
+                          <p className="text-lg font-bold">
+                            {itemData.printingType === "suger"
+                              ? t("orderDetail.printingSugar")
+                              : itemData.printingType === "paper"
+                                ? t("orderDetail.printingPaper")
+                                : "—"}
+                          </p>
+                        </div>
+                        {typeof itemData.printingFee === "number" && (
+                          <div className="space-y-1 bg-muted p-4 rounded-lg flex-1 min-w-40">
+                            <p className="text-xs text-muted-foreground uppercase font-medium">
+                              {t("orderDetail.printingFee")}
+                            </p>
+                            <p className="text-lg font-bold">
+                              {itemData.printingFee} {t("orderDetail.lyd")}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() =>
+                          downloadImage(
+                            itemData.imageToPrint as string,
+                            `design-to-print-${item.id}.png`,
+                          )
+                        }
+                      >
+                        <Download className="w-4 h-4" />
+                        {t("orderDetail.download")}
+                      </Button>
                     </CardContent>
                   </Card>
                 )}
@@ -717,43 +790,75 @@ export default function ItemDetailPage() {
 
                           {/* Color & Message Section */}
                           <div className="space-y-4 border-t pt-4">
-                            {/* Color Swatch */}
+                            {/* Color — the bakery has to physically mix this,
+                                so the hex code is the actionable part: the
+                                customizer lets customers pick any color and
+                                stores the name as literally "Custom". */}
                             {typeof itemData.color === "object" &&
                               itemData.color && (
-                                <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+                                <div className="rounded-lg border bg-muted overflow-hidden">
                                   <div
-                                    className="w-10 h-10 rounded-lg border-2 border-gray-300 shrink-0"
+                                    className="h-24 w-full border-b"
                                     style={{
                                       backgroundColor: (
-                                        itemData.color as Record<
-                                          string,
-                                          string | unknown
-                                        >
-                                      ).hex as string,
+                                        itemData.color as Record<string, string>
+                                      ).hex,
                                     }}
-                                    title={
-                                      (
-                                        itemData.color as Record<
-                                          string,
-                                          string | unknown
-                                        >
-                                      ).hex as string
-                                    }
                                   />
-                                  <div className="text-xs">
-                                    <p className="text-muted-foreground uppercase font-medium">
-                                      {t("itemDetail.color")}
-                                    </p>
-                                    <p className="font-semibold">
-                                      {
-                                        (
+                                  <div className="p-3 space-y-2">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground uppercase font-medium">
+                                        {t("itemDetail.color")}
+                                      </p>
+                                      <p className="font-semibold">
+                                        {
+                                          (
+                                            itemData.color as Record<
+                                              string,
+                                              string
+                                            >
+                                          ).name
+                                        }
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <code className="flex-1 text-sm font-mono font-semibold tracking-wider bg-background rounded px-2 py-1.5 border">
+                                        {(
                                           itemData.color as Record<
                                             string,
-                                            string | unknown
+                                            string
                                           >
-                                        ).name as string
-                                      }
-                                    </p>
+                                        ).hex?.toUpperCase()}
+                                      </code>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 px-2 shrink-0"
+                                        title={t("itemDetail.copyColorCode")}
+                                        onClick={() => {
+                                          const hex = (
+                                            itemData.color as Record<
+                                              string,
+                                              string
+                                            >
+                                          ).hex;
+                                          navigator.clipboard.writeText(
+                                            hex.toUpperCase(),
+                                          );
+                                          setCopiedColor(true);
+                                          setTimeout(
+                                            () => setCopiedColor(false),
+                                            1500,
+                                          );
+                                        }}
+                                      >
+                                        {copiedColor ? (
+                                          <Check className="w-4 h-4 text-green-600" />
+                                        ) : (
+                                          <Copy className="w-4 h-4" />
+                                        )}
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               )}
