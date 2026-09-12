@@ -1,3 +1,4 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG as QRCode } from "qrcode.react";
 
 interface GreetingCardPreviewProps {
@@ -9,46 +10,101 @@ interface GreetingCardPreviewProps {
   };
 }
 
+const MESSAGE_MAX_FONT_SIZE = 36;
+const MESSAGE_MIN_FONT_SIZE = 10;
+
+function hasArabicText(text: string) {
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(text);
+}
+
 export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
+  const messageRef = useRef<HTMLParagraphElement>(null);
+  const [messageFontSize, setMessageFontSize] = useState(
+    MESSAGE_MAX_FONT_SIZE,
+  );
+  const isArabicMessage = useMemo(
+    () => hasArabicText(cardMessage.message),
+    [cardMessage.message],
+  );
+
+  useLayoutEffect(() => {
+    const element = messageRef.current;
+    if (!element) return;
+
+    let frame = 0;
+    const fitMessage = () => {
+      let nextSize = MESSAGE_MAX_FONT_SIZE;
+      element.style.fontSize = `${nextSize}px`;
+
+      while (
+        nextSize > MESSAGE_MIN_FONT_SIZE &&
+        (element.scrollHeight > element.clientHeight ||
+          element.scrollWidth > element.clientWidth)
+      ) {
+        nextSize -= 1;
+        element.style.fontSize = `${nextSize}px`;
+      }
+
+      setMessageFontSize(nextSize);
+    };
+
+    frame = requestAnimationFrame(fitMessage);
+    document.fonts?.ready.then(fitMessage).catch(() => {});
+
+    const resizeObserver = new ResizeObserver(fitMessage);
+    resizeObserver.observe(element);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
+  }, [cardMessage.message, isArabicMessage]);
+
   return (
-    <div className="relative bg-linear-to-br from-amber-50 to-orange-50 rounded-xl p-8 border-2 border-amber-200 shadow-lg min-h-96 flex flex-col overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 end-0 w-24 h-24 bg-white/30 rounded-full blur-2xl" />
-      <div className="absolute bottom-0 start-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
-
-      {/* Top - To field */}
-      <div className="relative z-10">
-        <p className="text-sm text-amber-700/70 font-medium">
-          To: <span className="font-semibold">{cardMessage.to}</span>
+    <div className="mx-auto flex w-full max-w-[5.5cm] flex-col items-center gap-6">
+      <div className="flex h-[9cm] w-[5.5cm] max-w-full shrink-0 flex-col justify-between overflow-hidden rounded-[12px] border border-[#E0E0E0] bg-white p-[0.5cm] text-[#333333] shadow-[0_4px_10px_rgba(0,0,0,0.05)]">
+        <p className="text-left font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]">
+          To: <span dir="auto">{cardMessage.to}</span>
         </p>
-      </div>
 
-      {/* Middle - Centered Message with QR Code */}
-      <div className="relative z-10 flex-1 flex items-center justify-center gap-6">
-        <p className="text-2xl font-serif italic text-amber-900 leading-relaxed text-center flex-1">
-          {cardMessage.message}
-        </p>
-        {cardMessage.link && (
-          <div className="bg-white p-2 rounded border border-amber-200 shrink-0">
-            <QRCode
-              value={cardMessage.link || ""}
-              size={80}
-              level="H"
-              includeMargin={false}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Bottom - Signature */}
-      <div className="relative z-10 flex items-end justify-end">
-        <div className="text-end">
-          <p className="text-sm text-amber-700/70">With warm wishes,</p>
-          <p className="text-lg font-serif text-amber-900">
-            {cardMessage.from}
+        <div className="flex min-h-0 flex-1 items-center justify-center py-3">
+          <p
+            ref={messageRef}
+            dir="auto"
+            className={`max-h-full w-full overflow-hidden break-words whitespace-pre-wrap text-center font-bold leading-[1.5] text-[#333333] ${
+              isArabicMessage
+                ? "font-['Aref_Ruqaa','Noto_Nastaliq_Urdu','Scheherazade_New',serif]"
+                : "font-['Dancing_Script','Aref_Ruqaa','Noto_Nastaliq_Urdu','Scheherazade_New',serif]"
+            }`}
+            style={{
+              color: cardMessage.message ? "#333333" : "#CCCCCC",
+              fontSize: messageFontSize,
+            }}
+          >
+            {cardMessage.message || "Message will appear here"}
           </p>
         </div>
+
+        <p className="text-right font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]">
+          From: <span dir="auto">{cardMessage.from}</span>
+        </p>
       </div>
+
+      {cardMessage.link && (
+        <div className="flex flex-col items-center rounded-lg border border-[#E0E0E0] bg-white px-4 py-5">
+          <QRCode
+            value={cardMessage.link || ""}
+            size={70}
+            level="H"
+            includeMargin={false}
+            fgColor="#7d8992"
+            bgColor="#ffffff"
+          />
+          <p className="mt-4 whitespace-nowrap font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[10px] text-[#9ca3af]">
+            Scan to play video/audio
+          </p>
+        </div>
+      )}
     </div>
   );
 }

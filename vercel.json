@@ -1,7 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "comment": "SPA fallback: every navigable path renders index.html so client-side routes survive a refresh or a direct link. /assets/* is excluded deliberately — those are content-hashed build outputs, and rewriting a missing one to index.html makes a stale-chunk request fail as an HTML-instead-of-JS MIME error rather than an honest 404, which hides the real cause in logs and error reports.",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ]

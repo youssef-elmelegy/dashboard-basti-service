@@ -7,7 +7,7 @@ import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/auth.store";
 import { orderApi } from "@/lib/services/order.service";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { downloadImage } from "@/lib/image-utils";
+import { downloadGreetingCardAsImage, downloadImage } from "@/lib/image-utils";
 import { cn, formatClockTime12h } from "@/lib/utils";
 import ReassignOrderDialog from "@/components/ReassignOrderDialog";
 import { LocationMap } from "@/components/location-map";
@@ -217,116 +217,6 @@ function cartItemToOrderItem(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-}
-
-// Function to download image properly
-// Function to download greeting card as image with QR code
-async function downloadCardAsImage(cardMessage: {
-  to: string;
-  from: string;
-  message: string;
-  link?: string;
-}) {
-  try {
-    // Create a canvas element
-    const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 600;
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    // Draw gradient background
-    const gradient = ctx.createLinearGradient(
-      0,
-      0,
-      canvas.width,
-      canvas.height,
-    );
-    gradient.addColorStop(0, "#fef3c7"); // amber-50
-    gradient.addColorStop(1, "#fed7aa"); // orange-50
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw border
-    ctx.strokeStyle = "#fbbf24"; // amber-200
-    ctx.lineWidth = 4;
-    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-
-    // Draw "To"
-    ctx.font = "14px Arial";
-    ctx.fillStyle = "#b45309"; // amber-700
-    ctx.textAlign = "left";
-    ctx.fillText(`To: ${cardMessage.to}`, 60, 100);
-
-    // Draw message
-    ctx.font = "italic 28px Georgia";
-    ctx.fillStyle = "#78350f"; // amber-900
-    ctx.textAlign = "center";
-    const lines = cardMessage.message.split("\n");
-    let yPos = 240;
-    lines.forEach((line: string) => {
-      ctx.fillText(line, canvas.width / 2, yPos);
-      yPos += 40;
-    });
-
-    // Generate and draw QR code if link exists
-    if (cardMessage.link) {
-      try {
-        const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-          cardMessage.link,
-        )}`;
-
-        const qrImage = new Image();
-        qrImage.crossOrigin = "anonymous";
-
-        await new Promise<void>((resolve) => {
-          qrImage.onload = () => {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(580, 220, 180, 180);
-            ctx.strokeStyle = "#fbbf24";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(580, 220, 180, 180);
-            ctx.drawImage(qrImage, 590, 230, 160, 160);
-            resolve();
-          };
-          qrImage.onerror = () => {
-            console.error("Failed to load QR code image");
-            resolve();
-          };
-          qrImage.src = qrDataUrl;
-        });
-      } catch (error) {
-        console.error("Error generating QR code:", error);
-      }
-    }
-
-    // Draw signature
-    ctx.font = "14px Arial";
-    ctx.fillStyle = "#b45309"; // amber-700
-    ctx.textAlign = "right";
-    ctx.fillText("With warm wishes,", canvas.width - 60, canvas.height - 120);
-
-    ctx.font = "24px Georgia";
-    ctx.fillStyle = "#78350f"; // amber-900
-    ctx.fillText(cardMessage.from, canvas.width - 60, canvas.height - 80);
-
-    // Convert canvas to blob and download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `greeting-card-${cardMessage.from.replace(/\s/g, "-")}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    });
-  } catch (error) {
-    console.error("Error downloading card:", error);
-  }
 }
 
 export default function OrderDetailPage() {
@@ -1685,7 +1575,7 @@ export default function OrderDetailPage() {
                             message: string;
                             link?: string;
                           });
-                    downloadCardAsImage(cardMsg);
+                    downloadGreetingCardAsImage(cardMsg);
                   }}
                   className="gap-2"
                 >

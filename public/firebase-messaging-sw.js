@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 // Bump this when changing the SW so caches/devtools pick up the new version.
 const SW_VERSION = "2026-06-18-fcm-project-fix";
 
