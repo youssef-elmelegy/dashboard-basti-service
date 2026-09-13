@@ -316,8 +316,7 @@ export async function downloadGreetingCardAsImage(cardMessage: {
 
     const width = cm(GREETING_CARD_WIDTH_CM);
     const cardHeight = cm(GREETING_CARD_HEIGHT_CM);
-    const qrSectionHeight = cardMessage.link ? cm(3.3) : 0;
-    const height = cardHeight + qrSectionHeight;
+    const height = cardHeight;
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -357,8 +356,16 @@ export async function downloadGreetingCardAsImage(cardMessage: {
       ctx.fillText(`To: ${cardMessage.to}`, textLeft, cardPadding + labelLineHeight / 2);
     }
 
+    const qrPanelWidth = cm(2.45);
+    const qrPanelHeight = cm(2.35);
+    const qrPanelX = (width - qrPanelWidth) / 2;
+    const qrPanelY = cardHeight - cardPadding - qrPanelHeight;
+    const fromY = cardMessage.link
+      ? qrPanelY - cm(0.25) - labelLineHeight / 2
+      : cardHeight - cardPadding - labelLineHeight / 2;
+
     const messageTop = cardPadding + labelLineHeight + cm(0.25);
-    const messageBottom = cardHeight - cardPadding - labelLineHeight - cm(0.25);
+    const messageBottom = fromY - labelLineHeight / 2 - cm(0.25);
     const messageHeight = messageBottom - messageTop;
     const messageText = cardMessage.message || "Message will appear here";
     const fittedMessage = fitMessageText(
@@ -387,19 +394,15 @@ export async function downloadGreetingCardAsImage(cardMessage: {
       ctx.fillText(
         `From: ${cardMessage.from}`,
         textRight,
-        cardHeight - cardPadding - labelLineHeight / 2,
+        fromY,
       );
     }
 
     if (cardMessage.link) {
-      const qrPanelWidth = cm(2.45);
-      const qrPanelHeight = cm(2.35);
-      const qrPanelX = (width - qrPanelWidth) / 2;
-      const qrPanelY = cardHeight + cm(0.5);
       const qrPanelRadius = cm(0.08);
-      const qrSize = cssPx(70);
+      const qrSize = cssPx(58);
       const qrX = (width - qrSize) / 2;
-      const qrY = qrPanelY + cm(0.35);
+      const qrY = qrPanelY + cssPx(10);
 
       ctx.fillStyle = "#ffffff";
       roundedRect(ctx, qrPanelX, qrPanelY, qrPanelWidth, qrPanelHeight, qrPanelRadius);
@@ -418,14 +421,14 @@ export async function downloadGreetingCardAsImage(cardMessage: {
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
       }
 
-      ctx.font = `400 ${cssPx(10)}px Tajawal, "Segoe UI", Tahoma, sans-serif`;
+      ctx.font = `400 ${cssPx(7)}px Tajawal, "Segoe UI", Tahoma, sans-serif`;
       ctx.fillStyle = "#9ca3af";
       ctx.textAlign = "center";
       ctx.direction = "ltr";
       ctx.fillText(
         "Scan to play video/audio",
         width / 2,
-        qrPanelY + qrPanelHeight - cm(0.32),
+        qrY + qrSize + cssPx(15),
       );
     }
 

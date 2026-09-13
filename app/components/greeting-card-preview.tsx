@@ -61,7 +61,7 @@ export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
   }, [cardMessage.message, isArabicMessage]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[5.5cm] flex-col items-center gap-6">
+    <div className="mx-auto flex w-full max-w-[5.5cm] flex-col items-center">
       <div className="flex h-[9cm] w-[5.5cm] max-w-full shrink-0 flex-col justify-between overflow-hidden rounded-[12px] border border-[#E0E0E0] bg-white p-[0.5cm] text-[#333333] shadow-[0_4px_10px_rgba(0,0,0,0.05)]">
         <p
           dir="ltr"
@@ -94,23 +94,23 @@ export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
         >
           From: <bdi>{cardMessage.from}</bdi>
         </p>
-      </div>
 
-      {cardMessage.link && (
-        <div className="flex flex-col items-center rounded-lg border border-[#E0E0E0] bg-white px-4 py-5">
-          <QRCode
-            value={cardMessage.link || ""}
-            size={70}
-            level="H"
-            includeMargin={false}
-            fgColor="#7d8992"
-            bgColor="#ffffff"
-          />
-          <p className="mt-4 whitespace-nowrap font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[10px] text-[#9ca3af]">
-            Scan to play video/audio
-          </p>
-        </div>
-      )}
+        {cardMessage.link && (
+          <div className="mx-auto mt-[0.25cm] flex h-[2.35cm] w-[2.45cm] shrink-0 flex-col items-center justify-center rounded-[3px] border border-[#eeebe6] bg-white px-1.5">
+            <QRCode
+              value={cardMessage.link || ""}
+              size={58}
+              level="H"
+              includeMargin={false}
+              fgColor="#7d8992"
+              bgColor="#ffffff"
+            />
+            <p className="mt-1.5 max-w-full whitespace-nowrap text-center font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[7px] leading-none text-[#9ca3af]">
+              Scan to play video/audio
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
