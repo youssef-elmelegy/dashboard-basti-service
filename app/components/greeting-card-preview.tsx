@@ -63,8 +63,11 @@ export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
   return (
     <div className="mx-auto flex w-full max-w-[5.5cm] flex-col items-center gap-6">
       <div className="flex h-[9cm] w-[5.5cm] max-w-full shrink-0 flex-col justify-between overflow-hidden rounded-[12px] border border-[#E0E0E0] bg-white p-[0.5cm] text-[#333333] shadow-[0_4px_10px_rgba(0,0,0,0.05)]">
-        <p className="text-left font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]">
-          To: <span dir="auto">{cardMessage.to}</span>
+        <p
+          dir="ltr"
+          className="text-left font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]"
+        >
+          To: <bdi>{cardMessage.to}</bdi>
         </p>
 
         <div className="flex min-h-0 flex-1 items-center justify-center py-3">
@@ -85,8 +88,11 @@ export function GreetingCardPreview({ cardMessage }: GreetingCardPreviewProps) {
           </p>
         </div>
 
-        <p className="text-right font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]">
-          From: <span dir="auto">{cardMessage.from}</span>
+        <p
+          dir="ltr"
+          className="text-right font-['Tajawal','Segoe_UI',Tahoma,sans-serif] text-[14px] font-bold leading-none text-[#333333]"
+        >
+          From: <bdi>{cardMessage.from}</bdi>
         </p>
       </div>
 
