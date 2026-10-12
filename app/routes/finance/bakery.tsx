@@ -53,6 +53,8 @@ function getDefaultRange() {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const fmtRate = (fraction: number) => `${fmt(fraction * 100)}%`;
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 // Status badge tint — `print:` variants render stronger in PDF
@@ -96,6 +98,7 @@ function BakeryTableBody({
           <TableCell>
             <StatusBadge status={order.orderStatus} />
           </TableCell>
+          <TableCell className="text-end tabular-nums">{fmtRate(order.bastiPercentage)}</TableCell>
           {/* Bakery managers see their own share only, not the order total */}
           <TableCell className="text-end tabular-nums">{fmt(order.bakeryAmount)}</TableCell>
         </TableRow>
@@ -221,6 +224,7 @@ export default function BakeryFinancePage() {
         <TableHead className="text-start">
           {t("finance.columns.status")}
         </TableHead>
+        <TableHead className="text-end">{t("finance.columns.bastiRate")}</TableHead>
         <TableHead className="text-end">{t("finance.columns.bakeryAmount")}</TableHead>
       </TableRow>
     </TableHeader>
@@ -232,6 +236,7 @@ export default function BakeryFinancePage() {
         <TableCell colSpan={3} className="font-semibold">
           {t("finance.sum")} ({totalCount})
         </TableCell>
+        <TableCell className="text-end font-semibold tabular-nums">—</TableCell>
         <TableCell className="text-end font-semibold tabular-nums">
           {fmt(totals.bakeryTotal)}
         </TableCell>
@@ -296,7 +301,7 @@ export default function BakeryFinancePage() {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-gray-400">
+                <TableCell colSpan={5} className="text-center py-8 text-gray-400">
                   {t("finance.noOrders")}
                 </TableCell>
               </TableRow>
@@ -368,7 +373,7 @@ export default function BakeryFinancePage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12">
+              <TableCell colSpan={5} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{t("common.loading")}</span>
@@ -377,7 +382,7 @@ export default function BakeryFinancePage() {
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                     {t("finance.noOrders")}
                   </TableCell>
                 </TableRow>

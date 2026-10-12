@@ -35,6 +35,7 @@ export default function EditDriver({ driver, onSubmit }: EditDriverProps) {
   const [formData, setFormData] = useState({
     name: driver.name ?? "",
     phoneNumber: driver.phoneNumber ?? "",
+    address: driver.address ?? "",
     regionId: driver.regionId ?? "",
   });
 
@@ -46,6 +47,7 @@ export default function EditDriver({ driver, onSubmit }: EditDriverProps) {
     setFormData({
       name: driver.name ?? "",
       phoneNumber: driver.phoneNumber ?? "",
+      address: driver.address ?? "",
       regionId: driver.regionId ?? "",
     });
     setProfileImageUrl(driver.profileImage ?? undefined);
@@ -91,6 +93,7 @@ export default function EditDriver({ driver, onSubmit }: EditDriverProps) {
       await onSubmit({
         name: formData.name.trim(),
         phoneNumber: formData.phoneNumber.trim() || undefined,
+        address: formData.address.trim(),
         regionId: formData.regionId || undefined,
         profileImage: profileImageUrl ?? null,
       });
@@ -133,6 +136,18 @@ export default function EditDriver({ driver, onSubmit }: EditDriverProps) {
             value={formData.phoneNumber}
             onChange={handleChange}
             placeholder="+201234567890"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {t("drivers.address")} ({t("drivers.optional")})
+          </label>
+          <Input
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder={t("drivers.addressPlaceholder")}
           />
         </div>
 

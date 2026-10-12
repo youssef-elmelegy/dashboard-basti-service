@@ -226,6 +226,7 @@ export default function DispatchPage() {
               <TableHead>{t("dispatch.columns.region")}</TableHead>
               <TableHead>{t("dispatch.columns.status")}</TableHead>
               <TableHead>{t("dispatch.columns.driver")}</TableHead>
+              <TableHead>{t("dispatch.columns.address")}</TableHead>
               <TableHead className="text-end">
                 {t("dispatch.columns.action")}
               </TableHead>
@@ -234,7 +235,7 @@ export default function DispatchPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={7} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin" />
                     <span>{t("common.loading")}</span>
@@ -244,7 +245,7 @@ export default function DispatchPage() {
             ) : items.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="text-center py-12 text-muted-foreground"
                 >
                   {t("dispatch.noOrders")}
@@ -265,6 +266,12 @@ export default function DispatchPage() {
                   </TableCell>
                   <TableCell>
                     <DriverChip order={order} />
+                  </TableCell>
+                  <TableCell
+                    className="max-w-64 truncate"
+                    title={order.assignedDriverAddress ?? undefined}
+                  >
+                    {order.assignedDriverAddress || "—"}
                   </TableCell>
                   <TableCell className="text-end">
                     <Button

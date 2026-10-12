@@ -250,6 +250,8 @@ function BakeryColumn({
   logoUrl,
   location,
   capacity,
+  bastiPercentage,
+  miniCakePercentage,
   orders,
   types,
   isCollapsed,
@@ -264,11 +266,13 @@ function BakeryColumn({
   logoUrl?: string | null;
   location: string;
   capacity: number;
+  bastiPercentage: number;
+  miniCakePercentage: number;
   orders: Order[];
   types?: string[];
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, string | number>) => string;
   activeOrderType?: string;
   isIncompatible?: boolean;
   onPasteAssign: (bakeryId: string, value: string) => Promise<boolean>;
@@ -303,6 +307,8 @@ function BakeryColumn({
     0,
   );
   const capacityPercentage = (usedCapacity / capacity) * 100;
+  const commissionPercentage =
+    activeOrderType === "big_cakes" ? bastiPercentage : miniCakePercentage;
 
   if (isCollapsed) {
     return (
@@ -421,6 +427,13 @@ function BakeryColumn({
                   </Badge>
                 ))}
               </div>
+            )}
+            {activeOrderType && (
+              <p className="mt-2 text-xs font-medium text-primary">
+                {t("reassignOrder.commissionLabel", {
+                  percentage: commissionPercentage,
+                })}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -1103,6 +1116,8 @@ const Orders = () => {
                         logoUrl={bakery.logoUrl}
                         location={bakery.locationDescription}
                         capacity={bakery.capacity}
+                        bastiPercentage={bakery.bastiPercentage}
+                        miniCakePercentage={bakery.miniCakePercentage}
                         orders={bakeryOrders[bakery.id] || []}
                         types={bakery.types}
                         isCollapsed={collapsedColumns.has(bakery.id)}

@@ -40,6 +40,10 @@ export interface Bakery {
   regionId: string;
   capacity: number;
   types: BakeryType[];
+  /** Basti commission for big-cake orders, as a whole percentage (e.g. 20). */
+  bastiPercentage: number;
+  /** Basti commission for mini/small-cake orders, as a whole percentage. */
+  miniCakePercentage: number;
   /** Management-only free-text notes. Null when never set. */
   notes: string | null;
   /** Logo icon URL. Null when the bakery has no logo. */
@@ -61,6 +65,8 @@ export interface CreateBakeryRequest {
   regionId: string;
   capacity: number;
   bakeryTypes: BakeryType[];
+  bastiPercentage: number;
+  miniCakePercentage: number;
   /** Optional management fields — omit entirely when not set. */
   notes?: string;
   logoUrl?: string;
@@ -76,6 +82,8 @@ export interface UpdateBakeryRequest {
   regionId?: string;
   capacity?: number;
   bakeryTypes?: BakeryType[];
+  bastiPercentage?: number;
+  miniCakePercentage?: number;
   /**
    * Optional management fields. `undefined` leaves the stored value untouched;
    * an explicit `null` clears notes/logo, and `[]` clears the gallery.

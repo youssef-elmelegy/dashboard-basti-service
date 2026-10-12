@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api-client";
 export interface Driver {
   id: string;
   name?: string | null;
+  address?: string | null;
   email: string;
   phoneNumber?: string | null;
   dueAmount?: number;
@@ -82,6 +83,7 @@ export interface DriverOrder {
 
 export interface CreateDriverPayload {
   name?: string;
+  address?: string;
   email: string;
   password: string;
   phoneNumber?: string;
@@ -91,6 +93,7 @@ export interface CreateDriverPayload {
 
 export interface UpdateDriverPayload {
   name?: string;
+  address?: string;
   phoneNumber?: string;
   regionId?: string;
   profileImage?: string | null;

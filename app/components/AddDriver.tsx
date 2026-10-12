@@ -35,6 +35,7 @@ export default function AddDriver({ regionId, onSubmit }: AddDriverProps) {
     email: "",
     password: "",
     phoneNumber: "",
+    address: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,10 +88,11 @@ export default function AddDriver({ regionId, onSubmit }: AddDriverProps) {
         email: formData.email.trim(),
         password: formData.password,
         phoneNumber: formData.phoneNumber.trim() || undefined,
+        address: formData.address.trim() || undefined,
         regionId,
         profileImage: profileImageUrl,
       });
-      setFormData({ name: "", email: "", password: "", phoneNumber: "" });
+      setFormData({ name: "", email: "", password: "", phoneNumber: "", address: "" });
       setProfileImageUrl(undefined);
     } catch (error) {
       console.error("Failed to add driver:", error);
@@ -178,6 +180,18 @@ export default function AddDriver({ regionId, onSubmit }: AddDriverProps) {
             value={formData.phoneNumber}
             onChange={handleChange}
             placeholder="+201234567890"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {t("drivers.address")} ({t("drivers.optional")})
+          </label>
+          <Input
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder={t("drivers.addressPlaceholder")}
           />
         </div>
 

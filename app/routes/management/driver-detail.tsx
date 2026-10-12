@@ -235,6 +235,10 @@ export default function DriverDetailPage() {
             <p className="text-xs text-muted-foreground">{t("drivers.phone")}</p>
             <p className="font-medium">{driver.phoneNumber || "—"}</p>
           </div>
+          <div className="sm:col-span-2">
+            <p className="text-xs text-muted-foreground">{t("drivers.address")}</p>
+            <p className="font-medium">{driver.address || "—"}</p>
+          </div>
           <div>
             <p className="text-xs text-muted-foreground">{t("drivers.region")}</p>
             <p className="font-medium">{regionName}</p>

@@ -134,6 +134,26 @@ export function BakeryCard({ bakery, onEdit, onDelete }: BakeryCardProps) {
         )}
       </div>
 
+      <div className="mb-4 pb-4 border-b border-border">
+        <p className="text-xs text-muted-foreground font-medium mb-2">
+          {t("bakeriesManagement.commissionRates")}
+        </p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">
+              {t("bakeriesManagement.bastiPercentage")}
+            </p>
+            <p className="font-semibold tabular-nums">{bakery.bastiPercentage}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">
+              {t("bakeriesManagement.miniCakePercentage")}
+            </p>
+            <p className="font-semibold tabular-nums">{bakery.miniCakePercentage}%</p>
+          </div>
+        </div>
+      </div>
+
       {/* Types */}
       <div>
         <p className="text-xs text-muted-foreground font-medium mb-2">

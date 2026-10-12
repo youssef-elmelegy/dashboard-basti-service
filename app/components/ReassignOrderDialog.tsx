@@ -242,6 +242,8 @@ export default function ReassignOrderDialog({
                         {t("reassignOrder.capacityLabel", {
                           available: bakery.availableCapacity,
                           capacity: bakery.capacity,
+                        })} — {t("reassignOrder.commissionLabel", {
+                          percentage: bakery.commissionPercentage,
                         })}
                       </SelectItem>
                     ))}

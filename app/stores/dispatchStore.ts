@@ -47,13 +47,14 @@ interface DispatchState {
   reload: (options?: { force?: boolean }) => Promise<void>;
   /**
    * Assign (driverId set) or unassign (driverId null) a driver to an order.
-   * `driverName` is an optional hint so the chip can show the name before the
-   * driver accepts. Throws on failure so the caller can surface it.
+   * Names and addresses are kept as optimistic hints until the board refreshes.
+   * Throws on failure so the caller can surface it.
    */
   assignDriver: (
     orderId: string,
     driverId: string | null,
     driverName?: string | null,
+    driverAddress?: string | null,
   ) => Promise<void>;
   invalidate: () => void;
   reset: () => void;
@@ -93,6 +94,7 @@ function applyAssignment(
   order: DispatchOrder,
   driverId: string | null,
   driverName?: string | null,
+  driverAddress?: string | null,
 ): DispatchOrder {
   if (driverId === null) {
     return {
@@ -101,6 +103,7 @@ function applyAssignment(
       driverData: null,
       driverAssignedAt: null,
       assignedDriverName: null,
+      assignedDriverAddress: null,
     };
   }
   return {
@@ -109,6 +112,7 @@ function applyAssignment(
     // Server clears driverData on (re)assign; it repopulates on acceptance.
     driverData: null,
     assignedDriverName: driverName ?? null,
+    assignedDriverAddress: driverAddress ?? null,
   };
 }
 
@@ -186,7 +190,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     await get().goToPage(1);
   },
 
-  assignDriver: async (orderId, driverId, driverName) => {
+  assignDriver: async (orderId, driverId, driverName, driverAddress) => {
     const response = await orderApi.assignDriver(orderId, driverId);
     if (!response.success) {
       throw new Error(response.message || "Failed to assign driver");
@@ -197,7 +201,9 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     set((s) => {
       const patch = (list: DispatchOrder[]) =>
         list.map((o) =>
-          o.id === orderId ? applyAssignment(o, driverId, driverName) : o,
+          o.id === orderId
+            ? applyAssignment(o, driverId, driverName, driverAddress)
+            : o,
         );
       const cache: Record<string, CacheEntry> = {};
       for (const [k, entry] of Object.entries(s.cache)) {

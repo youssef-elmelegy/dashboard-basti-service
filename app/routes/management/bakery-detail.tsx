@@ -26,6 +26,7 @@ import {
   Package,
   Plus,
   Star,
+  Percent,
   User,
   Store,
   StickyNote,
@@ -410,6 +411,33 @@ export default function BakeryDetailPage() {
                   <p className="text-sm text-muted-foreground">
                     {bakery.capacity} {t("bakeriesManagement.units")}
                   </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Percent className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">
+                    {t("bakeriesManagement.commissionRates")}
+                  </p>
+                  <div className="mt-1 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("bakeriesManagement.bastiPercentage")}
+                      </p>
+                      <p className="font-semibold tabular-nums">
+                        {bakery.bastiPercentage}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("bakeriesManagement.miniCakePercentage")}
+                      </p>
+                      <p className="font-semibold tabular-nums">
+                        {bakery.miniCakePercentage}%
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

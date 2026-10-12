@@ -328,6 +328,7 @@ export default function RegionDriversPage() {
                   <TableHead className={align}>{t("driverTable.name")}</TableHead>
                   <TableHead className={align}>{t("driverTable.email")}</TableHead>
                   <TableHead className={align}>{t("driverTable.phone")}</TableHead>
+                  <TableHead className={align}>{t("driverTable.address")}</TableHead>
                   <TableHead className={align}>{t("driverTable.dueAmount")}</TableHead>
                   <TableHead className={align}>{t("driverTable.status")}</TableHead>
                   {canWriteDrivers && (
@@ -362,6 +363,13 @@ export default function RegionDriversPage() {
                     <TableCell onClick={() => openDriver(driver)}>{driver.email}</TableCell>
                     <TableCell onClick={() => openDriver(driver)}>
                       {driver.phoneNumber || "—"}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-56 truncate"
+                      title={driver.address ?? undefined}
+                      onClick={() => openDriver(driver)}
+                    >
+                      {driver.address || "—"}
                     </TableCell>
                     <TableCell onClick={() => openDriver(driver)}>
                       {Number(driver.dueAmount ?? 0).toFixed(2)}

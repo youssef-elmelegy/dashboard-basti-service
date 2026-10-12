@@ -268,9 +268,9 @@ export type DispatchDriverState = "unassigned" | "assigned" | "accepted";
 /**
  * An order as shown on the driver-dispatch board. Carries the driver
  * assignment state so the board can render the assignment chip.
- * `assignedDriverName` is a client-only hint set right after assigning, so the
- * chip can show the chosen driver's name before they accept (the server clears
- * driverData on assign and only repopulates it on acceptance).
+ * `assignedDriverName` and `assignedDriverAddress` are supplied by the server
+ * from the currently assigned driver. They are also updated optimistically
+ * after assignment while the server refreshes the board.
  */
 export interface DispatchOrder {
   id: string;
@@ -293,6 +293,7 @@ export interface DispatchOrder {
   willDeliverAt: string | null;
   createdAt: string;
   assignedDriverName?: string | null;
+  assignedDriverAddress?: string | null;
 }
 
 export interface DispatchOrdersPage {
@@ -323,6 +324,8 @@ export interface AvailableBakery {
   usedCapacity: number;
   availableCapacity: number;
   isCurrent: boolean;
+  /** The Basti commission this bakery would apply to the selected order type. */
+  commissionPercentage: number;
 }
 
 /**

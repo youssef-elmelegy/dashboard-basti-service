@@ -27,8 +27,6 @@ const formSchema = z.object({
   minHoursToPrepare: z.number().int().min(1),
   weekendDays: z.array(z.number().int().min(0).max(6)),
   holidays: z.array(z.string()),
-  bastiPercentage: z.number().int().min(0).max(100),
-  miniCakePercentage: z.number().min(0),
   minMiniCakesRequired: z.number().int().min(0),
   printingFee: z.object({
     normal: z.number().int().min(0),
@@ -77,8 +75,6 @@ export default function AppConfigPage() {
       minHoursToPrepare: 24,
       weekendDays: [5, 6],
       holidays: [],
-      bastiPercentage: 20,
-      miniCakePercentage: 10,
       minMiniCakesRequired: 10,
       printingFee: { normal: 10, suger: 20 },
       paymentFee: { masarat: 1, tadawul: 1.5 },
@@ -104,8 +100,6 @@ export default function AppConfigPage() {
           minHoursToPrepare: config.minHoursToPrepare,
           weekendDays: config.weekendDays,
           holidays: config.holidays,
-          bastiPercentage: config.bastiPercentage,
-          miniCakePercentage: config.miniCakePercentage,
           minMiniCakesRequired: config.minMiniCakesRequired,
           printingFee: config.printingFee,
           paymentFee: config.paymentFee,
@@ -143,8 +137,6 @@ export default function AppConfigPage() {
         minHoursToPrepare: values.minHoursToPrepare,
         weekendDays: values.weekendDays,
         holidays: values.holidays,
-        bastiPercentage: values.bastiPercentage,
-        miniCakePercentage: values.miniCakePercentage,
         minMiniCakesRequired: values.minMiniCakesRequired,
         printingFee: values.printingFee,
         paymentFee: values.paymentFee,
@@ -171,8 +163,6 @@ export default function AppConfigPage() {
         minHoursToPrepare: config.minHoursToPrepare,
         weekendDays: config.weekendDays,
         holidays: config.holidays,
-        bastiPercentage: config.bastiPercentage,
-        miniCakePercentage: config.miniCakePercentage,
         printingFee: config.printingFee,
         paymentFee: config.paymentFee,
         cardPrice: config.cardPrice,
@@ -403,72 +393,6 @@ export default function AppConfigPage() {
                       </FormControl>
                       <FormDescription>
                         {t("appConfig.bastiDeliveryAmountDesc")}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="bastiPercentage"
-                  render={({ field }) => {
-                    const value =
-                      typeof field.value === "number" && !isNaN(field.value)
-                        ? field.value
-                        : 0;
-                    const bakeryPct = Math.max(0, Math.min(100, 100 - value));
-                    return (
-                      <FormItem className="flex-1 min-w-48">
-                        <div className="flex items-center justify-between gap-2">
-                          <FormLabel>
-                            {t("appConfig.bastiPercentage")}
-                          </FormLabel>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {t("appConfig.bakeryPercentage")}: {bakeryPct}%
-                          </span>
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value))
-                            }
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          {t("appConfig.bastiPercentageDesc")}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="miniCakePercentage"
-                  render={({ field }) => (
-                    <FormItem className="flex-1 min-w-48">
-                      <FormLabel>
-                        {t("appConfig.miniCakePercentage")}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="any"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t("appConfig.miniCakePercentageDesc")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

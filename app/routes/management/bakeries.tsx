@@ -103,6 +103,8 @@ export default function BakeriesPage() {
     regionId: string;
     capacity: number;
     bakeryTypes: BakeryType[];
+    bastiPercentage: number;
+    miniCakePercentage: number;
     notes?: string;
     logoUrl?: string;
     galleryImages?: string[];
@@ -131,6 +133,8 @@ export default function BakeriesPage() {
           regionId: data.regionId,
           capacity: data.capacity,
           bakeryTypes: data.types,
+          bastiPercentage: data.bastiPercentage,
+          miniCakePercentage: data.miniCakePercentage,
           notes: data.notes,
           logoUrl: data.logoUrl,
           galleryImages: data.galleryImages,

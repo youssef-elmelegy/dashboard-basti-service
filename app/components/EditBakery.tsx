@@ -56,6 +56,8 @@ const formSchema = z.object({
     .number()
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
+  bastiPercentage: z.number().min(0).max(100),
+  miniCakePercentage: z.number().min(0).max(100),
   bakeryTypes: z
     .array(z.enum(["small_cakes", "big_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
@@ -98,6 +100,8 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
       locationDescription: bakery.locationDescription,
       regionId: bakery.regionId,
       capacity: bakery.capacity,
+      bastiPercentage: bakery.bastiPercentage,
+      miniCakePercentage: bakery.miniCakePercentage,
       // Legacy values are folded onto the current vocabulary and unknown ones
       // dropped. Without this a bakery stored with an out-of-vocabulary type
       // (e.g. the legacy `large_cakes`) fails the zod enum, and since the submit
@@ -185,6 +189,8 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
       locationDescription: values.locationDescription,
       regionId: values.regionId,
       capacity: values.capacity,
+      bastiPercentage: values.bastiPercentage,
+      miniCakePercentage: values.miniCakePercentage,
       types: values.bakeryTypes,
       // null rather than undefined so clearing a note or removing the logo is
       // sent as an explicit clear instead of being read as "leave unchanged".
@@ -264,6 +270,54 @@ export function EditBakery({ bakery, onSubmit }: EditBakeryProps) {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bastiPercentage"
+                  render={({ field }) => (
+                    <FormItem className="min-w-0">
+                      <FormLabel className="block whitespace-nowrap text-xs">
+                        {t("bakeriesManagement.bastiRate")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="miniCakePercentage"
+                  render={({ field }) => (
+                    <FormItem className="min-w-0">
+                      <FormLabel className="block whitespace-nowrap text-xs">
+                        {t("bakeriesManagement.miniCakeRate")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

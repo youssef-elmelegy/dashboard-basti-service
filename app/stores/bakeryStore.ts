@@ -41,6 +41,8 @@ interface BakeryState {
     regionId: string;
     capacity: number;
     bakeryTypes: BakeryType[];
+    bastiPercentage: number;
+    miniCakePercentage: number;
     notes?: string;
     logoUrl?: string;
     galleryImages?: string[];
@@ -53,6 +55,8 @@ interface BakeryState {
       regionId?: string;
       capacity?: number;
       bakeryTypes?: BakeryType[];
+      bastiPercentage?: number;
+      miniCakePercentage?: number;
       notes?: string | null;
       logoUrl?: string | null;
       galleryImages?: string[];
@@ -167,6 +171,8 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes,
+        bastiPercentage: bakeryData.bastiPercentage,
+        miniCakePercentage: bakeryData.miniCakePercentage,
         notes: bakeryData.notes,
         logoUrl: bakeryData.logoUrl,
         galleryImages: bakeryData.galleryImages,
@@ -198,6 +204,8 @@ export const useBakeryStore = create<BakeryState>((set, get) => ({
         regionId: bakeryData.regionId,
         capacity: bakeryData.capacity,
         bakeryTypes: bakeryData.bakeryTypes,
+        bastiPercentage: bakeryData.bastiPercentage,
+        miniCakePercentage: bakeryData.miniCakePercentage,
         notes: bakeryData.notes,
         logoUrl: bakeryData.logoUrl,
         galleryImages: bakeryData.galleryImages,

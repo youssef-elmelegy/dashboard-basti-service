@@ -175,6 +175,9 @@ export const useDriverStore = create<DriverStore>((set, get) => ({
   createDriver: async (payload) => {
     try {
       await driverService.create(payload);
+      // The region list is cached for five minutes; force the caller's reload
+      // to fetch the newly created driver instead of returning stale rows.
+      set({ lastFetchTime: null });
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to create driver");
       set({ error: message });
@@ -185,6 +188,18 @@ export const useDriverStore = create<DriverStore>((set, get) => ({
   updateDriver: async (id, payload) => {
     try {
       await driverService.update(id, payload);
+      set((state) => ({
+        currentDriver:
+          state.currentDriver && state.currentDriver.id === id
+            ? { ...state.currentDriver, ...payload }
+            : state.currentDriver,
+        drivers: state.drivers.map((driver) =>
+          driver.id === id ? { ...driver, ...payload } : driver,
+        ),
+        // The caller reloads after editing; do not let its request return the
+        // five-minute cached version of this driver.
+        lastFetchTime: null,
+      }));
     } catch (error) {
       const message = extractErrorMessage(error, "Failed to update driver");
       set({ error: message });

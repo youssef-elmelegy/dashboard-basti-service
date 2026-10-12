@@ -51,6 +51,8 @@ const formSchema = z.object({
     .number({ message: "Capacity must be a number!" })
     .min(1, { message: "Capacity must be at least 1!" })
     .max(10000, { message: "Capacity must not exceed 10000!" }),
+  bastiPercentage: z.number().min(0).max(100),
+  miniCakePercentage: z.number().min(0).max(100),
   bakeryTypes: z
     .array(z.enum(["small_cakes", "big_cakes", "others"]))
     .min(1, { message: "Select at least one bakery type!" }),
@@ -92,6 +94,8 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
       locationDescription: "",
       regionId: "",
       capacity: undefined,
+      bastiPercentage: 0,
+      miniCakePercentage: 0,
       bakeryTypes: [],
       notes: "",
     },
@@ -238,6 +242,54 @@ export function AddBakery({ onSubmit }: AddBakeryProps) {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bastiPercentage"
+                  render={({ field }) => (
+                    <FormItem className="min-w-0">
+                      <FormLabel className="block whitespace-nowrap text-xs">
+                        {t("bakeriesManagement.bastiRate")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="miniCakePercentage"
+                  render={({ field }) => (
+                    <FormItem className="min-w-0">
+                      <FormLabel className="block whitespace-nowrap text-xs">
+                        {t("bakeriesManagement.miniCakeRate")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}

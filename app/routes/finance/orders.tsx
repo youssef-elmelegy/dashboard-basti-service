@@ -59,6 +59,8 @@ const fmt = (n: number) =>
     maximumFractionDigits: 2,
   });
 
+const fmtRate = (fraction: number) => `${fmt(fraction * 100)}%`;
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 // Column color tokens — `print:` variants render stronger in PDF
@@ -136,6 +138,9 @@ function OrderTableBody({ rows }: { rows: OrderFinancialsRow[] }) {
             </TableCell>
             <TableCell className={`text-end tabular-nums ${COL_BASTI}`}>
               {fmt(order.bastiAmount)}
+            </TableCell>
+            <TableCell className="text-end tabular-nums">
+              {fmtRate(order.bastiPercentage)}
             </TableCell>
             <TableCell className={`text-end tabular-nums ${COL_ADDON}`}>
               {fmt(order.addonsTotal)}
@@ -338,6 +343,9 @@ export default function FinanceOrdersPage() {
         <TableHead className={`text-end ${HDR_BASTI}`}>
           {t("finance.columns.bastiAmount")}
         </TableHead>
+        <TableHead className="text-end">
+          {t("finance.columns.bastiRate")}
+        </TableHead>
         <TableHead className={`text-end ${HDR_ADDON}`}>
           {t("finance.columns.addonValue")}
         </TableHead>
@@ -374,6 +382,7 @@ export default function FinanceOrdersPage() {
         >
           {fmt(totals.bastiTotal)}
         </TableCell>
+        <TableCell className="text-end font-semibold tabular-nums">—</TableCell>
         <TableCell
           className={`text-end font-semibold tabular-nums ${HDR_ADDON}`}
         >
@@ -486,7 +495,7 @@ export default function FinanceOrdersPage() {
             {(printRows ?? rows).length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={11}
+                  colSpan={12}
                   className="text-center py-8 text-gray-400"
                 >
                   {t("finance.noOrders")}
@@ -586,7 +595,7 @@ export default function FinanceOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-12">
+              <TableCell colSpan={12} className="text-center py-12">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{t("common.loading")}</span>
@@ -596,7 +605,7 @@ export default function FinanceOrdersPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={11}
+                  colSpan={12}
                     className="text-center py-12 text-muted-foreground"
                   >
                     {t("finance.noOrders")}

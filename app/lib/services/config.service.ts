@@ -14,8 +14,6 @@ export interface ConfigResponseDto {
   }>;
   isOpen: boolean;
   closureMessage: string | null;
-  bastiPercentage: number;
-  miniCakePercentage: number;
   minMiniCakesRequired: number;
   printingFee: {
     normal: number;
@@ -45,8 +43,6 @@ export interface UpdateConfigRequest {
   }>;
   isOpen?: boolean;
   closureMessage?: string | null;
-  bastiPercentage?: number;
-  miniCakePercentage?: number;
   minMiniCakesRequired?: number;
   printingFee?: {
     normal: number;

@@ -94,7 +94,12 @@ export default function AssignDriverDialog({
     setSubmittingId(driver.id);
     setError(null);
     try {
-      await assignDriver(order.id, driver.id, driver.name ?? driver.email);
+      await assignDriver(
+        order.id,
+        driver.id,
+        driver.name ?? driver.email,
+        driver.address ?? null,
+      );
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("dispatch.assignError"));
