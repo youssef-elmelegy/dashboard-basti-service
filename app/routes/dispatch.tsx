@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Truck,
@@ -43,6 +44,7 @@ type DriverStateFilter = "all" | DispatchDriverState;
 
 export default function DispatchPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const isRTL = i18n.language === "ar";
 
   const items = useDispatchStore((s) => s.items);
@@ -120,6 +122,10 @@ export default function DispatchPage() {
   const openAssign = (order: DispatchOrder) => {
     setDialogOrder(order);
     setDialogOpen(true);
+  };
+
+  const openOrder = (orderId: string) => {
+    navigate(`/orders/${orderId}`, { state: { from: "/dispatch" } });
   };
 
   const handlePrev = () => {
@@ -253,7 +259,11 @@ export default function DispatchPage() {
               </TableRow>
             ) : (
               items.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow
+                  key={order.id}
+                  className="cursor-pointer transition-colors hover:bg-muted/50"
+                  onClick={() => openOrder(order.id)}
+                >
                   <TableCell className="font-mono font-medium">
                     #{order.referenceNumber || order.id.slice(0, 8)}
                   </TableCell>
@@ -278,7 +288,10 @@ export default function DispatchPage() {
                       variant="outline"
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => openAssign(order)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openAssign(order);
+                      }}
                     >
                       <UserPlus className="w-4 h-4" />
                       {order.driverId

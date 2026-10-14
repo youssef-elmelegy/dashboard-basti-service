@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import type { OrderItem } from "@/data/orders";
 import { differenceInCalendarDays, format } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -222,6 +222,7 @@ function cartItemToOrderItem(
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const orders = useOrderStore((state) => state.orders);
   const getDetailedOrder = useOrderStore((state) => state.getDetailedOrder);
@@ -297,9 +298,11 @@ export default function OrderDetailPage() {
   // normal (active) orders page.
   const completedStatuses = ["ready", "out_for_delivery", "delivered", "cancelled"];
   const backTo =
-    order && completedStatuses.includes(order.orderStatus)
-      ? "/completed-orders"
-      : "/orders";
+    location.state?.from === "/dispatch"
+      ? "/dispatch"
+      : order && completedStatuses.includes(order.orderStatus)
+        ? "/completed-orders"
+        : "/orders";
 
   if (isLoading) {
     return (

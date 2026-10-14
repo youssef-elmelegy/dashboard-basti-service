@@ -201,6 +201,11 @@ export default function AssignDriverDialog({
                               {driver.phoneNumber}
                             </span>
                           )}
+                          {driver.address && (
+                            <span className="text-xs text-muted-foreground truncate">
+                              {driver.address}
+                            </span>
+                          )}
                         </span>
                       </span>
                       {submittingId === driver.id ? (
